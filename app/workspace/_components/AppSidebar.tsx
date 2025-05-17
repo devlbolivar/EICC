@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AddNewCourseDialog from "./AddNewCourseDialog";
 
 const SideBarOptions = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/workspace" },
@@ -44,10 +45,12 @@ const AppSidebar = () => {
 
       <SidebarContent>
         <SidebarGroup>
-          <Button>
-            <Plus />
-            Crear nuevo curso
-          </Button>
+          <AddNewCourseDialog>
+            <Button>
+              <Plus />
+              Crear nuevo curso
+            </Button>
+          </AddNewCourseDialog>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupContent>

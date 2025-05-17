@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import AddNewCourseDialog from "./AddNewCourseDialog";
 
 interface Course {
   id: number;
@@ -26,7 +28,12 @@ const CourseList = () => {
           <h2 className="text-muted-foreground my-2 text-xl font-bold">
             Parece que no has creado ningún curso aún
           </h2>
-          <Button>Crea tu primer curso</Button>
+          <AddNewCourseDialog>
+            <Button>
+              <Plus />
+              Crea tu primer curso
+            </Button>
+          </AddNewCourseDialog>
         </div>
       ) : (
         <div>
