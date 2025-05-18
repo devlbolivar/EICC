@@ -18,9 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Sparkle } from "lucide-react";
+import { Loader2, Sparkle } from "lucide-react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const AddNewCourseDialog = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
     description: string;
@@ -51,8 +55,19 @@ const AddNewCourseDialog = ({ children }: { children: React.ReactNode }) => {
     setFormData({ ...formData, includeVideos: checked });
   };
 
-  const handleSubmit = () => {
-    console.log(formData);
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      const result = await axios.post("/api/generate-course-layout", {
+        ...formData,
+      });
+      console.log(result.data);
+      router.push(`/workspace/edit-course/${result.data.courseId}`);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -131,8 +146,13 @@ const AddNewCourseDialog = ({ children }: { children: React.ReactNode }) => {
                 />
               </div>
               <div className="flex gap-2 flex-col mt-5">
-                <Button onClick={handleSubmit}>
-                  <Sparkle className="w-full h-4 mr-2" /> Crear curso
+                <Button onClick={handleSubmit} disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkle className="w-full h-4 mr-2" />
+                  )}
+                  Crear curso
                 </Button>
               </div>
             </div>
