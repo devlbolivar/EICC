@@ -1,12 +1,29 @@
 "use client";
-import { Book, Clock, TrendingUp } from "lucide-react";
-import React from "react";
+import { Book, Clock, Gift, Settings, TrendingUp, Loader2 } from "lucide-react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-
+import axios from "axios";
 const CourseInfo = ({ course }: { course: any }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const courseLayout = course?.courseJson?.course;
   console.log(course);
+
+  const generateCourseContent = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.post("/api/generate-course-content", {
+        courseJson: courseLayout,
+        courseTitle: course?.name,
+        courseId: course?.cid,
+      });
+      console.log(response);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex gap-5 justify-around p-5 rounded-2xl shadow">
@@ -38,7 +55,18 @@ const CourseInfo = ({ course }: { course: any }) => {
             </section>
           </div>
         </div>
-        <Button className="max-w-sm">Generar Contenido</Button>
+        <Button
+          className="max-w-sm"
+          onClick={generateCourseContent}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Settings className="mr-2 h-4 w-4" />
+          )}
+          {isLoading ? "Generando..." : "Generar Contenido"}
+        </Button>
       </div>
       <Image
         src={course?.bannerImage}

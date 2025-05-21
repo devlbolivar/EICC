@@ -33,6 +33,10 @@ Devuelve el resultado únicamente en formato JSON, siguiendo este esquema:
 User Input: 
 `;
 
+export const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
 export async function POST(req: Request) {
   const formData = await req.json();
 
@@ -49,9 +53,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-  });
   const config = {
     responseMimeType: "text/plain",
   };
@@ -85,8 +86,6 @@ export async function POST(req: Request) {
   const imagePrompt = jsonResponse.course.bannerImagePrompt;
 
   const bannerImage = await generateBannerImage(imagePrompt);
-
-  console.log(bannerImage);
 
   const result = await db.insert(coursesTable).values({
     cid: courseId,

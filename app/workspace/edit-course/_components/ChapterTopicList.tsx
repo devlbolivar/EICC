@@ -34,7 +34,6 @@ const ChapterTopicList = ({ course }: { course: any }) => {
               {chapter?.topic.map((topic: string, index: number) => (
                 <div className="flex flex-col items-center" key={index}>
                   <div className="h-10 bg-gray-300 w-1"></div>
-
                   <div className="flex items-center gap-5">
                     <span
                       className={`${
