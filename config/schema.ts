@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   jsonb,
+  json,
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
@@ -26,8 +27,9 @@ export const coursesTable = pgTable("courses", {
   includeVideos: boolean().notNull().default(false),
   difficulty: varchar({ length: 255 }).notNull(),
   category: varchar({ length: 255 }).notNull(),
-  courseJson: jsonb(),
+  courseJson: json(),
   bannerImage: text().default(""),
+  courseContent: json().default({}),
   userEmail: varchar("userEmail")
     .references(() => usersTable.email)
     .notNull(),

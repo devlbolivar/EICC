@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 const CourseInfo = ({ course }: { course: any }) => {
   const [isLoading, setIsLoading] = useState(false);
   const courseLayout = course?.courseJson?.course;
-  console.log(course);
+  const router = useRouter();
 
   const generateCourseContent = async () => {
     try {
@@ -17,11 +19,15 @@ const CourseInfo = ({ course }: { course: any }) => {
         courseTitle: course?.name,
         courseId: course?.cid,
       });
-      console.log(response);
+
+      router.replace(`/workspace`);
+      toast.success("Contenido del curso generado correctamente");
     } catch (error) {
       console.error(error);
-    } finally {
       setIsLoading(false);
+      toast.error(
+        "Error al generar el contenido del curso, por favor intente nuevamente"
+      );
     }
   };
 
