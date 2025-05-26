@@ -1,10 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AddNewCourseDialog from "./AddNewCourseDialog";
-
+import axios from "axios";
+import { useUser } from "@clerk/nextjs";
+import CourseCard from "./CourseCard";
 interface Course {
   id: number;
   name: string;
@@ -13,6 +15,17 @@ interface Course {
 
 const CourseList = () => {
   const [courseList, setCourseList] = useState<Course[]>([]);
+  const { user } = useUser();
+
+  const getCourseList = async () => {
+    const response = await axios.get("/api/courses");
+    setCourseList(response.data);
+  };
+
+  useEffect(() => {
+    user && getCourseList();
+  }, [user]);
+
   return (
     <div className="mt-10">
       <h2 className="text-2xl font-bold">Lista de Cursos</h2>
@@ -36,12 +49,9 @@ const CourseList = () => {
           </AddNewCourseDialog>
         </div>
       ) : (
-        <div>
-          {courseList.map((course) => (
-            <div key={course.id}>
-              <h3>{course.name}</h3>
-              <p>{course.description}</p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+          {courseList.map((course, index) => (
+            <CourseCard key={index} course={course} />
           ))}
         </div>
       )}
