@@ -20,7 +20,7 @@ export const usersTable = pgTable("users", {
 
 export const coursesTable = pgTable("courses", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  cid: varchar({ length: 255 }).notNull(),
+  cid: varchar({ length: 255 }).notNull().unique(),
   name: varchar({ length: 255 }).notNull(),
   description: text().notNull(),
   numberOfChapters: integer().notNull(),
@@ -33,6 +33,15 @@ export const coursesTable = pgTable("courses", {
   userEmail: varchar("userEmail")
     .references(() => usersTable.email)
     .notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow(),
+});
+
+export const enrollCourseTable = pgTable("enrollCourse", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  cid: varchar("cid").references(() => coursesTable.cid),
+  userEmail: varchar("userEmail").references(() => usersTable.email),
+  completedChapters: json().default({}),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
 });

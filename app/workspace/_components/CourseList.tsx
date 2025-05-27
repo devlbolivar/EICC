@@ -28,7 +28,7 @@ const CourseList = () => {
 
   return (
     <div className="mt-10">
-      <h2 className="text-2xl font-bold">Lista de Cursos</h2>
+      <h2 className="text-2xl font-bold">Cursos disponibles</h2>
       {courseList.length === 0 ? (
         <div className="flex items-center justify-center h-full p-7 flex-col border  rounded-xl shadow-xs mt-2 bg-secondary/50">
           <Image
@@ -49,7 +49,7 @@ const CourseList = () => {
           </AddNewCourseDialog>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 mt-4">
           {courseList.map((course, index) => (
             <CourseCard key={index} course={course} />
           ))}
