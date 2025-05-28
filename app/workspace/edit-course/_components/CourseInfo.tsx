@@ -1,12 +1,27 @@
 "use client";
-import { Book, Clock, Gift, Settings, TrendingUp, Loader2 } from "lucide-react";
+import {
+  Book,
+  Clock,
+  Gift,
+  Settings,
+  TrendingUp,
+  Loader2,
+  PlayCircle,
+} from "lucide-react";
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-const CourseInfo = ({ course }: { course: any }) => {
+import Link from "next/link";
+const CourseInfo = ({
+  course,
+  viewCourse,
+}: {
+  course: any;
+  viewCourse: boolean;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const courseLayout = course?.courseJson?.course;
   const router = useRouter();
@@ -61,18 +76,27 @@ const CourseInfo = ({ course }: { course: any }) => {
             </section>
           </div>
         </div>
-        <Button
-          className="max-w-sm"
-          onClick={generateCourseContent}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Settings className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? "Generando..." : "Generar Contenido"}
-        </Button>
+        {!viewCourse ? (
+          <Button
+            className="max-w-sm"
+            onClick={generateCourseContent}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Settings className="mr-2 h-4 w-4" />
+            )}
+            {isLoading ? "Generando..." : "Generar Contenido"}
+          </Button>
+        ) : (
+          <Link href={`/course/${course?.cid}`}>
+            <Button className="max-w-sm">
+              <PlayCircle />
+              Continuar Aprendiendo
+            </Button>
+          </Link>
+        )}
       </div>
       <Image
         src={course?.bannerImage}

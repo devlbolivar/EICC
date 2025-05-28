@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { UserDetailContext } from "./context/UserDetailContext";
+import { SelectedChapterIndexContext } from "./context/SelectedChapterIndexContext";
 const Provider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUser();
   const [userDetail, setUserDetail] = useState<{
@@ -10,6 +11,7 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
     name: string;
     email: string;
   } | null>(null);
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -29,7 +31,11 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
     <UserDetailContext.Provider
       value={{ user: userDetail, setUser: setUserDetail }}
     >
-      <div>{children}</div>
+      <SelectedChapterIndexContext.Provider
+        value={{ selectedChapterIndex, setSelectedChapterIndex }}
+      >
+        <div>{children}</div>
+      </SelectedChapterIndexContext.Provider>
     </UserDetailContext.Provider>
   );
 };

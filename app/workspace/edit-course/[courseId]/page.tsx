@@ -6,7 +6,7 @@ import axios from "axios";
 import CourseInfo from "../_components/CourseInfo";
 import ChapterTopicList from "../_components/ChapterTopicList";
 
-const EditCourse = () => {
+const EditCourse = ({ viewCourse = false }: { viewCourse?: boolean }) => {
   const { courseId } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState<any>(null);
@@ -35,7 +35,7 @@ const EditCourse = () => {
 
   return (
     <div>
-      <CourseInfo course={courseInfo} />
+      <CourseInfo course={courseInfo} viewCourse={viewCourse} />
       <ChapterTopicList course={courseInfo} />
     </div>
   );

@@ -14,8 +14,6 @@ const EnrollCourseList = () => {
       },
     });
 
-    console.log(result);
-
     if (result.status === 200) {
       setEnrolledCourses(result.data);
     }
@@ -24,8 +22,6 @@ const EnrollCourseList = () => {
   useEffect(() => {
     getEnrolledCourses();
   }, []);
-
-  console.log(enrolledCourses);
 
   return (
     <div>
