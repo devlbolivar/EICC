@@ -14,7 +14,6 @@ const Course = () => {
   const getEnrolledCourseById = async () => {
     const result = await axios.get(`/api/enroll-course?courseId=${courseId}`);
 
-    console.log(result.data);
     if (result.status === 200) {
       setCourseInfo(result.data);
     }
@@ -25,11 +24,18 @@ const Course = () => {
   }, []);
 
   return (
-    <div>
-      <AppHeader hideSidebar={true} />
-      <div className="flex gap-10">
+    <div className="flex h-screen">
+      <div className="fixed">
         <ChapterListSidebar courseInfo={courseInfo} />
-        <ChapterContent courseInfo={courseInfo} />
+      </div>
+      <div className="flex-1 ml-80">
+        <AppHeader hideSidebar={true} />
+        <div className="flex gap-10 overflow-y-auto h-[calc(100vh-64px)]">
+          <ChapterContent
+            courseInfo={courseInfo}
+            refreshData={() => getEnrolledCourseById()}
+          />
+        </div>
       </div>
     </div>
   );

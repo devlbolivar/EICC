@@ -4,7 +4,11 @@ import React from "react";
 
 const AppHeader = ({ hideSidebar = false }: { hideSidebar?: boolean }) => {
   return (
-    <div className="flex items-center justify-between p-5 shadow-sm">
+    <div
+      className={`flex items-center ${
+        hideSidebar ? "justify-end" : "justify-between"
+      } p-5 shadow-sm`}
+    >
       {!hideSidebar && <SidebarTrigger />}
       <UserButton />
     </div>

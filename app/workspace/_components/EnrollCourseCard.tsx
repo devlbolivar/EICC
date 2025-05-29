@@ -14,10 +14,10 @@ const EnrollCourseCard = ({
   const courseJson = course.courseJson.course;
 
   const calculateProgress = () => {
-    return (
+    return Math.round(
       ((enrollCourse?.completedChapters?.length ?? 0) /
         course.courseContent.length) *
-      100
+        100
     );
   };
 

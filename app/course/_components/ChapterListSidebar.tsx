@@ -15,7 +15,7 @@ const ChapterListSidebar = ({ courseInfo }: { courseInfo: any }) => {
     useSelectedChapterIndexContext();
 
   return (
-    <div className="w-[300px] bg-secondary h-screen p-5">
+    <div className="w-80 bg-secondary h-screen p-5">
       <h2 className=" my-3 text-xl font-bold">
         Capítulos ({courseContent?.length})
       </h2>
@@ -30,10 +30,9 @@ const ChapterListSidebar = ({ courseInfo }: { courseInfo: any }) => {
               {index + 1}. {chapter.chapterName}
             </AccordionTrigger>
             <AccordionContent asChild>
-              <div className="">
+              <div>
                 {chapter.topics.map((topic: any, index: number) => (
                   <h2 key={index} className="p-3 bg-white my-1 rounded-lg">
-                    {" "}
                     {topic.topic}
                   </h2>
                 ))}

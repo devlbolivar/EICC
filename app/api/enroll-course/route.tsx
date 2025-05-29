@@ -90,3 +90,36 @@ export async function GET(req: Request) {
     return NextResponse.json(result);
   }
 }
+
+export async function PUT(req: Request) {
+  const { courseId, completedChapter } = await req.json();
+  const user = await currentUser();
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  if (!user?.primaryEmailAddress?.emailAddress) {
+    return new Response("No email address found", { status: 400 });
+  }
+
+  const result = await db
+    .update(enrollCourseTable)
+    .set({
+      completedChapters: completedChapter,
+    })
+    .where(
+      and(
+        eq(enrollCourseTable.userEmail, user.primaryEmailAddress.emailAddress),
+        eq(enrollCourseTable.cid, courseId)
+      )
+    )
+    .returning({
+      id: enrollCourseTable.id,
+      cid: enrollCourseTable.cid,
+      userEmail: enrollCourseTable.userEmail,
+      completedChapters: enrollCourseTable.completedChapters,
+    });
+
+  return NextResponse.json(result);
+}
