@@ -21,6 +21,7 @@ import {
   Settings,
   Users,
   CircleCheck,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,10 +29,10 @@ import AddNewCourseDialog from "./AddNewCourseDialog";
 
 const SideBarOptions = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/workspace" },
-  { title: "Cursos", icon: Book, path: "/workspace/courses" },
-  { title: "Estudiantes", icon: Users, path: "/workspace/students" },
-  { title: "Profesores", icon: GraduationCap, path: "/workspace/teachers" },
-  { title: "Configuración", icon: Settings, path: "/workspace/settings" },
+  { title: "Mis cursos", icon: Book, path: "/workspace/my-learning" },
+  { title: "Explorar cursos", icon: Book, path: "/workspace/explore" },
+  { title: "Perfil", icon: Settings, path: "/workspace/profile" },
+  { title: "Billing", icon: CreditCard, path: "/workspace/billing" },
 ];
 
 const AppSidebar = () => {

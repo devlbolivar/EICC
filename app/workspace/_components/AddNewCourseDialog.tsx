@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Sparkle } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-
+import { toast } from "sonner";
 const AddNewCourseDialog = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +61,15 @@ const AddNewCourseDialog = ({ children }: { children: React.ReactNode }) => {
       const result = await axios.post("/api/generate-course-layout", {
         ...formData,
       });
-      console.log(result.data);
+
+      if (result.data.response === "Limit exceeded") {
+        toast.warning(
+          "No puedes generar más de un curso con un plan free, por favor selecciona un plan"
+        );
+
+        router.push("/workspace/billing");
+      }
+
       router.push(`/workspace/edit-course/${result.data.courseId}`);
     } catch (error) {
       console.error(error);

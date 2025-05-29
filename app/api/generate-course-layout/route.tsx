@@ -3,8 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import db from "@/config/db";
 import crypto from "crypto";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import axios from "axios";
+import { eq } from "drizzle-orm";
 const prompt = `Genera un curso de aprendizaje basado en los siguientes detalles. Asegúrate de incluir:
 Nombre del curso
 Descripción, Nombre de cada capítulo,Prompt para imagen (Crea una ilustración digital 2D moderna, de estilo plano, que represente el tema del usuario. Incluye elementos de UI/UX como pantallas de maquetas, bloques de texto, íconos, botones y herramientas creativas de trabajo. Agrega elementos simbólicos relacionados con el curso del usuario, como notas adhesivas, componentes de diseño y ayudas visuales. Usa una paleta de colores vibrante (azul, púrpura, naranja) con una apariencia limpia y profesional. La ilustración debe sentirse creativa, tecnológica y educativa, ideal para visualizar conceptos del curso del usuario.), 
@@ -41,6 +42,8 @@ export async function POST(req: Request) {
   const formData = await req.json();
 
   const user = await currentUser();
+  const { has } = await auth();
+  const hasPremiumAccess = has({ plan: "basico" });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -67,6 +70,16 @@ export async function POST(req: Request) {
       ],
     },
   ];
+
+  if (!hasPremiumAccess) {
+    const result = await db
+      .select()
+      .from(coursesTable)
+      .where(eq(coursesTable.userEmail, user.primaryEmailAddress.emailAddress));
+    if (result.length >= 1) {
+      return NextResponse.json({ response: "Limit exceeded" });
+    }
+  }
 
   const response = await ai.models.generateContent({
     model,

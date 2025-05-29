@@ -137,11 +137,10 @@ const ChapterContent = ({
         )}
       </div>
       <div className="mt-7">
-        {topics?.map((topic: any, index: number) => (
-          <div key={index} className="mt-10 p-5 bg-secondary rounded-2xl">
+        {topics?.map((topic: any, index_: number) => (
+          <div key={index_} className="mt-10 p-5 bg-secondary rounded-2xl">
             <h2 className="text-2xl font-bold text-primary">
-              {" "}
-              {index + 1}. {topic.topic}
+              {index_ + 1}. {topic.topic}
             </h2>
 
             <div

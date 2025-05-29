@@ -1,6 +1,6 @@
 import db from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, sql } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -13,6 +13,15 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const courseId = searchParams.get("courseId");
+
+  if (courseId === "0") {
+    const result = await db
+      .select()
+      .from(coursesTable)
+      .where(sql`${coursesTable.courseContent}::jsonb != '{}'::jsonb`);
+
+    return NextResponse.json(result);
+  }
 
   if (courseId) {
     const result = await db
