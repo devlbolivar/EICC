@@ -144,3 +144,31 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .font-logo {
+    @apply font-bold; /* Or use @apply for any font styling */
+  }
+
+  .text-primary {
+    color: #2563eb;
+  }
+
+  .text-secondary {
+    color: #22c55e;
+  }
+
+  .text-cta {
+    color: #f97316;
+  }
+
+  .card-hover-effect {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .card-hover-effect:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
