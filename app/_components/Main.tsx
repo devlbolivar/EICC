@@ -6,11 +6,11 @@ const Main = () => {
         className="relative min-h-[500px] md:min-h-[600px] flex items-center justify-center text-center px-4 py-16 bg-cover bg-center"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(0, 20, 40, 0.6) 0%, rgba(0, 20, 40, 0.8) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuA3twXNmSpy25Bqhb0uHnm2XE20-NnaYdNUYFjOnhdwNsZUj5g_m0GMRzSLEfb2VDRZ66DwIyadwxNgBUrBjgMXXtenYYA7njGyfB_TButg5x5cpGANLaRJh8XySyszm0gmcTOZuJNsDpS-aE8ZWQtjFpZR7Ft9OUkMJ9nWoK-c_6SNIi8N2DFWcJstQsaYoS_If_3hbo_nsCgP7RVsTH7f1UygRE3fTl5GgDP6NvActoCBrKSv8dn2aJuu7mcwxAtLCAHpvSwNnVRn");',
+            'linear-gradient(rgba(0, 20, 40, 0.6) 0%, rgba(0, 20, 40, 0.8) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuA3twXNmSpy25Bqhb0uHnm2XE20-NnaYdNUYFjOnhdwNsZUj5g_m0GMRzSLEfb2VDRZ66DwIyadwxNgBUrBjgMXXtenYYA7njGyfB_TButg5x5cpGANLaRJh8XySyszm0gmcTOZuJNsDpS-aE8ZWQtjFpZR7Ft9OUkMJ9nWoK-c_6SNIi8N2DFWcJstQsaYoS_If_3hbo_nsCgP7RVsTH7f1UygRE3fTl5GgDP6NvActoCBrKSv8dn2aJuu7mcwxAtLCAHpvSwNnVRn")',
         }}
       >
         <div className="max-w-4xl">
-          <h1 className="text-white text-4xl sm:text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6">
+          <h1 className="text-white text-4xl sm:text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6 mt-10">
             Lidera el Cambio en Criminología Corporativa y Compliance
           </h1>
           <p className="text-gray-200 text-base sm:text-lg md:text-xl font-normal leading-relaxed mb-8">
@@ -158,7 +158,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDu_lla23IpNPKy-aXEfAo8-824StdeTThCIwoX6Bqc2uvk-QuUaWxhqA4KlgAQGA8T2JxhwvzfabJNjv5ItkQ7eAVkzxsH4mX-mqQXQjyn_3-VqjDYWtaw6u8-AtZVHORx6yygLSjAZ8dtcPNhOuJV9z0KVhz3Kko3XI4K2NRDA153GT4BxUVm4I11znaISwM8CbI-4_6ApsZ4Z-1UMWbZA03DuUIeKsL7s2uMJJSvffrpZRxCav0LHm0tF3sVttnAD5SVQqnCAehx");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDu_lla23IpNPKy-aXEfAo8-824StdeTThCIwoX6Bqc2uvk-QuUaWxhqA4KlgAQGA8T2JxhwvzfabJNjv5ItkQ7eAVkzxsH4mX-mqQXQjyn_3-VqjDYWtaw6u8-AtZVHORx6yygLSjAZ8dtcPNhOuJV9z0KVhz3Kko3XI4K2NRDA153GT4BxUVm4I11znaISwM8CbI-4_6ApsZ4Z-1UMWbZA03DuUIeKsL7s2uMJJSvffrpZRxCav0LHm0tF3sVttnAD5SVQqnCAehx")',
                 }}
               ></div>
               <div className="p-6 flex-grow">
@@ -198,7 +198,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIv14GDuG7IFNvF91F1nY9mZLbTtcS5-NRDhXzbVc01gXvVmr-OgJRzVhgKOQW8b_yIkFVjPWMObkmlkS54wZNC9P9U5HL-FQYhOD6KIyEZny0D0f_fByp8MdWN-Z3uaANbCnxHyUkhHh_K5ni7SpmOItAWQXpVN_BgdPX11FDoXd7z1gJPCyKUIQNrUu2hP-ZWzoMo0Anl6bnrhAshP8-Xa0hgLueRLrZ1QKGAAm7HwqnSoIKVUnfYrcXiHH-WwC5vl-Q3uuYLnA4");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIv14GDuG7IFNvF91F1nY9mZLbTtcS5-NRDhXzbVc01gXvVmr-OgJRzVhgKOQW8b_yIkFVjPWMObkmlkS54wZNC9P9U5HL-FQYhOD6KIyEZny0D0f_fByp8MdWN-Z3uaANbCnxHyUkhHh_K5ni7SpmOItAWQXpVN_BgdPX11FDoXd7z1gJPCyKUIQNrUu2hP-ZWzoMo0Anl6bnrhAshP8-Xa0hgLueRLrZ1QKGAAm7HwqnSoIKVUnfYrcXiHH-WwC5vl-Q3uuYLnA4")',
                 }}
               ></div>
               <div className="p-6 flex-grow">
@@ -238,7 +238,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAF9JLvuFWMfBWnDADTAtiz59_pJQGStYa6NupJArWQWtNUWJ5IB-z9Vn2CQ-zEu36pcOTRXzsdjkBaKTlgELDxOnlrxVusR1uskKQhmtvUWwbuMs_dxlmZESRQtsDqf3ZhulRZyaSr0lrWzsGQkhF8QP8gKV2THRNsK3mCjyHSy2e0EkgTRU9ibZyY-ASLO1d9ehEh3TWPyRv_DWOghRxVMlBm-yAI-f_5FM3s0jTe7SyIbz-MjRu5dMKYNUMtWClUrnS8SbQ5uP4f");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAF9JLvuFWMfBWnDADTAtiz59_pJQGStYa6NupJArWQWtNUWJ5IB-z9Vn2CQ-zEu36pcOTRXzsdjkBaKTlgELDxOnlrxVusR1uskKQhmtvUWwbuMs_dxlmZESRQtsDqf3ZhulRZyaSr0lrWzsGQkhF8QP8gKV2THRNsK3mCjyHSy2e0EkgTRU9ibZyY-ASLO1d9ehEh3TWPyRv_DWOghRxVMlBm-yAI-f_5FM3s0jTe7SyIbz-MjRu5dMKYNUMtWClUrnS8SbQ5uP4f")',
                 }}
               ></div>
               <div className="p-6 flex-grow">
@@ -302,7 +302,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4rDTVkAcns5PJI05cWpLWSxCdLqPpj__ewRc5I977voK-TpNBpWO6he8ZI6lfyW5fylRuqBIzPZ1TgSfJ18LdzH32GkkLvyvUr5aeqq4HD8r3K-E3CAipRE09bP96JO5KLy5N8NPxHZ0VI-Vimdcgj2AqT1HvRK1MAoZIzWrgwW4c6PMkwfK9tQvadCwfPODOsfH1gU8fWy1Rxbb_ST42opW0sWLRan5rIz7SBnw6xi2jSFFlAI-oJwLTH9jYBthZongszbuig0W4");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4rDTVkAcns5PJI05cWpLWSxCdLqPpj__ewRc5I977voK-TpNBpWO6he8ZI6lfyW5fylRuqBIzPZ1TgSfJ18LdzH32GkkLvyvUr5aeqq4HD8r3K-E3CAipRE09bP96JO5KLy5N8NPxHZ0VI-Vimdcgj2AqT1HvRK1MAoZIzWrgwW4c6PMkwfK9tQvadCwfPODOsfH1gU8fWy1Rxbb_ST42opW0sWLRan5rIz7SBnw6xi2jSFFlAI-oJwLTH9jYBthZongszbuig0W4")',
                 }}
               ></div>
               <div className="p-6 flex-grow">
@@ -342,7 +342,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC8mNgwHnQMRw3Y6YnugVYpDWTQ_XVSks1YtVwDe7KMkUNmgPybGj4-GFaY6U2PUuiNQ3LHqJ4uhGdvTz8EbwcNGgZJLZKMWtj0jdQ9HevX8xkBpXQMsy-wgSZy_aEa48XVvk6fi5uUijYBlo2tDpHeofjiUlH8d8zlkZeIihwZDBmA6ZmqjqFO4g46NkoNWn7d4oUgaFrS7ta9cycUeu3f9SG3MUb2SzTOeYL-GgZ2c0-XCMRQrSiBnGpF4XTue46v_jn1ABZGz5f3");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuC8mNgwHnQMRw3Y6YnugVYpDWTQ_XVSks1YtVwDe7KMkUNmgPybGj4-GFaY6U2PUuiNQ3LHqJ4uhGdvTz8EbwcNGgZJLZKMWtj0jdQ9HevX8xkBpXQMsy-wgSZy_aEa48XVvk6fi5uUijYBlo2tDpHeofjiUlH8d8zlkZeIihwZDBmA6ZmqjqFO4g46NkoNWn7d4oUgaFrS7ta9cycUeu3f9SG3MUb2SzTOeYL-GgZ2c0-XCMRQrSiBnGpF4XTue46v_jn1ABZGz5f3")',
                 }}
               ></div>
               <div className="p-6 flex-grow">
@@ -382,7 +382,7 @@ const Main = () => {
                 className="w-full h-56 bg-center bg-no-repeat bg-cover"
                 style={{
                   backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmBfkaOcgFrbDAPuY_hiDVeVrhU4OBempQbQa7dTNpUqYgasQA1a-5HvTPLkQrBAB03BerHpNBm1mMH79llr603c1H4KOVTZyuziqOQWhZZsGPpEEwsAK192505jnl93X-oMscBbXWI0tmE-PnH6nf84DuZS8vxZeqnrJl-WC9L2GcZgbuCyT6jCU05UwdFCmXs3XQCPCl8pAGTRLO_mCsxPTI5LFGshYLWAQLidL3PTiJK6VA4V6we_rO3OoZO21ljtUmGHz4RRKh");',
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmBfkaOcgFrbDAPuY_hiDVeVrhU4OBempQbQa7dTNpUqYgasQA1a-5HvTPLkQrBAB03BerHpNBm1mMH79llr603c1H4KOVTZyuziqOQWhZZsGPpEEwsAK192505jnl93X-oMscBbXWI0tmE-PnH6nf84DuZS8vxZeqnrJl-WC9L2GcZgbuCyT6jCU05UwdFCmXs3XQCPCl8pAGTRLO_mCsxPTI5LFGshYLWAQLidL3PTiJK6VA4V6we_rO3OoZO21ljtUmGHz4RRKh")',
                 }}
               ></div>
               <div className="p-6 flex-grow">

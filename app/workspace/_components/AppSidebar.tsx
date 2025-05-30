@@ -40,8 +40,15 @@ const AppSidebar = () => {
 
   return (
     <Sidebar>
-      <SidebarHeader className="flex items-center justify-center">
-        <Image src="/logo.svg" alt="logo" width={130} height={120} />
+      <SidebarHeader className="flex items-center justify-center flex-row mt-2">
+        <img
+          src="/logo-minimalista.png"
+          alt="EICCC Logo"
+          className="h-10 rounded-md"
+        />
+        <h2 className="text-gray-800 text-2xl font-bold leading-tight tracking-[-0.015em]">
+          EICCC
+        </h2>
       </SidebarHeader>
 
       <SidebarContent>
@@ -65,7 +72,7 @@ const AppSidebar = () => {
                     <Link
                       href={option.path}
                       className={`text-[17px] ${
-                        path.includes(option.path) &&
+                        path === option.path &&
                         "text-primary bg-sidebar-primary-foreground"
                       }`}
                     >

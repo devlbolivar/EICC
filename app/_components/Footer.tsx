@@ -14,10 +14,10 @@ const Footer = () => {
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  clip-rule="evenodd"
+                  clipRule="evenodd"
                   d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z"
                   fill="currentColor"
-                  fill-rule="evenodd"
+                  fillRule="evenodd"
                 ></path>
               </svg>
               <h2 className="text-white text-2xl font-bold">EICCC</h2>
@@ -66,9 +66,9 @@ const Footer = () => {
                   viewBox="0 0 24 24"
                 >
                   <path
-                    clip-rule="evenodd"
+                    clipRule="evenodd"
                     d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"
-                    fill-rule="evenodd"
+                    fillRule="evenodd"
                   ></path>
                 </svg>
               </a>
@@ -152,7 +152,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-gray-700 pt-8 text-center">
           <p className="text-sm">
-            © 2024 EICCC - Escuela Internacional de Criminología Corporativa y
+            © 2025 EICCC - Escuela Internacional de Criminología Corporativa y
             Compliance. Todos los derechos reservados.
           </p>
         </div>

@@ -6,7 +6,6 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <AppSidebar />
-
       <div className="flex flex-col w-full">
         <AppHeader />
         <div className="p-10">{children}</div>

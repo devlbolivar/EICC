@@ -1,6 +1,3 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { UserButton } from "@clerk/nextjs";
 import Header from "./_components/Header";
 import Main from "./_components/Main";
 import Footer from "./_components/Footer";
