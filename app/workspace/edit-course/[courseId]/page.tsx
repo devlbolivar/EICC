@@ -1,16 +1,17 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
 import axios from "axios";
 import CourseInfo from "../_components/CourseInfo";
 import ChapterTopicList from "../_components/ChapterTopicList";
 import { Course } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-const EditCourse = ({ viewCourse = false }: { viewCourse?: boolean }) => {
-  const { courseId } = useParams();
+import { useParams } from "next/navigation";
+
+const EditCourse = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [courseInfo, setCourseInfo] = useState<Course | null>(null);
+  const { courseId } = useParams();
 
   const getCourseInfo = useCallback(async () => {
     setIsLoading(true);
@@ -38,7 +39,7 @@ const EditCourse = ({ viewCourse = false }: { viewCourse?: boolean }) => {
         <>
           {courseInfo ? (
             <>
-              <CourseInfo course={courseInfo} viewCourse={viewCourse} />
+              <CourseInfo course={courseInfo} viewCourse={false} />
               <ChapterTopicList course={courseInfo} />
             </>
           ) : (

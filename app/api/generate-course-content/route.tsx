@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ai } from "../generate-course-layout/route";
 import axios from "axios";
 import { coursesTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
 import db from "@/config/db";
 import { Chapter, YoutubeVideo } from "@/app/types";
+import { GoogleGenAI } from "@google/genai";
 
 const Prompt = `
 Depende del nombre del capítulo y del tema. Genera contenido para cada tema en formato HTML y da la respuesta en formato JSON.
@@ -16,6 +16,10 @@ content:<>
 }
 }
 : User Input:`;
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 // Helper function to sanitize JSON string
 function sanitizeJsonString(str: string): string {

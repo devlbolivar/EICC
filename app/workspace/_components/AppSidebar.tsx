@@ -42,6 +42,8 @@ const AppSidebar = () => {
           src="/logo-minimalista.png"
           alt="EICCC Logo"
           className="h-10 rounded-md"
+          width={32}
+          height={32}
         />
         <h2 className="text-gray-800 text-2xl font-bold leading-tight tracking-[-0.015em]">
           EICCC
