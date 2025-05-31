@@ -1,6 +1,6 @@
 import db from "@/config/db";
 import { coursesTable } from "@/config/schema";
-import { eq, desc, ne, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 

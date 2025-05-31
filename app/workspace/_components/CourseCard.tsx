@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "sonner";
+import { Course } from "@/app/types";
 
-const CourseCard = ({ course }: { course: any }) => {
+const CourseCard = ({ course }: { course: Course }) => {
   const [isLoading, setIsLoading] = useState(false);
   const courseJson = course.courseJson.course;
 
@@ -24,6 +25,7 @@ const CourseCard = ({ course }: { course: any }) => {
       }
       setIsLoading(false);
     } catch (error) {
+      console.log(error);
       toast.error("Error al inscribirse en el curso");
       setIsLoading(false);
     }

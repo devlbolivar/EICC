@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const Main = () => {
   return (
     <main className="flex-1">
@@ -444,7 +446,9 @@ const Main = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-gray-50 p-8 rounded-xl shadow-md">
               <div className="flex items-center mb-4">
-                <img
+                <Image
+                  width={48}
+                  height={48}
                   alt="User avatar"
                   className="w-12 h-12 rounded-full mr-4"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbrZBpJiGjNEXazDmwBYxv_9HosQVUAZcXEq7S624THjUENW5_fWw_qG_WTIknTuM6y2MlZsLw8QSp3Hoaql3T-WBnI7zafxzHZAsyFVuQPCQnNDngbK5csVH_U6XxEZ4BRvtk0FkvO5v_X2ALUxmhjVcDxC5cqVCarH92adx4WJMQ4ykaXvHqRm90IqBscZuauI2ehtR_TkzI7xEgqXGbovdRPuAatUtw5JmMBF01cxgC_iFBbouYu-aXGmr9gn2ieq-zQl2BvewG"
@@ -457,15 +461,17 @@ const Main = () => {
                 </div>
               </div>
               <p className="text-gray-600 leading-relaxed">
-                "El programa de Compliance Corporativo me proporcionó
+                &ldquo;El programa de Compliance Corporativo me proporcionó
                 herramientas invaluables que aplico diariamente. Los
                 instructores fueron excepcionales y la plataforma muy
-                intuitiva."
+                intuitiva.&rdquo;
               </p>
             </div>
             <div className="bg-gray-50 p-8 rounded-xl shadow-md">
               <div className="flex items-center mb-4">
-                <img
+                <Image
+                  width={48}
+                  height={48}
                   alt="User avatar"
                   className="w-12 h-12 rounded-full mr-4"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFSLjS-XZB-UdiGleYE9ePN3Mfm8ZLsToaOuvIO-XqUmcDUho6ieLyk_p6R8dInyc7H8Jw-psn40gSojok9b3AHgdMLi11QynHKB86AZ23N3vYsi_Esx8kz8z8C49JNZPr8Z2r8JF4oFc8_URUi4KYtAL4349BAxnJgdWKDn8PTdJnfm3c9JW5t8r3afAH_e0qyYCI8f4X87k5c1TFeLMMe89gNINMgrDd09N4NFxUAdfrhGJK3ams8cYrUhPA-x4J5X1uvhre96J1"
@@ -478,14 +484,16 @@ const Main = () => {
                 </div>
               </div>
               <p className="text-gray-600 leading-relaxed">
-                "La certificación en Criminología Corporativa de EICCC mejoró
-                significativamente mi perfil profesional. El contenido práctico
-                y el networking fueron excelentes."
+                &ldquo;La certificación en Criminología Corporativa de EICCC
+                mejoró significativamente mi perfil profesional. El contenido
+                práctico y el networking fueron excelentes.&rdquo;
               </p>
             </div>
             <div className="bg-gray-50 p-8 rounded-xl shadow-md">
               <div className="flex items-center mb-4">
-                <img
+                <Image
+                  width={48}
+                  height={48}
                   alt="User avatar"
                   className="w-12 h-12 rounded-full mr-4"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQkfS2KyPGDukB350IRXhRZLYJ9XdO4H3mGukQAGmH4nmCez-fhM3Rgyvfr_a9_LoTvSh00c9JLYxTaZT43YPmyo_ozKBgwqkD__O8XcWKWQb-K70D_s9ziIywRCOtQnhT3WldGyfPApuBVr_rVs3w9OKmjPNtrZDe1DJC9hK0ZmbrJ8BMGNbdw8ZBQvqdPNXjl9DxdRyjJAjcShxcJHvgSHJuKnsGuqYaWkBHDe0QHNEtjWgzjY_Go4UgfYlGM61i94FF6tX_E3YY"
@@ -500,9 +508,10 @@ const Main = () => {
                 </div>
               </div>
               <p className="text-gray-600 leading-relaxed">
-                "El programa de Investigación Corporativa fue increíblemente
-                práctico. Pude aplicar inmediatamente las técnicas aprendidas en
-                mi trabajo. ¡Altamente recomendado!"
+                &ldquo;El programa de Investigación Corporativa fue
+                increíblemente práctico. Pude aplicar inmediatamente las
+                técnicas aprendidas en mi trabajo. ¡Altamente
+                recomendado!&rdquo;
               </p>
             </div>
           </div>
@@ -524,28 +533,36 @@ const Main = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-center">
             <div className="flex justify-center">
-              <img
+              <Image
+                width={48}
+                height={48}
                 alt="Institution Logo 1"
                 className="max-h-24 object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhm_VKbWzEdsVx3HX7_ENWzMI5iSpqubCJOxkjrnAfJK8Ljyiu2KKLx7WFYWZSU1ruT0nBC7AOYjw0T7x3xV2431QBonaEUbbxqFt2oIEvcRCLuyFo6JefcXsSpek-eCHsuOkdWekS_gqOONPHc0X9OIiMHZvS3O7520dr5H-7k1BXuai3I1hxlZrtnHk25S-wSshhdCQXur5UZQ1MJddTIn83qYe7xxCkTWvHpB5xCZ01N4Ng_FwTWrSVsDLzY124PRokzNDO8hKo"
               />
             </div>
             <div className="flex justify-center">
-              <img
+              <Image
+                width={48}
+                height={48}
                 alt="Institution Logo 2"
                 className="max-h-24 object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCVruF7w5pLpv-bYu_QTE6eoU8fEaAxBnJG2l8qX-fqpfpQPRfkiR5BXlbNqEo-NDVEYFFzpIT7zRS9b-g23I8v0kVynkky_Xn_FF8I4keyncH5AgXU-oNTnMolVUIsbwzyrTkemul2FjkbQAJykbQ016LFwfstyuoh47Swy9AlMFSEKJIl1wL-GliVBov7mBkrAsbj8N5JLmRsvuHhgO_hS_YItto7KUK-r5QbdrC8EmOVp5-G4LopCmyp-E9ZkS5y6ZW3tGX-wXQ"
               />
             </div>
             <div className="flex justify-center">
-              <img
+              <Image
+                width={48}
+                height={48}
                 alt="Institution Logo 3"
                 className="max-h-24 object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXRePDD4gf51SOR0L3cx-S_uVnh7ArAqJDwmjaG9atbRKJpO9B-zOoc6USYux99w8aY2wFjj1ktj2CPYiMe65gUu0yGCsc_fTBun8raMcynU4ThCzcvP2H30lUlpucrqLQfan6-UJvrGcGaVN0rGPXYsnQzIjVzDsFVC5n4_M7RKsMzWg7RmQ1yh67PQZjxK6qZePM2ViFJiY80_ZAQRVY1P30J4MZ5lgiQs_7c3mMWwPaINf_epbg4DPBLVGn8CYjaqhSmLC5OoiH"
               />
             </div>
             <div className="flex justify-center">
-              <img
+              <Image
+                width={48}
+                height={48}
                 alt="Institution Logo 4"
                 className="max-h-24 object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7tpSfuTj3X96MeAbliJui07je-n_HYg-v0fRdbobWwAQYG1BaDEuER81vPHPo9IwotW7ItKw64VB0dRkzSVzQvcx1Gl-jL9M_4oprn91_45c31TM6Is9cFFWisGbUyRdcRtug3ujtVUXZxCLyf73Op2QAQJjvq9XTt08vQY_ZP1u9SKHjK-Zaz1l762_9BDarILT8H4V3XxBUSPg8jx9kV3E5wsw66pgdlaAT0TKMkysBoKOihyihdnvcgwHCbWqOZ0WCd-vzY-GV"

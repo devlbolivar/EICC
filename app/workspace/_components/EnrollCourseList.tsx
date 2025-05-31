@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import EnrollCourseCard from "./EnrollCourseCard";
@@ -11,7 +11,7 @@ const EnrollCourseList = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourses[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getEnrolledCourses = async () => {
+  const getEnrolledCourses = useCallback(async () => {
     if (!user) return;
     try {
       const result = await axios.get("/api/enroll-course", {
@@ -25,11 +25,11 @@ const EnrollCourseList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     getEnrolledCourses();
-  }, [user]);
+  }, [user, getEnrolledCourses]);
 
   return (
     <div>

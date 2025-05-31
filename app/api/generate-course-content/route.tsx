@@ -4,6 +4,8 @@ import axios from "axios";
 import { coursesTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
 import db from "@/config/db";
+import { Chapter, YoutubeVideo } from "@/app/types";
+
 const Prompt = `
 Depende del nombre del capítulo y del tema. Genera contenido para cada tema en formato HTML y da la respuesta en formato JSON.
 Schema:{
@@ -42,7 +44,7 @@ function sanitizeJsonString(str: string): string {
 export async function POST(req: NextRequest) {
   const { courseJson, courseTitle, courseId } = await req.json();
 
-  const promises = courseJson.chapters.map(async (chapter: any) => {
+  const promises = courseJson.chapters.map(async (chapter: Chapter) => {
     const config = {
       responseMimeType: "text/plain",
     };
@@ -128,15 +130,20 @@ const getYoutubeVideo = async (topic: string) => {
   const response = await axios.get(YOUTUBE_BASE_URL, { params });
 
   const youtubeVideoListResponse = response.data.items;
-  const youtubeVideoList: any[] = [];
-  youtubeVideoListResponse.forEach((item: any) => {
-    const data = {
-      videoId: item.id.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails.default.url,
-    };
-    youtubeVideoList.push(data);
-  });
+  const youtubeVideoList: YoutubeVideo[] = [];
+  youtubeVideoListResponse.forEach(
+    (item: {
+      id: { videoId: string };
+      snippet: { title: string; thumbnails: { default: { url: string } } };
+    }) => {
+      const data = {
+        videoId: item.id.videoId,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails.default.url,
+      };
+      youtubeVideoList.push(data);
+    }
+  );
 
   return youtubeVideoList;
 };

@@ -26,7 +26,7 @@ const Explore = () => {
   };
 
   useEffect(() => {
-    user && getCourseList();
+    getCourseList();
   }, [user]);
 
   return (

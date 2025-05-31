@@ -11,21 +11,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Plus,
   Book,
-  GraduationCap,
   Settings,
-  Users,
-  CircleCheck,
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AddNewCourseDialog from "./AddNewCourseDialog";
+import Image from "next/image";
 
 const SideBarOptions = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/workspace" },
@@ -41,7 +38,7 @@ const AppSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center justify-center flex-row mt-2">
-        <img
+        <Image
           src="/logo-minimalista.png"
           alt="EICCC Logo"
           className="h-10 rounded-md"

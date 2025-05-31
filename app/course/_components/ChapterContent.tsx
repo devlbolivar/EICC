@@ -1,8 +1,5 @@
 "use client";
-import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import DOMPurify from "dompurify";
-
+import React, { useCallback, useMemo, useState } from "react";
 import { useSelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
 import Youtube from "react-youtube";
 import { Button } from "@/components/ui/button";
@@ -10,25 +7,29 @@ import { CheckCircle, X, Loader2 } from "lucide-react";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { EnrolledCourses, Topic, YoutubeVideo } from "@/app/types";
+
 const ChapterContent = ({
   courseInfo,
   refreshData,
 }: {
-  courseInfo: any;
+  courseInfo: EnrolledCourses;
   refreshData: () => void;
 }) => {
   const courseId = useParams();
-  const { courses, enrollCourse } = courseInfo;
+  const { enrollCourse } = courseInfo;
   const courseContent = courseInfo.courses?.courseContent;
-  const { selectedChapterIndex, setSelectedChapterIndex } =
-    useSelectedChapterIndexContext();
+  const { selectedChapterIndex } = useSelectedChapterIndexContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const videosData = courseContent?.[selectedChapterIndex]?.youtubeVideo;
   const topics = courseContent?.[selectedChapterIndex]?.topics;
-  const completedChapter = enrollCourse?.completedChapters ?? [];
+  const completedChapter = useMemo(
+    () => enrollCourse?.completedChapters,
+    [enrollCourse?.completedChapters]
+  );
 
-  const markChapterAsCompleted = async () => {
+  const markChapterAsCompleted = useCallback(async () => {
     setIsLoading(true);
     try {
       const updatedCompletedChapters = Array.isArray(completedChapter)
@@ -48,9 +49,9 @@ const ChapterContent = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [completedChapter, courseId, refreshData, selectedChapterIndex]);
 
-  const markChapterAsIncomplete = async () => {
+  const markChapterAsIncomplete = useCallback(async () => {
     setIsLoading(true);
     try {
       const updatedCompletedChapters = Array.isArray(completedChapter)
@@ -70,7 +71,7 @@ const ChapterContent = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [completedChapter, courseId, refreshData, selectedChapterIndex]);
 
   return (
     <div className="p-10">
@@ -125,7 +126,7 @@ const ChapterContent = ({
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {videosData?.map(
-          (video: any, index: number) =>
+          (video: YoutubeVideo, index: number) =>
             index < 2 && (
               <div key={index}>
                 <Youtube
@@ -137,7 +138,7 @@ const ChapterContent = ({
         )}
       </div>
       <div className="mt-7">
-        {topics?.map((topic: any, index_: number) => (
+        {topics?.map((topic: Topic, index_: number) => (
           <div key={index_} className="mt-10 p-5 bg-secondary rounded-2xl">
             <h2 className="text-2xl font-bold text-primary">
               {index_ + 1}. {topic.topic}

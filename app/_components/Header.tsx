@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { UserButton, useAuth } from "@clerk/nextjs";
-import Link from "next/link";
+import Image from "next/image";
 
 const Header = () => {
-  const router = useRouter();
   const { isSignedIn } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -77,11 +75,13 @@ const Header = () => {
         } ${isVisible ? "translate-y-0" : "-translate-y-full"}`}
       >
         <div className="flex items-center gap-3 text-gray-800">
-          <img
+          <Image
             src="/logo-minimalista.png"
             alt="EICCC Logo"
             className="h-10 rounded-md cursor-pointer"
             onClick={() => scrollToSection("inicio")}
+            width={40}
+            height={40}
           />
           <h2
             onClick={() => scrollToSection("inicio")}

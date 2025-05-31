@@ -1,14 +1,9 @@
 "use client";
 import React from "react";
 import { Gift } from "lucide-react";
+import { Chapter, Course } from "@/app/types";
 
-interface Chapter {
-  chapterName: string;
-  duration: string;
-  topic: string[];
-}
-
-const ChapterTopicList = ({ course }: { course: any }) => {
+const ChapterTopicList = ({ course }: { course: Course }) => {
   const courseLayout = course?.courseJson?.course;
   return (
     <div>

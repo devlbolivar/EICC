@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -15,7 +15,7 @@ const CourseList = () => {
   const [courseList, setCourseList] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const getCourseList = async () => {
+  const getCourseList = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -27,11 +27,11 @@ const CourseList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     getCourseList();
-  }, [user]);
+  }, [user, getCourseList]);
 
   return (
     <div className="mt-10">

@@ -7,9 +7,9 @@ export interface Course {
   includeVideos: boolean;
   difficulty: string;
   category: string;
-  courseJson: any;
+  courseJson: CourseJson;
   bannerImage: string;
-  courseContent: any;
+  courseContent: CourseContent[];
   userEmail: string;
   createdAt: Date;
   updatedAt: Date;
@@ -19,7 +19,7 @@ export interface EnrollCourse {
   id: number;
   cid: string;
   userEmail: string;
-  completedChapters: Record<string, any>;
+  completedChapters: Record<string, number>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,4 +27,41 @@ export interface EnrollCourse {
 export interface EnrolledCourses {
   courses: Course;
   enrollCourse: EnrollCourse;
+}
+
+export interface CourseJson {
+  course: {
+    name: string;
+    category: string;
+    chapters: Chapter[];
+    difficulty: string;
+    description: string;
+    includeVideos: boolean;
+    numberOfChapters: number;
+    bannerImagePrompt: string;
+  };
+}
+
+export interface Chapter {
+  topic: string[];
+  duration: string;
+  chapterName: string;
+  imagePrompt: string;
+}
+
+export interface CourseContent {
+  chapterName: string;
+  topics: Topic[];
+  youtubeVideo?: YoutubeVideo[];
+}
+
+export interface Topic {
+  topic: string;
+  content: string;
+}
+
+export interface YoutubeVideo {
+  videoId: string;
+  title: string;
+  thumbnail: string;
 }

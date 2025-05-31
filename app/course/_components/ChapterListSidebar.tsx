@@ -6,15 +6,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useSelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
+import { EnrolledCourses, CourseContent, Topic } from "@/app/types";
 
-const ChapterListSidebar = ({ courseInfo }: { courseInfo: any }) => {
-  const course = courseInfo?.courses;
+const ChapterListSidebar = ({
+  courseInfo,
+}: {
+  courseInfo: EnrolledCourses;
+}) => {
   const enrollCourse = courseInfo?.enrollCourse;
   const courseContent = courseInfo?.courses?.courseContent;
-  const { selectedChapterIndex, setSelectedChapterIndex } =
-    useSelectedChapterIndexContext();
+  const { setSelectedChapterIndex } = useSelectedChapterIndexContext();
 
-  const completedChapter = enrollCourse?.completedChapters ?? [];
+  const completedChapter = enrollCourse?.completedChapters || {};
 
   return (
     <div className="w-80 bg-secondary h-screen p-5">
@@ -22,29 +25,27 @@ const ChapterListSidebar = ({ courseInfo }: { courseInfo: any }) => {
         Capítulos ({courseContent?.length})
       </h2>
       <Accordion type="single" collapsible>
-        {courseContent?.map((chapter: any, index: number) => (
+        {courseContent?.map((content: CourseContent, index: number) => (
           <AccordionItem
-            value={chapter.chapterName}
+            value={content.chapterName}
             key={index}
             onClick={() => setSelectedChapterIndex(index)}
           >
             <AccordionTrigger
               className={`text-lg font-medium px-5 ${
-                completedChapter.includes(index)
-                  ? "bg-green-100 text-green-900"
-                  : ""
+                completedChapter[index] ? "bg-green-100 text-green-900" : ""
               }`}
             >
               <span className="text-primary">{index + 1}</span>
-              {chapter.chapterName}
+              {content.chapterName}
             </AccordionTrigger>
             <AccordionContent asChild>
               <div>
-                {chapter.topics.map((topic: any, index_: number) => (
+                {content.topics.map((topic: Topic, index_: number) => (
                   <h2
                     key={index_}
                     className={`p-3 my-1 rounded-lg ${
-                      completedChapter.includes(index)
+                      completedChapter[index]
                         ? "bg-green-100 text-green-900"
                         : "bg-white"
                     }`}

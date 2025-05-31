@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
   const bannerImage = await generateBannerImage(imagePrompt);
 
-  const result = await db.insert(coursesTable).values({
+  await db.insert(coursesTable).values({
     cid: courseId,
     name: formData.name,
     description: formData.description,

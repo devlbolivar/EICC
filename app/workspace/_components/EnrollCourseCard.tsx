@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { Book, Loader2, PlayCircle } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
+import { Course, EnrollCourse } from "@/app/types";
+
 const EnrollCourseCard = ({
   course,
   enrollCourse,
 }: {
-  course: any;
-  enrollCourse: any;
+  course: Course;
+  enrollCourse: EnrollCourse;
 }) => {
   const courseJson = course.courseJson.course;
 

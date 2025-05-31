@@ -2,7 +2,6 @@
 import {
   Book,
   Clock,
-  Gift,
   Settings,
   TrendingUp,
   Loader2,
@@ -15,11 +14,13 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Course } from "@/app/types";
+
 const CourseInfo = ({
   course,
   viewCourse,
 }: {
-  course: any;
+  course: Course;
   viewCourse: boolean;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +30,7 @@ const CourseInfo = ({
   const generateCourseContent = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.post("/api/generate-course-content", {
+      await axios.post("/api/generate-course-content", {
         courseJson: courseLayout,
         courseTitle: course?.name,
         courseId: course?.cid,
