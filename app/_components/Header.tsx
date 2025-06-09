@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
   const { isSignedIn } = useAuth();
@@ -10,7 +11,7 @@ const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -114,12 +115,18 @@ const Header = () => {
         </nav>
         <div className="flex items-center gap-5">
           {isSignedIn && (
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]">
+            <button
+              onClick={() => router.push("/workspace")}
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+            >
               <span className="truncate">Aula virtual</span>
             </button>
           )}
           {!isSignedIn ? (
-            <button className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]">
+            <button
+              onClick={() => router.push("/workspace")}
+              className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+            >
               <span className="truncate">Iniciar Sesión</span>
             </button>
           ) : (

@@ -121,7 +121,7 @@ export async function POST(req: Request) {
       },
     ];
 
-    if (!hasPremiumAccess) {
+    /* if (!hasPremiumAccess) {
       const result = await db
         .select()
         .from(coursesTable)
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
           { status: 403 }
         );
       }
-    }
+    } */
 
     const response = await ai.models.generateContent({
       model,
