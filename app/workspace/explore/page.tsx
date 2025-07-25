@@ -5,14 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
 import CourseCard from "../_components/CourseCard";
 import { Course } from "@/app/types";
 
 const Explore = () => {
   const [courseList, setCourseList] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  // Eliminar useUser y lógica asociada
 
   const getCourseList = async () => {
     try {
@@ -26,8 +25,9 @@ const Explore = () => {
   };
 
   useEffect(() => {
-    user && getCourseList();
-  }, [user]);
+    // Eliminar user && getCourseList();
+    getCourseList();
+  }, []);
 
   return (
     <div>

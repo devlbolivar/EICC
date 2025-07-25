@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎓 Plataforma de E-Learning
 
-## Getting Started
+Una plataforma moderna de aprendizaje en línea construida con Next.js, TypeScript y PostgreSQL.
 
-First, run the development server:
+## 🚀 Características
+
+- **Autenticación Segura**: JWT con refresh tokens y validación robusta
+- **Gestión de Roles**: Sistema de permisos granular (Admin, Company, Student)
+- **Cursos Interactivos**: Generación de contenido con IA y videos de YouTube
+- **Gestión de Empresas**: Sistema multi-tenant para organizaciones
+- **UI Moderna**: Interfaz responsive con Tailwind CSS y Radix UI
+
+## 🛡️ Seguridad
+
+### ✅ Medidas Implementadas
+
+- **Autenticación JWT**: Tokens seguros con expiración configurable
+- **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **Validación de Entrada**: Sanitización y validación de todos los datos
+- **Headers de Seguridad**: CSP, XSS Protection, HSTS, etc.
+- **Cookies Seguras**: HttpOnly, Secure, SameSite configurado
+- **Hashing de Contraseñas**: bcrypt con salt rounds de 12
+- **Validación de UUIDs**: Prevención de inyección de IDs
+- **Logs Seguros**: Sin información sensible en logs de producción
+
+### 🔧 Configuración de Seguridad
+
+```bash
+# Variables de entorno críticas
+JWT_SECRET="clave-super-segura-de-al-menos-32-caracteres"
+COOKIE_SECRET="otra-clave-secreta-para-cookies"
+DATABASE_URL="postgresql://user:password@host:port/database"
+```
+
+## 📋 Requisitos
+
+- Node.js 18+
+- PostgreSQL 14+
+- npm o yarn
+
+## 🚀 Instalación
+
+1. **Clonar el repositorio**
+
+```bash
+git clone <repository-url>
+cd online-learning-platform
+```
+
+2. **Instalar dependencias**
+
+```bash
+npm install
+```
+
+3. **Configurar variables de entorno**
+
+```bash
+cp env.example .env.local
+# Editar .env.local con tus configuraciones
+```
+
+4. **Configurar base de datos**
+
+```bash
+# Generar migraciones
+npm run db:generate
+
+# Ejecutar migraciones
+npm run db:migrate
+
+# Configurar datos iniciales
+npm run db:setup
+```
+
+5. **Ejecutar en desarrollo**
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔐 Configuración de Seguridad
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Variables de Entorno Críticas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# JWT Configuration
+JWT_SECRET="tu-clave-super-segura-de-al-menos-32-caracteres"
+JWT_EXPIRES_IN="7d"
+REFRESH_TOKEN_EXPIRES_IN="30d"
 
-## Learn More
+# Database
+DATABASE_URL="postgresql://user:password@host:port/database"
 
-To learn more about Next.js, take a look at the following resources:
+# Security
+COOKIE_SECRET="otra-clave-secreta-para-cookies"
+RATE_LIMIT_MAX_REQUESTS="100"
+RATE_LIMIT_WINDOW_MS="900000"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### ⚠️ IMPORTANTE PARA PRODUCCIÓN
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Cambiar todas las claves secretas** por defecto
+2. **Configurar HTTPS** en producción
+3. **Usar variables de entorno** para todas las configuraciones sensibles
+4. **Revisar logs** regularmente
+5. **Actualizar dependencias** frecuentemente
 
-## Deploy on Vercel
+## 📁 Estructura del Proyecto
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+├── app/                    # App Router de Next.js
+│   ├── api/               # API Routes
+│   ├── (auth)/            # Páginas de autenticación
+│   ├── workspace/         # Dashboard principal
+│   └── course/            # Páginas de cursos
+├── components/            # Componentes UI reutilizables
+├── config/               # Configuración de base de datos
+├── lib/                  # Utilidades y funciones de autenticación
+├── context/              # Contextos de React
+└── scripts/              # Scripts de configuración
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔧 Scripts Disponibles
+
+```bash
+# Desarrollo
+npm run dev              # Servidor de desarrollo
+npm run build            # Build de producción
+npm run start            # Servidor de producción
+
+# Base de datos
+npm run db:generate      # Generar migraciones
+npm run db:migrate       # Ejecutar migraciones
+npm run db:push          # Push de esquema
+npm run db:studio        # Abrir Drizzle Studio
+npm run db:setup         # Configurar datos iniciales
+
+# Utilidades
+npm run lint             # Linting
+```
+
+## 🛡️ Mejores Prácticas de Seguridad
+
+### Para Desarrolladores
+
+1. **Nunca committear** archivos `.env` o claves secretas
+2. **Validar siempre** la entrada del usuario
+3. **Usar HTTPS** en producción
+4. **Implementar rate limiting** en endpoints críticos
+5. **Logging seguro** sin información sensible
+
+### Para Administradores
+
+1. **Rotar claves** regularmente
+2. **Monitorear logs** de acceso
+3. **Backups regulares** de la base de datos
+4. **Actualizar dependencias** de seguridad
+5. **Configurar firewall** apropiadamente
+
+## 🐛 Troubleshooting
+
+### Problemas Comunes
+
+1. **Error de JWT_SECRET**: Asegúrate de configurar la variable de entorno
+2. **Error de base de datos**: Verifica la conexión y credenciales
+3. **Errores de CORS**: Configura CORS_ORIGIN correctamente
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT.
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature
+3. Commit tus cambios
+4. Push a la rama
+5. Abre un Pull Request
+
+## 📞 Soporte
+
+Para soporte técnico o preguntas de seguridad, contacta al equipo de desarrollo.

@@ -2,26 +2,48 @@
 import AppHeader from "@/app/workspace/_components/AppHeader";
 import ChapterListSidebar from "@/app/course/_components/ChapterListSidebar";
 import ChapterContent from "@/app/course/_components/ChapterContent";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
+
+interface CourseContent {
+  chapterName: string;
+  youtubeVideo: { videoId: string }[];
+  topics: { topic: string; content: string }[];
+}
+
+interface CourseInfo {
+  courses: {
+    courseContent: CourseContent[];
+  };
+  enrollCourse: {
+    completedChapters: number[];
+  };
+}
 
 const Course = () => {
   const { courseId } = useParams();
-  const [courseInfo, setCourseInfo] = useState({});
+  const [courseInfo, setCourseInfo] = useState<CourseInfo | null>(null);
 
-  const getEnrolledCourseById = async () => {
+  const getEnrolledCourseById = useCallback(async () => {
     const result = await axios.get(`/api/enroll-course?courseId=${courseId}`);
 
     if (result.status === 200) {
       setCourseInfo(result.data);
     }
-  };
+  }, [courseId]);
 
   useEffect(() => {
     getEnrolledCourseById();
-  }, []);
+  }, [getEnrolledCourseById]);
+
+  if (!courseInfo) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-lg">Cargando...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen">

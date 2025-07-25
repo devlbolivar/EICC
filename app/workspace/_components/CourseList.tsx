@@ -5,19 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import AddNewCourseDialog from "./AddNewCourseDialog";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
 import CourseCard from "./CourseCard";
 import { Course } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CourseList = () => {
-  const { user } = useUser();
   const [courseList, setCourseList] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const getCourseList = async () => {
-    if (!user) return;
-
     try {
       setIsLoading(true);
       const response = await axios.get("/api/courses");
@@ -31,7 +27,7 @@ const CourseList = () => {
 
   useEffect(() => {
     getCourseList();
-  }, [user]);
+  }, []);
 
   return (
     <div className="mt-10">

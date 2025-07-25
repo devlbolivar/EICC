@@ -1,24 +1,17 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
 import EnrollCourseCard from "./EnrollCourseCard";
 import { EnrolledCourses } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const EnrollCourseList = () => {
-  const { user } = useUser();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourses[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const getEnrolledCourses = async () => {
-    if (!user) return;
     try {
-      const result = await axios.get("/api/enroll-course", {
-        params: {
-          userEmail: user?.primaryEmailAddress?.emailAddress,
-        },
-      });
+      const result = await axios.get("/api/enroll-course");
       setEnrolledCourses(result.data);
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
@@ -29,7 +22,7 @@ const EnrollCourseList = () => {
 
   useEffect(() => {
     getEnrolledCourses();
-  }, [user]);
+  }, []);
 
   return (
     <div>

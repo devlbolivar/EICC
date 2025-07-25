@@ -1,10 +1,10 @@
 import React from "react";
-import EditCourse from "../../edit-course/[courseId]/page";
+import EditCourseComponent from "../../edit-course/[courseId]/EditCourseComponent";
 
 const ViewCourse = () => {
   return (
     <div>
-      <EditCourse viewCourse={true} />
+      <EditCourseComponent viewCourse={true} />
     </div>
   );
 };

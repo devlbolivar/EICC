@@ -17,10 +17,7 @@ import {
   LayoutDashboard,
   Plus,
   Book,
-  GraduationCap,
   Settings,
-  Users,
-  CircleCheck,
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";
@@ -41,10 +38,11 @@ const AppSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center justify-center flex-row mt-2">
-        <img
+        <Image
           src="/logo-minimalista.png"
           alt="EICCC Logo"
-          className="h-10 rounded-md"
+          width={40}
+          height={40}
         />
         <h2 className="text-gray-800 text-2xl font-bold leading-tight tracking-[-0.015em]">
           EICCC

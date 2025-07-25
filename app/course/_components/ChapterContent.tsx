@@ -1,8 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import DOMPurify from "dompurify";
-
 import { useSelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
 import Youtube from "react-youtube";
 import { Button } from "@/components/ui/button";
@@ -10,18 +7,33 @@ import { CheckCircle, X, Loader2 } from "lucide-react";
 import axios from "axios";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+
+interface CourseContent {
+  chapterName: string;
+  youtubeVideo: { videoId: string }[];
+  topics: { topic: string; content: string }[];
+}
+
+interface CourseInfo {
+  courses: {
+    courseContent: CourseContent[];
+  };
+  enrollCourse: {
+    completedChapters: number[];
+  };
+}
+
 const ChapterContent = ({
   courseInfo,
   refreshData,
 }: {
-  courseInfo: any;
+  courseInfo: CourseInfo;
   refreshData: () => void;
 }) => {
   const courseId = useParams();
   const { courses, enrollCourse } = courseInfo;
-  const courseContent = courseInfo.courses?.courseContent;
-  const { selectedChapterIndex, setSelectedChapterIndex } =
-    useSelectedChapterIndexContext();
+  const courseContent = courses?.courseContent;
+  const { selectedChapterIndex } = useSelectedChapterIndexContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const videosData = courseContent?.[selectedChapterIndex]?.youtubeVideo;
@@ -125,7 +137,7 @@ const ChapterContent = ({
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {videosData?.map(
-          (video: any, index: number) =>
+          (video: { videoId: string }, index: number) =>
             index < 2 && (
               <div key={index}>
                 <Youtube
@@ -137,18 +149,20 @@ const ChapterContent = ({
         )}
       </div>
       <div className="mt-7">
-        {topics?.map((topic: any, index_: number) => (
-          <div key={index_} className="mt-10 p-5 bg-secondary rounded-2xl">
-            <h2 className="text-2xl font-bold text-primary">
-              {index_ + 1}. {topic.topic}
-            </h2>
+        {topics?.map(
+          (topic: { topic: string; content: string }, index_: number) => (
+            <div key={index_} className="mt-10 p-5 bg-secondary rounded-2xl">
+              <h2 className="text-2xl font-bold text-primary">
+                {index_ + 1}. {topic.topic}
+              </h2>
 
-            <div
-              dangerouslySetInnerHTML={{ __html: topic?.content }}
-              style={{ lineHeight: "2" }}
-            />
-          </div>
-        ))}
+              <div
+                dangerouslySetInnerHTML={{ __html: topic?.content }}
+                style={{ lineHeight: "2" }}
+              />
+            </div>
+          )
+        )}
       </div>
     </div>
   );

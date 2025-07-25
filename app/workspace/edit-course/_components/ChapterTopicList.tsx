@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Gift } from "lucide-react";
+import { Course } from "@/app/types";
 
 interface Chapter {
   chapterName: string;
@@ -8,8 +9,13 @@ interface Chapter {
   topic: string[];
 }
 
-const ChapterTopicList = ({ course }: { course: any }) => {
-  const courseLayout = course?.courseJson?.course;
+const ChapterTopicList = ({ course }: { course: Course }) => {
+  const courseLayout = course.courseJson?.course;
+
+  if (!courseLayout) {
+    return <div>Error: Datos del curso no disponibles</div>;
+  }
+
   return (
     <div>
       <h2 className="text-3xl font-bold mt-10">Capítulos & Temas</h2>

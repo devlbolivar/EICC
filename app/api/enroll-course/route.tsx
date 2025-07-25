@@ -1,125 +1,200 @@
 import db from "@/config/db";
-import { coursesTable, enrollCourseTable } from "@/config/schema";
+import { coursesTable, enrollCourseTable, usersTable } from "@/config/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { verifyAccessToken } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const { courseId } = await req.json();
-  const user = await currentUser();
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  try {
+    const { courseId } = await req.json();
 
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return new Response("No email address found", { status: 400 });
-  }
+    // Verificar autenticación
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
 
-  const enrollCourses = await db
-    .select()
-    .from(enrollCourseTable)
-    .where(
-      and(
-        eq(enrollCourseTable.userEmail, user.primaryEmailAddress.emailAddress),
-        eq(enrollCourseTable.cid, courseId)
-      )
-    );
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-  if (enrollCourses.length > 0) {
-    return NextResponse.json({
-      message: "Ya estás inscrito en este curso",
-    });
-  }
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
 
-  const result = await db
-    .insert(enrollCourseTable)
-    .values({
-      cid: courseId,
-      userEmail: user.primaryEmailAddress.emailAddress,
-    })
-    .returning({
-      id: enrollCourseTable.id,
-      cid: enrollCourseTable.cid,
-      userEmail: enrollCourseTable.userEmail,
+    // Obtener usuario de la base de datos
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, payload.userId),
     });
 
-  return NextResponse.json(result);
-}
+    if (!user || !user.isActive) {
+      return NextResponse.json(
+        { error: "Usuario no encontrado o inactivo" },
+        { status: 401 }
+      );
+    }
 
-export async function GET(req: Request) {
-  const user = await currentUser();
-
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json(
-      { message: "No email address found" },
-      { status: 400 }
-    );
-  }
-
-  const { searchParams } = new URL(req.url);
-  const courseId = searchParams.get("courseId");
-
-  if (courseId) {
-    const result = await db
+    const enrollCourses = await db
       .select()
-      .from(coursesTable)
-      .innerJoin(enrollCourseTable, eq(coursesTable.cid, enrollCourseTable.cid))
+      .from(enrollCourseTable)
       .where(
         and(
-          eq(
-            enrollCourseTable.userEmail,
-            user.primaryEmailAddress.emailAddress
-          ),
+          eq(enrollCourseTable.userEmail, user.email),
           eq(enrollCourseTable.cid, courseId)
         )
       );
-    return NextResponse.json(result[0]);
-  } else {
+
+    if (enrollCourses.length > 0) {
+      return NextResponse.json({
+        message: "Ya estás inscrito en este curso",
+      });
+    }
+
     const result = await db
-      .select()
-      .from(coursesTable)
-      .innerJoin(enrollCourseTable, eq(coursesTable.cid, enrollCourseTable.cid))
-      .where(
-        eq(enrollCourseTable.userEmail, user.primaryEmailAddress.emailAddress)
-      )
-      .orderBy(desc(enrollCourseTable.id));
+      .insert(enrollCourseTable)
+      .values({
+        userId: user.id,
+        courseId: courseId,
+        cid: courseId,
+        userEmail: user.email,
+        enrolledAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning({
+        id: enrollCourseTable.id,
+        cid: enrollCourseTable.cid,
+        userEmail: enrollCourseTable.userEmail,
+      });
+
     return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error enrolling in course:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    // Verificar autenticación
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Obtener usuario de la base de datos
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, payload.userId),
+    });
+
+    if (!user || !user.isActive) {
+      return NextResponse.json(
+        { error: "Usuario no encontrado o inactivo" },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const courseId = searchParams.get("courseId");
+
+    if (courseId) {
+      const result = await db
+        .select()
+        .from(coursesTable)
+        .innerJoin(
+          enrollCourseTable,
+          eq(coursesTable.cid, enrollCourseTable.cid)
+        )
+        .where(
+          and(
+            eq(enrollCourseTable.userEmail, user.email),
+            eq(enrollCourseTable.cid, courseId)
+          )
+        );
+      return NextResponse.json(result[0]);
+    } else {
+      const result = await db
+        .select()
+        .from(coursesTable)
+        .innerJoin(
+          enrollCourseTable,
+          eq(coursesTable.cid, enrollCourseTable.cid)
+        )
+        .where(eq(enrollCourseTable.userEmail, user.email))
+        .orderBy(desc(enrollCourseTable.id));
+      return NextResponse.json(result);
+    }
+  } catch (error) {
+    console.error("Error getting enrolled courses:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(req: Request) {
-  const { courseId, completedChapter } = await req.json();
-  const user = await currentUser();
+  try {
+    const { courseId, completedChapter } = await req.json();
 
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+    // Verificar autenticación
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
 
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return new Response("No email address found", { status: 400 });
-  }
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-  const result = await db
-    .update(enrollCourseTable)
-    .set({
-      completedChapters: completedChapter,
-    })
-    .where(
-      and(
-        eq(enrollCourseTable.userEmail, user.primaryEmailAddress.emailAddress),
-        eq(enrollCourseTable.cid, courseId)
-      )
-    )
-    .returning({
-      id: enrollCourseTable.id,
-      cid: enrollCourseTable.cid,
-      userEmail: enrollCourseTable.userEmail,
-      completedChapters: enrollCourseTable.completedChapters,
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Obtener usuario de la base de datos
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, payload.userId),
     });
 
-  return NextResponse.json(result);
+    if (!user || !user.isActive) {
+      return NextResponse.json(
+        { error: "Usuario no encontrado o inactivo" },
+        { status: 401 }
+      );
+    }
+
+    const result = await db
+      .update(enrollCourseTable)
+      .set({
+        completedChapters: completedChapter,
+      })
+      .where(
+        and(
+          eq(enrollCourseTable.userEmail, user.email),
+          eq(enrollCourseTable.cid, courseId)
+        )
+      )
+      .returning({
+        id: enrollCourseTable.id,
+        cid: enrollCourseTable.cid,
+        userEmail: enrollCourseTable.userEmail,
+        completedChapters: enrollCourseTable.completedChapters,
+      });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error updating course progress:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
 }

@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "sonner";
+import { Course } from "@/app/types";
 
-const CourseCard = ({ course }: { course: any }) => {
+const CourseCard = ({ course }: { course: Course }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const courseJson = course.courseJson.course;
+  const courseJson = course.courseJson?.course;
+
+  if (!courseJson) {
+    return <div>Error: Datos del curso no disponibles</div>;
+  }
 
   const onEnrollCourse = async () => {
     try {
@@ -23,7 +28,7 @@ const CourseCard = ({ course }: { course: any }) => {
         toast.error("Curso inscrito correctamente");
       }
       setIsLoading(false);
-    } catch (error) {
+    } catch {
       toast.error("Error al inscribirse en el curso");
       setIsLoading(false);
     }
@@ -48,7 +53,9 @@ const CourseCard = ({ course }: { course: any }) => {
             <Book className="text-primary h-5 w-5" />{" "}
             {courseJson.numberOfChapters} Capítulos
           </h2>
-          {course?.courseContent?.length > 0 ? (
+          {course?.courseContent &&
+          Array.isArray(course.courseContent) &&
+          course.courseContent.length > 0 ? (
             <Button size="sm" onClick={onEnrollCourse} disabled={isLoading}>
               {isLoading ? (
                 <Loader2 className="animate-spin" />
@@ -58,7 +65,6 @@ const CourseCard = ({ course }: { course: any }) => {
               {isLoading ? "Inscribiendote..." : "Inscribirse"}
             </Button>
           ) : (
-            // TODO: Change name to "Acceder al curso" if the user is enrolled
             <Link href={`/workspace/edit-course/${course.cid}`}>
               <Button size="sm" variant="outline">
                 <Settings />

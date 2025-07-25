@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { UserButton, useAuth } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 
 const Header = () => {
-  const router = useRouter();
-  const { isSignedIn } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -77,9 +74,11 @@ const Header = () => {
         } ${isVisible ? "translate-y-0" : "-translate-y-full"}`}
       >
         <div className="flex items-center gap-3 text-gray-800">
-          <img
+          <Image
             src="/logo-minimalista.png"
             alt="EICCC Logo"
+            width={40}
+            height={40}
             className="h-10 rounded-md cursor-pointer"
             onClick={() => scrollToSection("inicio")}
           />
@@ -113,18 +112,18 @@ const Header = () => {
           </button>
         </nav>
         <div className="flex items-center gap-5">
-          {isSignedIn && (
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]">
-              <span className="truncate">Aula virtual</span>
-            </button>
-          )}
-          {!isSignedIn ? (
-            <button className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]">
-              <span className="truncate">Iniciar Sesión</span>
-            </button>
-          ) : (
-            <UserButton />
-          )}
+          <Link
+            href="/workspace"
+            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+          >
+            <span className="truncate">Aula virtual</span>
+          </Link>
+          <Link
+            href="/workspace"
+            className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+          >
+            <span className="truncate">Iniciar Sesión</span>
+          </Link>
           <button
             id="burger-button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -176,12 +175,18 @@ const Header = () => {
             </button>
           </nav>
           <div className="mt-auto pb-8 flex flex-col gap-4">
-            <button className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em]">
+            <Link
+              href="/workspace"
+              className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] flex"
+            >
               <span className="truncate">Comenzar</span>
-            </button>
-            <button className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-800 text-base font-bold leading-normal tracking-[0.015em]">
+            </Link>
+            <Link
+              href="/workspace"
+              className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-800 text-base font-bold leading-normal tracking-[0.015em] flex"
+            >
               <span className="truncate">Iniciar Sesión</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
