@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useSelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
 import Youtube from "react-youtube";
 import { Button } from "@/components/ui/button";

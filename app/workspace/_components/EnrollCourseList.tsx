@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import EnrollCourseCard from "./EnrollCourseCard";
 import { EnrolledCourses } from "@/app/types";
@@ -18,7 +18,7 @@ const EnrollCourseList = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     getEnrolledCourses();

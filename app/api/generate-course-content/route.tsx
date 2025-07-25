@@ -15,10 +15,6 @@ content:<>
 }
 : User Input:`;
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
 // Helper function to sanitize JSON string
 function sanitizeJsonString(str: string): string {
   // Remove any markdown code block markers

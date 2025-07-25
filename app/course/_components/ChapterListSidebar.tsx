@@ -6,7 +6,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useSelectedChapterIndexContext } from "@/context/SelectedChapterIndexContext";
-import { EnrolledCourses, CourseContent, Topic } from "@/app/types";
 
 const ChapterListSidebar = ({ courseInfo }: { courseInfo: unknown }) => {
   const courseContent = (
