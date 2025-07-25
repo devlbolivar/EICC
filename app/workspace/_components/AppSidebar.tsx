@@ -11,7 +11,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -23,6 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AddNewCourseDialog from "./AddNewCourseDialog";
+import Image from "next/image";
 
 const SideBarOptions = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/workspace" },

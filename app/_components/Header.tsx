@@ -9,7 +9,7 @@ const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -81,6 +81,8 @@ const Header = () => {
             height={40}
             className="h-10 rounded-md cursor-pointer"
             onClick={() => scrollToSection("inicio")}
+            width={40}
+            height={40}
           />
           <h2
             onClick={() => scrollToSection("inicio")}

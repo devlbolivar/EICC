@@ -138,23 +138,28 @@ export async function POST(req: Request) {
   }
 }
 
-const generateBannerImage = async (imagePrompt: string) => {
+const generateBannerImage = async (imagePrompt: string): Promise<string> => {
   const BASE_URL = "https://aigurulab.tech";
-  const result = await axios.post(
-    BASE_URL + "/api/generate-image",
-    {
-      width: 1024,
-      height: 1024,
-      input: imagePrompt,
-      model: "flux",
-      aspectRatio: "16:9",
-    },
-    {
-      headers: {
-        "x-api-key": process.env.AI_GURU_LAB_API,
-        "Content-Type": "application/json",
+  try {
+    const result = await axios.post(
+      BASE_URL + "/api/generate-image",
+      {
+        width: 1024,
+        height: 1024,
+        input: imagePrompt,
+        model: "flux",
+        aspectRatio: "16:9",
       },
-    }
-  );
-  return result.data.image;
+      {
+        headers: {
+          "x-api-key": process.env.AI_GURU_LAB_API,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return result.data.image;
+  } catch (error) {
+    console.error("Error generating banner image:", error);
+    throw new Error("Failed to generate banner image");
+  }
 };

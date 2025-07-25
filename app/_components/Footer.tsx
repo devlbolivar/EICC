@@ -1,5 +1,5 @@
 import React from "react";
-
+import Image from "next/image";
 const Footer = () => {
   return (
     <footer className="bg-gray-800 text-gray-400">
@@ -7,19 +7,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <svg
+              <Image
+                src="/logo-minimalista.png"
+                alt="EICCC Logo"
                 className="h-8 w-8 text-[#1978e5]"
-                fill="none"
-                viewBox="0 0 48 48"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  clipRule="evenodd"
-                  d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z"
-                  fill="currentColor"
-                  fillRule="evenodd"
-                ></path>
-              </svg>
+                width={32}
+                height={32}
+              />
               <h2 className="text-white text-2xl font-bold">EICCC</h2>
             </div>
             <p className="text-sm">

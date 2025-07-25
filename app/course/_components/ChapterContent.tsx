@@ -38,9 +38,12 @@ const ChapterContent = ({
 
   const videosData = courseContent?.[selectedChapterIndex]?.youtubeVideo;
   const topics = courseContent?.[selectedChapterIndex]?.topics;
-  const completedChapter = enrollCourse?.completedChapters ?? [];
+  const completedChapter = useMemo(
+    () => enrollCourse?.completedChapters,
+    [enrollCourse?.completedChapters]
+  );
 
-  const markChapterAsCompleted = async () => {
+  const markChapterAsCompleted = useCallback(async () => {
     setIsLoading(true);
     try {
       const updatedCompletedChapters = Array.isArray(completedChapter)
@@ -60,9 +63,9 @@ const ChapterContent = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [completedChapter, courseId, refreshData, selectedChapterIndex]);
 
-  const markChapterAsIncomplete = async () => {
+  const markChapterAsIncomplete = useCallback(async () => {
     setIsLoading(true);
     try {
       const updatedCompletedChapters = Array.isArray(completedChapter)
@@ -82,7 +85,7 @@ const ChapterContent = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [completedChapter, courseId, refreshData, selectedChapterIndex]);
 
   return (
     <div className="p-10">
