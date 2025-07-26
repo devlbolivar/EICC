@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/hooks/use-admin";
+import { redirect } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -11,6 +13,12 @@ import {
 
 export default function AdminDashboard() {
   const { session } = useAuth();
+  const { isAdmin } = useAdmin();
+
+  // Redirigir si no es administrador
+  if (!isAdmin) {
+    redirect("/workspace");
+  }
 
   return (
     <div className="container mx-auto p-6">

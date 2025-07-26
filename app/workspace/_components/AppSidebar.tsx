@@ -4,36 +4,21 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import {
-  LayoutDashboard,
-  Plus,
-  Book,
-  Settings,
-  CreditCard,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import AddNewCourseDialog from "./AddNewCourseDialog";
-import Image from "next/image";
 
-const SideBarOptions = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/workspace" },
-  { title: "Mis cursos", icon: Book, path: "/workspace/my-learning" },
-  { title: "Explorar cursos", icon: Book, path: "/workspace/explore" },
-  { title: "Perfil", icon: Settings, path: "/workspace/profile" },
-  { title: "Billing", icon: CreditCard, path: "/workspace/billing" },
-];
+import Image from "next/image";
+import AdminNavMenu from "./AdminNavMenu";
+import CompanyNavMenu from "./CompanyNavMenu";
+import StudentNavMenu from "./StudentNavMenu";
+import { useAdmin } from "@/hooks/use-admin";
+import { useCompany } from "@/hooks/use-company";
+import { useStudent } from "@/hooks/use-student";
 
 const AppSidebar = () => {
-  const path = usePathname();
+  const { isAdmin } = useAdmin();
+  const { isCompany } = useCompany();
+  const { isStudent } = useStudent();
 
   return (
     <Sidebar>
@@ -50,39 +35,14 @@ const AppSidebar = () => {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <AddNewCourseDialog>
-            <Button>
-              <Plus />
-              Crear nuevo curso
-            </Button>
-          </AddNewCourseDialog>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {SideBarOptions.map((option, index) => (
-                <SidebarMenuItem key={index}>
-                  <SidebarMenuButton
-                    asChild
-                    className="flex items-center gap-2 p-5"
-                  >
-                    <Link
-                      href={option.path}
-                      className={`text-[17px] ${
-                        path === option.path &&
-                        "text-primary bg-sidebar-primary-foreground"
-                      }`}
-                    >
-                      <option.icon className="w-7 h-7" />
-                      <span>{option.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Menú de Administración - Solo visible para administradores */}
+        {isAdmin && <AdminNavMenu />}
+
+        {/* Menú de Empresa - Solo visible para usuarios con rol de empresa */}
+        {isCompany && <CompanyNavMenu />}
+
+        {/* Menú de Estudiante - Solo visible para usuarios con rol de estudiante */}
+        {isStudent && <StudentNavMenu />}
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
