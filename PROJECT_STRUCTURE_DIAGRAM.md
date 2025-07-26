@@ -17,7 +17,7 @@ graph TD
 
     %% App Directory Structure
     B --> B1[_components/]
-    B --> B2[(auth)/]
+    B --> B2["(auth)/"]
     B --> B3[api/]
     B --> B4[course/]
     B --> B5[workspace/]
