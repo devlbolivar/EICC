@@ -1,22 +1,63 @@
+"use client";
+
 import { useAuth } from "@/context/AuthContext";
-import { SYSTEM_ROLES } from "@/app/types";
+import { useMemo } from "react";
 
 export const useStudent = () => {
   const { session } = useAuth();
 
-  const isStudent = () => {
-    if (!session?.currentRole) return false;
-    return session.currentRole.name === SYSTEM_ROLES.STUDENT;
-  };
+  const isStudent = useMemo(() => {
+    // Si no hay sesión, no es estudiante
+    if (!session) {
+      console.log("useStudent: No session available");
+      return false;
+    }
 
-  const hasStudentPermission = (permission: string) => {
-    if (!session?.permissions) return false;
-    return session.permissions.includes(permission as any);
-  };
+    // Si no hay permisos, no es estudiante
+    if (!session.permissions || session.permissions.length === 0) {
+      console.log("useStudent: No permissions available");
+      return false;
+    }
 
-  return {
-    isStudent: isStudent(),
-    hasStudentPermission,
-    session,
-  };
+    // Check if user has student permissions
+    if (session.permissions && session.permissions.length > 0) {
+      const hasStudentPermissions = session.permissions.some(
+        (permission) =>
+          permission === "courses:enroll" ||
+          permission === "courses:read" ||
+          permission === "content:read"
+      );
+
+      // Check that user does NOT have admin or company permissions
+      const hasAdminPermissions = session.permissions.some(
+        (permission) =>
+          permission === "platform:admin" ||
+          permission === "platform:write" ||
+          permission === "platform:read"
+      );
+
+      const hasCompanyPermissions = session.permissions.some(
+        (permission) =>
+          permission === "company:admin" ||
+          permission === "company:write" ||
+          permission === "company:read" ||
+          permission === "company:billing"
+      );
+
+      console.log("useStudent: Permission analysis:", {
+        permissions: session.permissions,
+        hasStudentPermissions,
+        hasAdminPermissions,
+        hasCompanyPermissions,
+        isStudent: hasStudentPermissions && !hasAdminPermissions && !hasCompanyPermissions,
+      });
+
+      // Es estudiante si tiene permisos de estudiante Y NO tiene permisos de admin o company
+      return hasStudentPermissions && !hasAdminPermissions && !hasCompanyPermissions;
+    }
+
+    return false;
+  }, [session]);
+
+  return { isStudent };
 };

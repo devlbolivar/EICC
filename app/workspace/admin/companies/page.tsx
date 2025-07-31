@@ -18,7 +18,7 @@ export default function AdminCompaniesPage() {
 
   // Redirigir si no es administrador
   if (!isAdmin) {
-    redirect("/workspace");
+    redirect("/");
   }
 
   return (

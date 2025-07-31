@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
         name: primaryUserCompany.role.name,
         permissions: primaryUserCompany.role.permissions,
       },
+      permissions: primaryUserCompany.role.permissions as Permission[],
       userCompanies: activeUserCompanies.map((uc) => ({
         id: uc.id,
         company: uc.company

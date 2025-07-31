@@ -158,39 +158,6 @@ export const enrollCourseTable = pgTable(
   })
 );
 
-// ===== ORGANIZACIONES =====
-export const organizationsTable = pgTable("organizations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar({ length: 255 }).notNull(),
-  slug: varchar({ length: 255 }).notNull().unique(),
-  description: text(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-});
-
-export const userOrganizationsTable = pgTable(
-  "user_organizations",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => usersTable.id, { onDelete: "cascade" }),
-    organizationId: uuid("organization_id")
-      .notNull()
-      .references(() => organizationsTable.id, { onDelete: "cascade" }),
-    roleId: uuid("role_id")
-      .notNull()
-      .references(() => rolesTable.id),
-    isActive: boolean().notNull().default(true),
-    joinedAt: timestamp().notNull().defaultNow(),
-    invitedBy: uuid("invited_by").references(() => usersTable.id),
-    acceptedAt: timestamp(),
-  },
-  (table) => ({
-    userOrgIdx: index("user_org_idx").on(table.userId, table.organizationId),
-  })
-);
-
 // ===== RELACIONES =====
 export const usersRelations = relations(usersTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),

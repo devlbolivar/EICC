@@ -13,10 +13,6 @@ import {
   UserLoginData,
   UserRegistrationData,
   Permission,
-  User,
-  UserOrganization,
-  Organization,
-  Role,
 } from "@/app/types";
 import { toast } from "sonner";
 
@@ -40,14 +36,25 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Usar el hook de validación
+  // const { shouldValidate } = useAuthValidation(); // Eliminado
 
   // ===== INICIALIZACIÓN =====
   useEffect(() => {
-    initializeAuth();
-  }, []);
+    // Siempre inicializar, pero de manera diferente según la ruta
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, [initialized]);
 
   const initializeAuth = async () => {
     try {
+      setLoading(true);
+      setInitialized(true);
+
       // Los tokens están en cookies httpOnly, validar directamente
       await validateAndSetSession();
     } catch (error) {
@@ -55,8 +62,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
         "❌ AuthContext: Error inicializando autenticación:",
         error
       );
+      setSession(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTokenExpiration = async () => {
+    // Evitar múltiples intentos de refresh simultáneos
+    if (isRefreshing) {
+      console.log("🔄 Refresh ya en progreso, esperando...");
+      return;
+    }
+
+    try {
+      setIsRefreshing(true);
+      console.log("🔄 Token expirado, intentando refresh...");
+      await refreshToken();
+    } catch (error) {
+      console.error("❌ Error en refresh token:", error);
+      // No llamar a logout aquí para evitar el loop
+      setSession(null);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -64,19 +92,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await fetch("/api/auth/validate", {
         method: "GET",
-        // No necesitamos enviar el token en headers, está en cookies
       });
 
       if (response.ok) {
         const data = await response.json();
         setSession(data.data);
+      } else if (response.status === 401) {
+        // Token inválido, intentar refresh solo si no estamos ya refrescando
+        if (!isRefreshing) {
+          await handleTokenExpiration();
+        }
       } else {
-        // Token inválido, intentar refresh
-        await refreshToken();
+        // Otros errores, simplemente limpiar la sesión
+        setSession(null);
       }
     } catch (error) {
       console.error("❌ AuthContext: Error validando sesión:", error);
-      throw error;
+      setSession(null);
     }
   };
 
@@ -96,11 +128,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.setItem("refreshToken", data.data.refreshToken);
         setSession(data.data.session);
       } else {
+        // Refresh token inválido, limpiar sesión sin redirección
+        setSession(null);
         throw new Error("Refresh token inválido");
       }
     } catch (error) {
       console.error("Error refrescando token:", error);
-      logout();
+      setSession(null);
       throw error;
     }
   };
@@ -183,44 +217,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("❌ AuthContext: Error en logout:", error);
     } finally {
       setSession(null);
+      // No resetear initialized aquí para evitar re-ejecuciones innecesarias
       toast.success("Sesión cerrada");
-    }
-  };
-
-  const switchOrganization = async (organizationId: string) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        throw new Error("No hay token de acceso");
-      }
-
-      const response = await fetch("/api/auth/switch-organization", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ organizationId }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Error cambiando organización");
-      }
-
-      // Actualizar tokens
-      localStorage.setItem("accessToken", result.data.accessToken);
-      localStorage.setItem("refreshToken", result.data.refreshToken);
-      setSession(result.data.session);
-
-      toast.success("Organización cambiada exitosamente");
-    } catch (error) {
-      console.error("Error cambiando organización:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Error cambiando organización"
-      );
-      throw error;
     }
   };
 
@@ -289,7 +287,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     switchCompany,
-    switchOrganization,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,

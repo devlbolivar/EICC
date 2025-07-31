@@ -29,7 +29,7 @@ function SignInForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/workspace";
+  const redirect = searchParams.get("redirect") || "/";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -68,23 +68,8 @@ function SignInForm() {
     setIsLoading(true);
 
     try {
-      const session = await login(formData);
-
-      // Si el redirect es /workspace, redirigir según el rol
-      if (redirect === "/workspace" && session?.currentRole?.name) {
-        const roleRedirects = {
-          admin: "/workspace/admin",
-          company: "/workspace/company",
-          student: "/workspace/my-learning",
-        };
-        const roleRedirect =
-          roleRedirects[session.currentRole.name as keyof typeof roleRedirects];
-        if (roleRedirect) {
-          await router.push(roleRedirect);
-          return;
-        }
-      }
-
+      await login(formData);
+      // El AuthGuard se encargará de la redirección automática
       router.push(redirect);
     } catch (error) {
       // El error ya se maneja en el contexto de autenticación

@@ -52,14 +52,7 @@ export const companies = pgTable(
 );
 
 export const courses = pgTable("courses", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity({
-    name: "courses_id_seq",
-    startWith: 1,
-    increment: 1,
-    minValue: 1,
-    maxValue: 2147483647,
-    cache: 1,
-  }),
+  id: uuid().defaultRandom().primaryKey().notNull(),
   cid: varchar({ length: 255 }).notNull(),
   name: varchar({ length: 255 }).notNull(),
   description: text().notNull(),
@@ -68,11 +61,15 @@ export const courses = pgTable("courses", {
   difficulty: varchar({ length: 255 }).notNull(),
   category: varchar({ length: 255 }).notNull(),
   courseJson: json(),
-  userEmail: varchar().notNull(),
-  createdAt: timestamp({ mode: "string" }).defaultNow().notNull(),
-  updatedAt: timestamp({ mode: "string" }).defaultNow().notNull(),
   bannerImage: text().default(""),
   courseContent: json().default({}),
+  createdBy: uuid("created_by").notNull(),
+  companyId: uuid("company_id"),
+  userEmail: varchar({ length: 255 }),
+  isPublic: boolean().default(false).notNull(),
+  isActive: boolean().default(true).notNull(),
+  createdAt: timestamp({ mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp({ mode: "string" }).defaultNow().notNull(),
 });
 
 export const enrollCourse = pgTable("enrollCourse", {
@@ -107,19 +104,6 @@ export const invitationTokens = pgTable(
   (table) => [unique("invitation_tokens_token_unique").on(table.token)]
 );
 
-export const organizations = pgTable(
-  "organizations",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    name: varchar({ length: 255 }).notNull(),
-    slug: varchar({ length: 255 }).notNull(),
-    description: text(),
-    createdAt: timestamp({ mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp({ mode: "string" }).defaultNow().notNull(),
-  },
-  (table) => [unique("organizations_slug_unique").on(table.slug)]
-);
-
 export const roleEnum = pgTable("role_enum", {
   value: varchar({ length: 20 }).primaryKey().notNull(),
 });
@@ -142,17 +126,6 @@ export const userCompanies = pgTable("user_companies", {
   id: uuid().defaultRandom().primaryKey().notNull(),
   userId: uuid("user_id").notNull(),
   companyId: uuid("company_id"),
-  roleId: uuid("role_id").notNull(),
-  isActive: boolean().default(true).notNull(),
-  joinedAt: timestamp({ mode: "string" }).defaultNow().notNull(),
-  invitedBy: uuid("invited_by"),
-  acceptedAt: timestamp({ mode: "string" }),
-});
-
-export const userOrganizations = pgTable("user_organizations", {
-  id: uuid().defaultRandom().primaryKey().notNull(),
-  userId: uuid("user_id").notNull(),
-  organizationId: uuid("organization_id").notNull(),
   roleId: uuid("role_id").notNull(),
   isActive: boolean().default(true).notNull(),
   joinedAt: timestamp({ mode: "string" }).defaultNow().notNull(),

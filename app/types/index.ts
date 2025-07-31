@@ -90,6 +90,7 @@ export type Permission =
   | "users:write"
   | "users:invite"
   | "users:remove"
+  | "users:manage"
 
   // Permisos de cursos
   | "courses:read"
@@ -98,6 +99,8 @@ export type Permission =
   | "courses:delete"
   | "courses:publish"
   | "courses:enroll"
+  | "courses:edit"
+  | "courses:view"
 
   // Permisos de contenido
   | "content:read"
@@ -113,44 +116,17 @@ export const SYSTEM_ROLES = {
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   [SYSTEM_ROLES.ADMIN]: [
-    "platform:read",
-    "platform:write",
     "platform:admin",
-    "company:read",
-    "company:write",
-    "company:admin",
-    "users:read",
-    "users:write",
-    "users:invite",
-    "users:remove",
-    "courses:read",
-    "courses:write",
     "courses:create",
+    "courses:edit",
     "courses:delete",
-    "courses:publish",
-    "content:read",
-    "content:write",
-    "content:create",
-    "content:delete",
+    "users:manage",
   ],
   [SYSTEM_ROLES.COMPANY]: [
-    "company:read",
-    "company:write",
     "company:admin",
-    "company:billing",
-    "users:read",
-    "users:write",
-    "users:invite",
-    "users:remove",
-    "courses:read",
-    "courses:write",
     "courses:create",
-    "courses:delete",
-    "courses:publish",
-    "content:read",
-    "content:write",
-    "content:create",
-    "content:delete",
+    "courses:edit",
+    "users:invite",
   ],
   [SYSTEM_ROLES.STUDENT]: ["courses:read", "courses:enroll", "content:read"],
 };
@@ -285,7 +261,6 @@ export interface AuthContextType {
   register: (data: UserRegistrationData) => Promise<void>;
   logout: () => Promise<void>;
   switchCompany: (companyId: string) => Promise<void>;
-  switchOrganization: (organizationId: string) => Promise<void>; // <-- Añadido
   hasPermission: (permission: Permission) => boolean;
   hasAnyPermission: (permissions: Permission[]) => boolean;
   hasAllPermissions: (permissions: Permission[]) => boolean;
@@ -353,26 +328,4 @@ export interface AppConfig {
 export interface EnrolledCourses {
   courses: Course;
   enrollCourse: EnrollCourse;
-}
-
-// ===== ORGANIZACIONES =====
-export interface Organization extends BaseEntity {
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-export interface UserOrganization extends BaseEntity {
-  userId: string;
-  organizationId: string;
-  roleId: string;
-  isActive: boolean;
-  joinedAt: Date;
-  invitedBy?: string;
-  acceptedAt?: Date;
-  // Relaciones
-  user?: User;
-  organization?: Organization;
-  role?: Role;
-  invitedByUser?: User;
 }

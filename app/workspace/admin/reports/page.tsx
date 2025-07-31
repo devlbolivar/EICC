@@ -17,7 +17,7 @@ export default function AdminReportsPage() {
 
   // Redirigir si no es administrador
   if (!isAdmin) {
-    redirect("/workspace");
+    redirect("/");
   }
 
   return (

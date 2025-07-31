@@ -14,11 +14,28 @@ import StudentNavMenu from "./StudentNavMenu";
 import { useAdmin } from "@/hooks/use-admin";
 import { useCompany } from "@/hooks/use-company";
 import { useStudent } from "@/hooks/use-student";
+import { useAuth } from "@/context/AuthContext";
 
 const AppSidebar = () => {
+  const { session } = useAuth();
   const { isAdmin } = useAdmin();
   const { isCompany } = useCompany();
   const { isStudent } = useStudent();
+
+  // Logs de depuración
+  console.log("AppSidebar Debug:", {
+    isAdmin,
+    isCompany,
+    isStudent,
+    session: session
+      ? {
+          user: session.user?.name,
+          currentRole: session.currentRole?.name,
+          permissions: session.permissions,
+          userCompanies: session.userCompanies?.length,
+        }
+      : null,
+  });
 
   return (
     <Sidebar>

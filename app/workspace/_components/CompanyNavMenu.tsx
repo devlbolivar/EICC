@@ -26,25 +26,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const CompanyNavMenu = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        router.push("/");
-      } else {
-        console.error("Error during logout");
-      }
+      await logout();
+      router.push("/");
     } catch (error) {
       console.error("Error during logout:", error);
     }

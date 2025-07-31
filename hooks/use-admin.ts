@@ -1,22 +1,49 @@
+"use client";
+
 import { useAuth } from "@/context/AuthContext";
-import { SYSTEM_ROLES } from "@/app/types";
+import { useMemo } from "react";
 
 export const useAdmin = () => {
   const { session } = useAuth();
 
-  const isAdmin = () => {
-    if (!session?.currentRole) return false;
-    return session.currentRole.name === SYSTEM_ROLES.ADMIN;
-  };
+  const isAdmin = useMemo(() => {
+    // Si no hay sesión, no es admin
+    if (!session) {
+      console.log("useAdmin: No session available");
+      return false;
+    }
 
-  const hasAdminPermission = () => {
-    if (!session?.permissions) return false;
-    return session.permissions.includes("platform:admin");
-  };
+    // Si no hay permisos, no es admin
+    if (!session.permissions || session.permissions.length === 0) {
+      console.log("useAdmin: No permissions available");
+      return false;
+    }
 
-  return {
-    isAdmin: isAdmin(),
-    hasAdminPermission: hasAdminPermission(),
-    session,
-  };
+    // Check if user has admin permissions
+    if (session.permissions && session.permissions.length > 0) {
+      const hasAdminPermissions = session.permissions.some(
+        (permission) =>
+          permission === "platform:admin" ||
+          permission === "platform:write" ||
+          permission === "platform:read"
+      );
+
+      console.log("useAdmin: Permission analysis:", {
+        permissions: session.permissions,
+        hasAdminPermissions,
+        adminPermissions: session.permissions.filter(
+          (permission) =>
+            permission === "platform:admin" ||
+            permission === "platform:write" ||
+            permission === "platform:read"
+        ),
+      });
+
+      return hasAdminPermissions;
+    }
+
+    return false;
+  }, [session]);
+
+  return { isAdmin };
 };

@@ -28,7 +28,7 @@ export default function CreateCoursePage() {
 
   // Redirigir si no es administrador
   if (!isAdmin) {
-    redirect("/workspace");
+    redirect("/");
   }
 
   return (

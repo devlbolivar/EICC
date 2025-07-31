@@ -17,7 +17,7 @@ export default function AdminEnrollmentsPage() {
 
   // Redirigir si no es administrador
   if (!isAdmin) {
-    redirect("/workspace");
+    redirect("/");
   }
 
   return (

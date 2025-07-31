@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Usar el contexto de autenticación
+  const { session, loading } = useAuth();
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -65,6 +70,22 @@ const Header = () => {
     }
   };
 
+  // Determinar la ruta de redirección según el rol del usuario
+  const getWorkspaceRoute = () => {
+    if (!session?.currentRole?.name) return "/sign-in";
+
+    const roleRoutes = {
+      admin: "/workspace/admin",
+      company: "/workspace/company",
+      student: "/workspace/student",
+    };
+
+    return (
+      roleRoutes[session.currentRole.name as keyof typeof roleRoutes] ||
+      "/sign-in"
+    );
+  };
+
   return (
     <>
       <header
@@ -111,18 +132,25 @@ const Header = () => {
           </button>
         </nav>
         <div className="flex items-center gap-5">
-          <Link
-            href="/workspace"
-            className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
-          >
-            <span className="truncate">Aula virtual</span>
-          </Link>
-          <Link
-            href="/workspace"
-            className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
-          >
-            <span className="truncate">Iniciar Sesión</span>
-          </Link>
+          {!loading && (
+            <>
+              {session ? (
+                <Link
+                  href={getWorkspaceRoute()}
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span className="truncate">Mi Aula</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/sign-in"
+                  className="hidden sm:flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1978e5]  hover:bg-blue-700 transition-colors text-white text-sm font-bold leading-normal tracking-[0.015em]"
+                >
+                  <span className="truncate">Iniciar Sesión</span>
+                </Link>
+              )}
+            </>
+          )}
           <button
             id="burger-button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -174,18 +202,35 @@ const Header = () => {
             </button>
           </nav>
           <div className="mt-auto pb-8 flex flex-col gap-4">
-            <Link
-              href="/workspace"
-              className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] flex"
-            >
-              <span className="truncate">Comenzar</span>
-            </Link>
-            <Link
-              href="/workspace"
-              className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-800 text-base font-bold leading-normal tracking-[0.015em] flex"
-            >
-              <span className="truncate">Iniciar Sesión</span>
-            </Link>
+            {!loading && (
+              <>
+                {session ? (
+                  // Usuario autenticado
+                  <Link
+                    href={getWorkspaceRoute()}
+                    className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] flex"
+                  >
+                    <span className="truncate">Mi Aula</span>
+                  </Link>
+                ) : (
+                  // Usuario no autenticado
+                  <>
+                    <Link
+                      href="/sign-in"
+                      className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-[#1978e5] hover:bg-blue-700 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] flex"
+                    >
+                      <span className="truncate">Comenzar</span>
+                    </Link>
+                    <Link
+                      href="/sign-in"
+                      className="w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-800 text-base font-bold leading-normal tracking-[0.015em] flex"
+                    >
+                      <span className="truncate">Iniciar Sesión</span>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

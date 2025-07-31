@@ -27,7 +27,7 @@ export default function AdminSettingsPage() {
 
   // Redirigir si no es administrador
   if (!isAdmin) {
-    redirect("/workspace");
+    redirect("/");
   }
 
   return (

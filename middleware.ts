@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessTokenEdge } from "@/lib/auth";
-import { SYSTEM_ROLES } from "@/app/types";
+import { SYSTEM_ROLES, Permission } from "@/app/types";
+import { validateRouteAccess, getMostRestrictiveRole } from "@/lib/permissions";
+import { validateUserActive, logUserAccess } from "@/lib/user-validation";
 
 // ===== RATE LIMITING SIMPLE =====
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -56,20 +58,34 @@ const publicApiRoutes = [
 
 // ===== RUTAS QUE REQUIEREN AUTENTICACIÓN =====
 const protectedRoutes = [
-  "/workspace",
-  "/course",
-  "/api/courses",
-  "/api/enroll-course",
+  "/workspace/admin",
+  "/workspace/company",
+  "/workspace/student",
   "/api/user",
   "/api/companies",
   "/api/invitations",
 ];
 
+// ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA REQUIERE AUTENTICACIÓN =====
+function isProtectedRoute(pathname: string): boolean {
+  // Verificar si es una ruta protegida general
+  const isGeneralProtected = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Verificar si es una ruta específica de rol
+  const isRoleSpecific = Object.values(roleRoutes)
+    .flat()
+    .some((route) => pathname.startsWith(route));
+
+  return isGeneralProtected || isRoleSpecific;
+}
+
 // ===== RUTAS ESPECÍFICAS POR ROL =====
 const roleRoutes = {
   [SYSTEM_ROLES.ADMIN]: ["/workspace/admin", "/api/admin"],
   [SYSTEM_ROLES.COMPANY]: ["/workspace/company", "/api/company"],
-  [SYSTEM_ROLES.STUDENT]: ["/workspace/student", "/workspace/my-learning"],
+  [SYSTEM_ROLES.STUDENT]: ["/workspace/student"],
 };
 
 // ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA ES PÚBLICA =====
@@ -84,11 +100,6 @@ function isPublicApiRoute(pathname: string): boolean {
   return publicApiRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
-}
-
-// ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA REQUIERE AUTENTICACIÓN =====
-function isProtectedRoute(pathname: string): boolean {
-  return protectedRoutes.some((route) => pathname.startsWith(route));
 }
 
 // ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA ES ESPECÍFICA DE UN ROL =====
@@ -106,9 +117,9 @@ function getRedirectRouteByRole(roleName: string): string {
     case SYSTEM_ROLES.COMPANY:
       return "/workspace/company";
     case SYSTEM_ROLES.STUDENT:
-      return "/workspace/my-learning";
+      return "/workspace/student";
     default:
-      return "/workspace";
+      return "/";
   }
 }
 
@@ -150,6 +161,32 @@ export async function middleware(request: NextRequest) {
 
   // ===== MANEJAR RUTAS PÚBLICAS =====
   if (isPublicRoute(pathname)) {
+    // Para rutas de auth, verificar si el usuario ya está autenticado
+    if (pathname === "/sign-in" || pathname === "/sign-up") {
+      const token = extractTokenFromCookies(request);
+
+      if (token) {
+        try {
+          const payload = await verifyAccessTokenEdge(token);
+
+          if (
+            payload &&
+            payload.permissions &&
+            payload.permissions.length > 0
+          ) {
+            // Usuario ya autenticado, redirigir según su rol
+            const roleName = getRoleNameFromPermissions(payload.permissions);
+            if (roleName) {
+              const redirectRoute = getRedirectRouteByRole(roleName);
+              return NextResponse.redirect(new URL(redirectRoute, request.url));
+            }
+          }
+        } catch (error) {
+          // Si hay error al verificar el token, continuar normalmente
+        }
+      }
+    }
+
     return NextResponse.next();
   }
 
@@ -226,35 +263,82 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    // ===== VALIDAR QUE EL USUARIO ESTÉ ACTIVO =====
+    const isUserActive = await validateUserActive(payload.userId);
+    if (!isUserActive) {
+      await logUserAccess(
+        payload.userId,
+        pathname,
+        false,
+        "Usuario desactivado"
+      );
+      const loginUrl = new URL("/sign-in", request.url);
+      loginUrl.searchParams.set("error", "account-disabled");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // ===== VALIDAR ACCESO A LA RUTA ESPECÍFICA =====
+    const hasAccess = validateRouteAccess(
+      payload.permissions as Permission[],
+      pathname
+    );
+
+    console.log("🔍 Middleware Debug:", {
+      pathname,
+      permissions: payload.permissions,
+      hasAccess,
+      roleName: getRoleNameFromPermissions(payload.permissions),
+    });
+
+    if (!hasAccess) {
+      await logUserAccess(
+        payload.userId,
+        pathname,
+        false,
+        "Acceso no autorizado"
+      );
+      const roleName = getRoleNameFromPermissions(payload.permissions);
+      const redirectRoute = getRedirectRouteByRole(roleName || "student");
+      console.log(
+        `🚫 Middleware: Usuario sin acceso a ${pathname}, redirigiendo a ${redirectRoute}`
+      );
+      return NextResponse.redirect(new URL(redirectRoute, request.url));
+    }
+
     // ===== VERIFICAR ACCESO A RUTAS ESPECÍFICAS DE ROL =====
-    // Obtener el nombre del rol desde los permisos o payload
     const roleName = getRoleNameFromPermissions(payload.permissions);
 
     if (roleName && isRoleSpecificRoute(pathname, roleName)) {
       // El usuario tiene acceso a esta ruta específica de su rol
+      await logUserAccess(payload.userId, pathname, true);
       return NextResponse.next();
     }
 
-    // ===== REDIRECCIÓN BASADA EN ROL =====
-    // Si el usuario intenta acceder a una ruta que no le corresponde,
-    // redirigirlo a su dashboard correspondiente
+    // ===== REDIRECCIÓN BASADA EN ROL - SOLO SI NO ESTÁ EN SU RUTA CORRECTA =====
     if (roleName) {
       const userRedirectRoute = getRedirectRouteByRole(roleName);
 
-      // Si está en una ruta que no le corresponde, redirigir
-      // PERO permitir acceso a rutas específicas de rol
+      // Solo redirigir si está en una ruta que no le corresponde
+      // y no está ya en su ruta correcta
       if (
         pathname !== userRedirectRoute &&
         !pathname.startsWith(userRedirectRoute) &&
         !pathname.startsWith("/workspace/admin") &&
         !pathname.startsWith("/workspace/company") &&
-        !pathname.startsWith("/workspace/my-learning")
+        !pathname.startsWith("/workspace/student")
       ) {
+        await logUserAccess(
+          payload.userId,
+          pathname,
+          false,
+          "Redirección por rol"
+        );
         return NextResponse.redirect(new URL(userRedirectRoute, request.url));
       }
     }
 
     // Token válido y acceso permitido, continuar
+    await logUserAccess(payload.userId, pathname, true);
     return NextResponse.next();
   }
 
@@ -264,20 +348,7 @@ export async function middleware(request: NextRequest) {
 
 // ===== FUNCIÓN PARA OBTENER EL NOMBRE DEL ROL DESDE LOS PERMISOS =====
 function getRoleNameFromPermissions(permissions: string[]): string | null {
-  // Determinar el rol basado en los permisos
-  if (permissions.includes("platform:admin")) {
-    return SYSTEM_ROLES.ADMIN;
-  }
-
-  if (permissions.includes("company:admin")) {
-    return SYSTEM_ROLES.COMPANY;
-  }
-
-  if (permissions.includes("courses:enroll")) {
-    return SYSTEM_ROLES.STUDENT;
-  }
-
-  return null;
+  return getMostRestrictiveRole(permissions as Permission[]);
 }
 
 // ===== CONFIGURACIÓN DEL MIDDLEWARE =====
