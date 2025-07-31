@@ -172,6 +172,28 @@ export interface InvitationCreateData {
 }
 
 // ===== CURSOS =====
+export interface Lesson {
+  id: string;
+  title: string;
+  text?: string; // Contenido de texto (editor enriquecido)
+  video?: string; // URL de video (YouTube, Vimeo, etc.)
+  attachments?: Array<{
+    id: string;
+    name: string;
+    url: string;
+    type: "file" | "link" | "pdf";
+  }>;
+  order: number;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  description?: string;
+  lessons: Lesson[];
+  order: number;
+}
+
 export interface Course extends BaseEntity {
   cid: string;
   name: string;
@@ -208,6 +230,13 @@ export interface Course extends BaseEntity {
   companyId?: string;
   isPublic: boolean;
   isActive: boolean;
+  // Nuevos campos
+  level: "Básico" | "Intermedio" | "Avanzado";
+  status: "Borrador" | "Publicado" | "Archivado";
+  estimatedDuration?: string;
+  visibility: "Público" | "Privado" | "Empresas específicas";
+  targetCompanies?: string[];
+  modules: Module[];
 
   // Relaciones
   creator?: User;
@@ -226,6 +255,13 @@ export interface CourseCreateData {
   courseContent?: unknown;
   isPublic?: boolean;
   companyId?: string;
+  // Nuevos campos
+  level?: "Básico" | "Intermedio" | "Avanzado";
+  status?: "Borrador" | "Publicado" | "Archivado";
+  estimatedDuration?: string;
+  visibility?: "Público" | "Privado" | "Empresas específicas";
+  targetCompanies?: string[];
+  modules?: Module[];
 }
 
 // ===== INSCRIPCIONES A CURSOS =====

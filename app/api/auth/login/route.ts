@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/config/db";
-import { usersTable } from "@/config/schema";
+import { usersTable, userCompaniesTable } from "@/config/schema";
 import { comparePassword, generateTokenPair, validateEmail } from "@/lib/auth";
 import { validateAndSanitizeEmail } from "@/lib/utils";
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";
 
 export async function POST(request: NextRequest) {
@@ -33,18 +34,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ===== BUSCAR USUARIO =====
-    const user = await db.query.usersTable.findFirst({
-      where: (users, { eq }) => eq(users.email, sanitizedEmail),
-    });
+    // ===== BUSCAR USUARIO CON SQL DIRECTO =====
+    const userResult = await db.execute(
+      sql`SELECT * FROM users WHERE email = ${sanitizedEmail}`
+    );
 
-    if (!user) {
-      // Usar el mismo mensaje para no revelar si el email existe
+    if (userResult.rows.length === 0) {
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
+
+    const user = userResult.rows[0];
 
     // ===== VERIFICAR SI EL USUARIO ESTÁ ACTIVO =====
     if (!user.isActive) {
@@ -62,7 +64,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isPasswordValid = await comparePassword(password, user.passwordHash);
+    const isPasswordValid = await comparePassword(
+      password,
+      String(user.passwordHash)
+    );
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Credenciales inválidas" },
@@ -70,19 +75,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ===== OBTENER RELACIONES USUARIO-EMPRESA =====
-    const userCompanies = await db.query.userCompaniesTable.findMany({
-      where: (userCompanies, { eq }) => eq(userCompanies.userId, user.id),
-      with: {
-        company: true,
-        role: true,
-      },
-    });
+    // ===== OBTENER RELACIONES USUARIO-EMPRESA CON SQL DIRECTO =====
+    const userCompaniesResult = await db.execute(
+      sql`
+        SELECT 
+          uc.id,
+          uc.user_id,
+          uc.company_id,
+          uc.role_id,
+          uc."isActive",
+          uc."joinedAt",
+          uc.invited_by,
+          uc."acceptedAt",
+          c.id as company_id,
+          c.name as company_name,
+          c.rut as company_rut,
+          c.description as company_description,
+          c.logo as company_logo,
+          c.website as company_website,
+          c.industry as company_industry,
+          c.size as company_size,
+          c."isActive" as company_is_active,
+          c."subscriptionPlan" as company_subscription_plan,
+          c."subscriptionExpiresAt" as company_subscription_expires_at,
+          c."createdAt" as company_created_at,
+          c."updatedAt" as company_updated_at,
+          r.id as role_id,
+          r.name as role_name,
+          r.description as role_description,
+          r.permissions as role_permissions,
+          r."isSystemRole" as role_is_system_role,
+          r."createdAt" as role_created_at,
+          r."updatedAt" as role_updated_at
+        FROM user_companies uc
+        LEFT JOIN companies c ON uc.company_id = c.id
+        LEFT JOIN roles r ON uc.role_id = r.id
+        WHERE uc.user_id = ${user.id} AND uc."isActive" = true
+      `
+    );
 
-    // ===== FILTRAR SOLO RELACIONES ACTIVAS =====
-    const activeUserCompanies = userCompanies.filter((uc) => uc.isActive);
+    const userCompanies = userCompaniesResult.rows;
 
-    if (activeUserCompanies.length === 0) {
+    if (userCompanies.length === 0) {
       return NextResponse.json(
         { error: "Usuario sin roles asignados" },
         { status: 401 }
@@ -93,14 +127,14 @@ export async function POST(request: NextRequest) {
     // Prioridad: admin > company > student
     const rolePriority = { admin: 3, company: 2, student: 1 };
 
-    let primaryUserCompany = activeUserCompanies[0];
+    let primaryUserCompany = userCompanies[0];
     let highestPriority =
-      rolePriority[primaryUserCompany.role.name as keyof typeof rolePriority] ||
+      rolePriority[primaryUserCompany.role_name as keyof typeof rolePriority] ||
       0;
 
-    for (const userCompany of activeUserCompanies) {
+    for (const userCompany of userCompanies) {
       const priority =
-        rolePriority[userCompany.role.name as keyof typeof rolePriority] || 0;
+        rolePriority[userCompany.role_name as keyof typeof rolePriority] || 0;
       if (priority > highestPriority) {
         highestPriority = priority;
         primaryUserCompany = userCompany;
@@ -108,20 +142,21 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== ACTUALIZAR ÚLTIMO LOGIN =====
-    await db
-      .update(usersTable)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(usersTable.id, user.id));
+    await db.execute(
+      sql`UPDATE users SET "lastLoginAt" = NOW() WHERE id = ${user.id}`
+    );
 
     // ===== GENERAR TOKENS =====
     const tokenPayload = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      companyId: primaryUserCompany.companyId || undefined,
-      roleId: primaryUserCompany.roleId,
-      permissions: primaryUserCompany.role
-        .permissions as unknown as Permission[],
+      userId: String(user.id),
+      email: String(user.email),
+      name: String(user.name),
+      companyId: primaryUserCompany.company_id
+        ? String(primaryUserCompany.company_id)
+        : undefined,
+      roleId: String(primaryUserCompany.role_id),
+      permissions:
+        primaryUserCompany.role_permissions as unknown as Permission[],
     };
 
     const tokens = generateTokenPair(tokenPayload);
@@ -134,35 +169,35 @@ export async function POST(request: NextRequest) {
         name: user.name,
         avatar: user.avatar,
       },
-      currentCompany: primaryUserCompany.company
+      currentCompany: primaryUserCompany.company_id
         ? {
-            id: primaryUserCompany.company.id,
-            name: primaryUserCompany.company.name,
-            rut: primaryUserCompany.company.rut,
+            id: primaryUserCompany.company_id,
+            name: primaryUserCompany.company_name,
+            rut: primaryUserCompany.company_rut,
           }
         : null,
       currentRole: {
-        id: primaryUserCompany.role.id,
-        name: primaryUserCompany.role.name,
-        permissions: primaryUserCompany.role.permissions,
+        id: primaryUserCompany.role_id,
+        name: primaryUserCompany.role_name,
+        permissions: primaryUserCompany.role_permissions,
       },
-      permissions: primaryUserCompany.role.permissions as Permission[],
-      userCompanies: activeUserCompanies.map((uc) => ({
+      permissions: primaryUserCompany.role_permissions as Permission[],
+      userCompanies: userCompanies.map((uc) => ({
         id: uc.id,
-        company: uc.company
+        company: uc.company_id
           ? {
-              id: uc.company.id,
-              name: uc.company.name,
-              rut: uc.company.rut,
+              id: uc.company_id,
+              name: uc.company_name,
+              rut: uc.company_rut,
             }
           : null,
         role: {
-          id: uc.role.id,
-          name: uc.role.name,
-          permissions: uc.role.permissions,
+          id: uc.role_id,
+          name: uc.role_name,
+          permissions: uc.role_permissions,
         },
         isActive: uc.isActive,
-        joinedAt: uc.joinedAt,
+        joinedAt: uc.joined_at,
       })),
     };
 

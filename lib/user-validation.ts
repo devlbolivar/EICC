@@ -1,14 +1,19 @@
 import db from "@/config/db";
 import { usersTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 export async function validateUserActive(userId: string): Promise<boolean> {
   try {
-    const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, userId),
-    });
+    const result = await db.execute(
+      sql`SELECT "isActive" FROM users WHERE id = ${userId}`
+    );
 
-    return user?.isActive ?? false;
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    return Boolean(result.rows[0].isActive);
   } catch (error) {
     console.error("Error validando usuario activo:", error);
     return false;
@@ -17,11 +22,11 @@ export async function validateUserActive(userId: string): Promise<boolean> {
 
 export async function validateUserExists(userId: string): Promise<boolean> {
   try {
-    const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, userId),
-    });
+    const result = await db.execute(
+      sql`SELECT id FROM users WHERE id = ${userId}`
+    );
 
-    return !!user;
+    return result.rows.length > 0;
   } catch (error) {
     console.error("Error validando existencia de usuario:", error);
     return false;
@@ -32,11 +37,15 @@ export async function validateUserEmailVerified(
   userId: string
 ): Promise<boolean> {
   try {
-    const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, userId),
-    });
+    const result = await db.execute(
+      sql`SELECT "emailVerified" FROM users WHERE id = ${userId}`
+    );
 
-    return user?.emailVerified ?? false;
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    return Boolean(result.rows[0].emailVerified);
   } catch (error) {
     console.error("Error validando email verificado:", error);
     return false;
@@ -61,11 +70,11 @@ export async function getUserValidationStatus(userId: string): Promise<{
   hasValidPermissions: boolean;
 }> {
   try {
-    const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, userId),
-    });
+    const result = await db.execute(
+      sql`SELECT "isActive", "emailVerified" FROM users WHERE id = ${userId}`
+    );
 
-    if (!user) {
+    if (result.rows.length === 0) {
       return {
         exists: false,
         isActive: false,
@@ -74,10 +83,12 @@ export async function getUserValidationStatus(userId: string): Promise<{
       };
     }
 
+    const user = result.rows[0];
+
     return {
       exists: true,
-      isActive: user.isActive,
-      emailVerified: user.emailVerified,
+      isActive: Boolean(user.isActive),
+      emailVerified: Boolean(user.emailVerified),
       hasValidPermissions: true, // Se valida en el token
     };
   } catch (error) {

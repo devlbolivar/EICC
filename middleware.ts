@@ -152,12 +152,12 @@ export async function middleware(request: NextRequest) {
   const clientIP = getClientIP(request);
 
   // ===== RATE LIMITING =====
-  if (!checkRateLimit(clientIP)) {
+  /* if (!checkRateLimit(clientIP)) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       { status: 429 }
     );
-  }
+  } */
 
   // ===== MANEJAR RUTAS PÚBLICAS =====
   if (isPublicRoute(pathname)) {
