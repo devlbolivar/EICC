@@ -19,21 +19,7 @@ if (!JWT_SECRET || JWT_SECRET === "your-secret-key-change-in-production") {
 }
 
 // ===== TIPOS =====
-export interface JWTPayload {
-  userId: string;
-  email: string;
-  name: string;
-  organizationId?: string;
-  companyId?: string; // <-- Añadido para compatibilidad
-  roleId?: string;
-  permissions: Permission[];
-  type: "access" | "refresh";
-}
-
-export interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-}
+import { JWTPayload, TokenPair } from "@/app/types";
 
 // ===== HASH DE CONTRASEÑAS =====
 export async function hashPassword(password: string): Promise<string> {

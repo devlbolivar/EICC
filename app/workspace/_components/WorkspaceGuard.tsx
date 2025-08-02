@@ -6,9 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { getMostRestrictiveRole, validateRouteAccess } from "@/lib/permissions";
 import { Permission } from "@/app/types";
 
-interface WorkspaceGuardProps {
-  children: React.ReactNode;
-}
+import { WorkspaceGuardProps } from "@/app/types";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
   const { session, loading } = useAuth();
@@ -18,9 +17,9 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
 
   // Rutas específicas del workspace que requieren autenticación
   const protectedWorkspaceRoutes = [
-    "/workspace/admin",
-    "/workspace/company",
-    "/workspace/student",
+    PAGE_ROUTES.WORKSPACE.ADMIN,
+    PAGE_ROUTES.WORKSPACE.COMPANY,
+    PAGE_ROUTES.WORKSPACE.STUDENT,
   ];
 
   // Verificar si la ruta actual requiere protección
@@ -32,11 +31,11 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
   const getRedirectRouteByRole = (roleName: string): string => {
     switch (roleName) {
       case "admin":
-        return "/workspace/admin";
+        return PAGE_ROUTES.WORKSPACE.ADMIN;
       case "company":
-        return "/workspace/company";
+        return PAGE_ROUTES.WORKSPACE.COMPANY;
       case "student":
-        return "/workspace/student";
+        return PAGE_ROUTES.WORKSPACE.STUDENT;
       default:
         return "/";
     }

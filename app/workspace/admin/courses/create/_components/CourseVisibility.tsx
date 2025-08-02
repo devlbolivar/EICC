@@ -2,24 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CourseFormData } from "./CourseWizard";
-import { Checkbox } from "@/components/ui/checkbox";
+import { CourseVisibilityProps, CompanyOption } from "@/app/types";
 
-interface CourseVisibilityProps {
-  formData: CourseFormData;
-  updateFormData: (updates: Partial<CourseFormData>) => void;
-  onNext: () => void;
-  onPrev: () => void;
-}
+import { toast } from "sonner";
 
 export function CourseVisibility({
   formData,
@@ -27,12 +13,12 @@ export function CourseVisibility({
   onNext,
   onPrev,
 }: CourseVisibilityProps) {
-  const [availableCompanies] = useState([
-    { id: "1", name: "TechCorp Solutions" },
-    { id: "2", name: "Digital Innovations" },
-    { id: "3", name: "StartupXYZ" },
-    { id: "4", name: "Global Enterprises" },
-    { id: "5", name: "Innovation Labs" },
+  const [availableCompanies] = useState<CompanyOption[]>([
+    { id: "1", name: "TechCorp Solutions", rut: "12345678-9" },
+    { id: "2", name: "Digital Innovations", rut: "23456789-0" },
+    { id: "3", name: "StartupXYZ", rut: "34567890-1" },
+    { id: "4", name: "Global Enterprises", rut: "45678901-2" },
+    { id: "5", name: "Innovation Labs", rut: "56789012-3" },
   ]);
 
   const handleVisibilityChange = (
@@ -58,7 +44,7 @@ export function CourseVisibility({
       formData.visibility === "Empresas específicas" &&
       formData.targetCompanies.length === 0
     ) {
-      alert(
+      toast.error(
         "Debes seleccionar al menos una empresa cuando la visibilidad es 'Empresas específicas'"
       );
       return false;
@@ -68,6 +54,7 @@ export function CourseVisibility({
 
   const handleNext = () => {
     if (validateVisibility()) {
+      toast.success("Configuración de visibilidad guardada");
       onNext();
     }
   };

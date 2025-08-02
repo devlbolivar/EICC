@@ -15,6 +15,7 @@ import {
   Permission,
 } from "@/app/types";
 import { toast } from "sonner";
+import { API_ROUTES, ERROR_MESSAGES } from "@/lib/constants";
 
 // ===== CONTEXTO =====
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,18 +30,13 @@ export function useAuth() {
 }
 
 // ===== PROVIDER =====
-interface AuthProviderProps {
-  children: ReactNode;
-}
+import { AuthProviderProps } from "@/app/types";
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Usar el hook de validación
-  // const { shouldValidate } = useAuthValidation(); // Eliminado
 
   // ===== INICIALIZACIÓN =====
   useEffect(() => {
@@ -90,7 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const validateAndSetSession = async () => {
     try {
-      const response = await fetch("/api/auth/validate", {
+      const response = await fetch(API_ROUTES.AUTH.VALIDATE, {
         method: "GET",
       });
 
@@ -115,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshToken = async () => {
     try {
       // El refresh token está en cookies, no necesitamos enviarlo en el body
-      const response = await fetch("/api/auth/refresh", {
+      const response = await fetch(API_ROUTES.AUTH.REFRESH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -144,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(API_ROUTES.AUTH.LOGIN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +174,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (data: UserRegistrationData) => {
     try {
       setLoading(true);
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(API_ROUTES.AUTH.REGISTER, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,7 +203,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       // Llamar al endpoint de logout para invalidar el refresh token
-      await fetch("/api/auth/logout", {
+      await fetch(API_ROUTES.AUTH.LOGOUT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -229,7 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error("No hay token de acceso");
       }
 
-      const response = await fetch("/api/auth/switch-company", {
+      const response = await fetch(API_ROUTES.AUTH.SWITCH_COMPANY, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

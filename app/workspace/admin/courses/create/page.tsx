@@ -1,7 +1,6 @@
 "use client";
 
 import { CourseAdminGuard } from "../_components/CourseAdminGuard";
-import { useState } from "react";
 import { CourseWizard } from "./_components/CourseWizard";
 
 export default function CreateCoursePage() {

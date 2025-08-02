@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import { UserDetailContext } from "./context/UserDetailContext";
 import { SelectedChapterIndexContext } from "./context/SelectedChapterIndexContext";
+
 const Provider = ({ children }: { children: React.ReactNode }) => {
   const [userDetail, setUserDetail] = useState<{
     id: number;
@@ -11,18 +11,6 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
   } | null>(null);
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
 
-  useEffect(() => {
-    // Eliminar useUser y lógica asociada
-  }, []);
-
-  const CreateNewUser = async () => {
-    const result = await axios.post("/api/user", {
-      name: userDetail?.name, // Assuming userDetail is now managed by context
-      email: userDetail?.email, // Assuming userDetail is now managed by context
-    });
-
-    setUserDetail(result.data.data);
-  };
   return (
     <UserDetailContext.Provider
       value={{ user: userDetail, setUser: setUserDetail }}
@@ -30,7 +18,7 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
       <SelectedChapterIndexContext.Provider
         value={{ selectedChapterIndex, setSelectedChapterIndex }}
       >
-        <div>{children}</div>
+        {children}
       </SelectedChapterIndexContext.Provider>
     </UserDetailContext.Provider>
   );

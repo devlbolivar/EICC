@@ -5,6 +5,23 @@ export interface BaseEntity {
   updatedAt: Date;
 }
 
+// ===== AUTENTICACIÓN Y TOKENS =====
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  name: string;
+  organizationId?: string;
+  companyId?: string;
+  roleId?: string;
+  permissions: Permission[];
+  type: "access" | "refresh";
+}
+
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
 // ===== USUARIOS Y AUTENTICACIÓN =====
 export interface User extends BaseEntity {
   email: string;
@@ -364,4 +381,80 @@ export interface AppConfig {
 export interface EnrolledCourses {
   courses: Course;
   enrollCourse: EnrollCourse;
+}
+
+// ===== INTERFACES DE COMPONENTES =====
+export interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export interface AuthGuardProps {
+  children: React.ReactNode;
+}
+
+export interface WorkspaceGuardProps {
+  children: React.ReactNode;
+}
+
+export interface CourseAdminGuardProps {
+  children: React.ReactNode;
+}
+
+export interface UserDetailContextType {
+  user: { id: number; name: string; email: string } | null;
+  setUser: (user: { id: number; name: string; email: string } | null) => void;
+}
+
+export interface SelectedChapterIndexContextType {
+  selectedChapterIndex: number;
+  setSelectedChapterIndex: (index: number) => void;
+}
+
+// ===== INTERFACES DE FORMULARIOS DE CURSOS =====
+export interface CourseFormData {
+  name: string;
+  description: string;
+  category: string;
+  level: Course["level"];
+  status: Course["status"];
+  estimatedDuration: string;
+  bannerImage?: string;
+  visibility: Course["visibility"];
+  targetCompanies: string[];
+  modules: Module[];
+}
+
+export interface CourseBasicInfoProps {
+  formData: CourseFormData;
+  updateFormData: (updates: Partial<CourseFormData>) => void;
+  onNext: () => void;
+}
+
+export interface CourseModulesProps {
+  formData: CourseFormData;
+  updateFormData: (updates: Partial<CourseFormData>) => void;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
+export interface CourseVisibilityProps {
+  formData: CourseFormData;
+  updateFormData: (updates: Partial<CourseFormData>) => void;
+  onNext: () => void;
+  onPrev: () => void;
+}
+
+export interface CourseReviewProps {
+  formData: CourseFormData;
+  updateFormData: (updates: Partial<CourseFormData>) => void;
+  onPrev: () => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+}
+
+// ===== INTERFACES PARA COMPAÑÍAS EN FORMULARIOS =====
+export interface CompanyOption {
+  id: string;
+  name: string;
+  rut: string;
 }

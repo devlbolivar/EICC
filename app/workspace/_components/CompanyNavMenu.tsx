@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 const CompanyNavMenu = () => {
   const pathname = usePathname();
@@ -46,7 +47,7 @@ const CompanyNavMenu = () => {
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      path: "/workspace/company/dashboard",
+      path: PAGE_ROUTES.COMPANY.DASHBOARD,
     },
     {
       title: "Mi Empresa",
@@ -55,44 +56,44 @@ const CompanyNavMenu = () => {
         {
           title: "Perfil de la empresa",
           icon: Building2,
-          path: "/workspace/company/profile",
+          path: PAGE_ROUTES.COMPANY.PROFILE,
         },
         {
           title: "Empleados",
           icon: Users,
-          path: "/workspace/company/employees",
+          path: PAGE_ROUTES.COMPANY.EMPLOYEES,
         },
         {
           title: "Invitar empleados",
           icon: UserPlus,
-          path: "/workspace/company/employees/invite",
+          path: PAGE_ROUTES.COMPANY.EMPLOYEES_INVITE,
         },
       ],
     },
     {
       title: "Cursos Disponibles",
       icon: BookOpen,
-      path: "/workspace/company/courses",
+      path: PAGE_ROUTES.COMPANY.COURSES,
     },
     {
       title: "Progreso de Empleados",
       icon: TrendingUp,
-      path: "/workspace/company/progress",
+      path: PAGE_ROUTES.COMPANY.PROGRESS,
     },
     {
       title: "Certificados",
       icon: Award,
-      path: "/workspace/company/certificates",
+      path: PAGE_ROUTES.COMPANY.CERTIFICATES,
     },
     {
       title: "Facturación / Pagos",
       icon: CreditCard,
-      path: "/workspace/company/billing",
+      path: PAGE_ROUTES.COMPANY.BILLING,
     },
     {
       title: "Soporte",
       icon: HelpCircle,
-      path: "/workspace/company/support",
+      path: PAGE_ROUTES.COMPANY.SUPPORT,
     },
   ];
 

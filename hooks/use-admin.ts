@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useMemo } from "react";
+import { Permission } from "@/app/types";
 
 export const useAdmin = () => {
   const { session } = useAuth();
@@ -21,21 +22,22 @@ export const useAdmin = () => {
 
     // Check if user has admin permissions
     if (session.permissions && session.permissions.length > 0) {
+      const adminPermissions: Permission[] = [
+        "platform:admin",
+        "courses:create",
+        "courses:edit",
+        "courses:delete",
+      ];
+
       const hasAdminPermissions = session.permissions.some(
-        (permission) =>
-          permission === "platform:admin" ||
-          permission === "platform:write" ||
-          permission === "platform:read"
+        (permission: Permission) => adminPermissions.includes(permission)
       );
 
       console.log("useAdmin: Permission analysis:", {
         permissions: session.permissions,
         hasAdminPermissions,
-        adminPermissions: session.permissions.filter(
-          (permission) =>
-            permission === "platform:admin" ||
-            permission === "platform:write" ||
-            permission === "platform:read"
+        adminPermissions: session.permissions.filter((permission: Permission) =>
+          adminPermissions.includes(permission)
         ),
       });
 

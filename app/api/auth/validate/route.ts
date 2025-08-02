@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import db from "@/config/db";
-import { usersTable, userCompaniesTable } from "@/config/schema";
-import { eq, and } from "drizzle-orm";
+import { usersTable } from "@/config/schema";
+import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { Permission } from "@/app/types";
 
@@ -38,16 +39,80 @@ export async function GET() {
     }
 
     // ===== OBTENER COMPAÑÍAS Y ROLES =====
-    const userCompanies = await db.query.userCompaniesTable.findMany({
-      where: and(
-        eq(userCompaniesTable.userId, user.id),
-        eq(userCompaniesTable.isActive, true)
-      ),
-      with: {
-        company: true,
-        role: true,
+    const userCompaniesResult = await db.execute(
+      sql`
+        SELECT 
+          uc.id,
+          uc."userId",
+          uc."companyId",
+          uc."roleId",
+          uc."isActive",
+          uc."joinedAt",
+          uc."invitedBy",
+          uc."acceptedAt",
+          c.id as company_id,
+          c.name as company_name,
+          c.rut as company_rut,
+          c.description as company_description,
+          c.logo as company_logo,
+          c.website as company_website,
+          c.industry as company_industry,
+          c.size as company_size,
+          c."isActive" as company_is_active,
+          c."subscriptionPlan" as company_subscription_plan,
+          c."subscriptionExpiresAt" as company_subscription_expires_at,
+          c."createdAt" as company_created_at,
+          c."updatedAt" as company_updated_at,
+          r.id as role_id,
+          r.name as role_name,
+          r.description as role_description,
+          r.permissions as role_permissions,
+          r."isSystemRole" as role_is_system_role,
+          r."createdAt" as role_created_at,
+          r."updatedAt" as role_updated_at
+        FROM user_companies uc
+        LEFT JOIN companies c ON uc."companyId" = c.id
+        LEFT JOIN roles r ON uc."roleId" = r.id
+        WHERE uc."userId" = ${user.id} AND uc."isActive" = true
+      `
+    );
+
+    const userCompanies = userCompaniesResult.rows.map((row) => ({
+      id: row.id,
+      userId: row.userId,
+      companyId: row.companyId,
+      roleId: row.roleId,
+      isActive: row.isActive,
+      joinedAt: row.joinedAt,
+      invitedBy: row.invitedBy,
+      acceptedAt: row.acceptedAt,
+      company: row.company_id
+        ? {
+            id: row.company_id,
+            name: row.company_name,
+            rut: row.company_rut,
+            description: row.company_description,
+            logo: row.company_logo,
+            website: row.company_website,
+            industry: row.company_industry,
+            size: row.company_size,
+            isActive: row.company_is_active,
+            subscriptionPlan: row.company_subscription_plan,
+            subscriptionExpiresAt: row.company_subscription_expires_at,
+            createdAt: row.company_created_at,
+            updatedAt: row.company_updated_at,
+          }
+        : null,
+      role: {
+        id: row.role_id,
+        name: row.role_name,
+        description: row.role_description,
+        permissions: row.role_permissions,
+        isSystemRole: row.role_is_system_role,
+        createdAt: row.role_created_at,
+        updatedAt: row.role_updated_at,
       },
-    });
+    }));
 
     // ===== DETERMINAR COMPAÑÍA Y ROL ACTUAL =====
     let currentCompany = null;

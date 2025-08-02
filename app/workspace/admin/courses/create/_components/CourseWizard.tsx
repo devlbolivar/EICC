@@ -5,20 +5,9 @@ import { CourseBasicInfo } from "./CourseBasicInfo";
 import { CourseModules } from "./CourseModules";
 import { CourseVisibility } from "./CourseVisibility";
 import { CourseReview } from "./CourseReview";
-import { Module, Lesson } from "@/app/types";
-
-export interface CourseFormData {
-  name: string;
-  description: string;
-  category: string;
-  level: "Básico" | "Intermedio" | "Avanzado";
-  status: "Borrador" | "Publicado" | "Archivado";
-  estimatedDuration: string;
-  bannerImage?: string;
-  visibility: "Público" | "Privado" | "Empresas específicas";
-  targetCompanies: string[];
-  modules: Module[];
-}
+import { CourseFormData } from "@/app/types";
+import { toast } from "sonner";
+import { API_ROUTES, PAGE_ROUTES, SUCCESS_MESSAGES } from "@/lib/constants";
 
 const initialFormData: CourseFormData = {
   name: "",
@@ -59,6 +48,22 @@ export function CourseWizard() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Validaciones adicionales
+      if (!formData.name.trim()) {
+        toast.error("El nombre del curso es requerido");
+        return;
+      }
+
+      if (!formData.description.trim()) {
+        toast.error("La descripción del curso es requerida");
+        return;
+      }
+
+      if (!formData.category) {
+        toast.error("La categoría del curso es requerida");
+        return;
+      }
+
       // Validar que el curso tenga al menos un módulo con una lección
       const hasValidModules = formData.modules.some((module) =>
         module.lessons.some(
@@ -67,14 +72,27 @@ export function CourseWizard() {
       );
 
       if (!hasValidModules) {
-        alert("El curso debe tener al menos un módulo con una lección válida");
+        toast.error(
+          "El curso debe tener al menos un módulo con una lección válida"
+        );
+        return;
+      }
+
+      // Validar visibilidad
+      if (
+        formData.visibility === "Empresas específicas" &&
+        (!formData.targetCompanies || formData.targetCompanies.length === 0)
+      ) {
+        toast.error(
+          "Debes seleccionar al menos una empresa cuando la visibilidad es 'Empresas específicas'"
+        );
         return;
       }
 
       // Preparar datos para enviar a la API
       const courseData = {
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description.trim(),
         category: formData.category,
         level: formData.level,
         status: formData.status,
@@ -85,8 +103,11 @@ export function CourseWizard() {
         modules: formData.modules,
       };
 
+      // Mostrar toast de carga
+      const loadingToast = toast.loading("Guardando curso...");
+
       // Llamar a la API para guardar el curso
-      const response = await fetch("/api/courses", {
+      const response = await fetch(API_ROUTES.COURSES, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,15 +117,22 @@ export function CourseWizard() {
 
       const result = await response.json();
 
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
       if (!response.ok) {
         throw new Error(result.error || "Error al guardar el curso");
       }
 
-      alert(result.message || "Curso guardado exitosamente");
-      window.location.href = "/workspace/admin/courses";
+      toast.success(result.message || SUCCESS_MESSAGES.COURSE_CREATED);
+
+      // Redirigir después de un breve delay para que se vea el toast
+      setTimeout(() => {
+        window.location.href = PAGE_ROUTES.ADMIN.COURSES;
+      }, 1500);
     } catch (error) {
       console.error("Error al guardar el curso:", error);
-      alert(
+      toast.error(
         error instanceof Error ? error.message : "Error al guardar el curso"
       );
     } finally {

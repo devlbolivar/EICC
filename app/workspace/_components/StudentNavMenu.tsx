@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 const StudentNavMenu = () => {
   const pathname = usePathname();
@@ -44,7 +45,7 @@ const StudentNavMenu = () => {
     {
       title: "Inicio",
       icon: LayoutDashboard,
-      path: "/workspace/student/dashboard",
+      path: PAGE_ROUTES.STUDENT.DASHBOARD,
     },
     {
       title: "Mis Cursos",
@@ -53,34 +54,34 @@ const StudentNavMenu = () => {
         {
           title: "Cursos Inscritos",
           icon: BookOpen,
-          path: "/workspace/student/courses",
+          path: PAGE_ROUTES.STUDENT.COURSES,
         },
         {
           title: "Continuar Aprendiendo",
           icon: PlayCircle,
-          path: "/workspace/student/courses/continue",
+          path: PAGE_ROUTES.STUDENT.COURSES_CONTINUE,
         },
       ],
     },
     {
       title: "Catálogo de Cursos",
       icon: Search,
-      path: "/workspace/student/catalog",
+      path: PAGE_ROUTES.STUDENT.CATALOG,
     },
     {
       title: "Certificados",
       icon: Award,
-      path: "/workspace/student/certificates",
+      path: PAGE_ROUTES.STUDENT.CERTIFICATES,
     },
     {
       title: "Perfil",
       icon: User,
-      path: "/workspace/student/profile",
+      path: PAGE_ROUTES.STUDENT.PROFILE,
     },
     {
       title: "Soporte",
       icon: HelpCircle,
-      path: "/workspace/student/support",
+      path: PAGE_ROUTES.STUDENT.SUPPORT,
     },
   ];
 

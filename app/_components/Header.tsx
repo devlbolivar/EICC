@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -75,9 +76,9 @@ const Header = () => {
     if (!session?.currentRole?.name) return "/sign-in";
 
     const roleRoutes = {
-      admin: "/workspace/admin",
-      company: "/workspace/company",
-      student: "/workspace/student",
+      admin: PAGE_ROUTES.WORKSPACE.ADMIN,
+      company: PAGE_ROUTES.WORKSPACE.COMPANY,
+      student: PAGE_ROUTES.WORKSPACE.STUDENT,
     };
 
     return (

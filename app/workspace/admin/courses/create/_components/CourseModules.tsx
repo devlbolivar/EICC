@@ -5,15 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CourseFormData, Module, Lesson } from "@/app/types";
+import { CourseModulesProps, Module, Lesson } from "@/app/types";
 import { Plus, Trash2, Edit, ChevronDown, ChevronRight } from "lucide-react";
-
-interface CourseModulesProps {
-  formData: CourseFormData;
-  updateFormData: (updates: Partial<CourseFormData>) => void;
-  onNext: () => void;
-  onPrev: () => void;
-}
+import { toast } from "sonner";
 
 export function CourseModules({
   formData,
@@ -55,6 +49,7 @@ export function CourseModules({
 
     setEditingModule(newModule.id);
     setExpandedModules(new Set([...expandedModules, newModule.id]));
+    toast.success("Módulo agregado");
   };
 
   const updateModule = (moduleId: string, updates: Partial<Module>) => {
@@ -72,6 +67,7 @@ export function CourseModules({
     setExpandedModules(
       new Set([...expandedModules].filter((id) => id !== moduleId))
     );
+    toast.success("Módulo eliminado");
   };
 
   const addLesson = (moduleId: string) => {
@@ -97,6 +93,7 @@ export function CourseModules({
 
     updateFormData({ modules: updatedModules });
     setEditingLesson({ moduleId, lessonId: newLesson.id });
+    toast.success("Lección agregada");
   };
 
   const updateLesson = (
@@ -127,19 +124,20 @@ export function CourseModules({
       return module;
     });
     updateFormData({ modules: updatedModules });
+    toast.success("Lección eliminada");
   };
 
   const validateModules = () => {
     // Verificar que haya al menos un módulo
     if (formData.modules.length === 0) {
-      alert("Debes agregar al menos un módulo");
+      toast.error("Debes agregar al menos un módulo");
       return false;
     }
 
     // Verificar que cada módulo tenga un título
-    for (const module of formData.modules) {
-      if (!module.title.trim()) {
-        alert("Todos los módulos deben tener un título");
+    for (const courseModule of formData.modules) {
+      if (!courseModule.title.trim()) {
+        toast.error("Todos los módulos deben tener un título");
         return false;
       }
     }
@@ -152,7 +150,9 @@ export function CourseModules({
     );
 
     if (!hasValidModule) {
-      alert("Debes agregar al menos una lección con contenido (texto o video)");
+      toast.error(
+        "Debes agregar al menos una lección con contenido (texto o video)"
+      );
       return false;
     }
 
@@ -161,6 +161,7 @@ export function CourseModules({
 
   const handleNext = () => {
     if (validateModules()) {
+      toast.success("Módulos y lecciones guardados");
       onNext();
     }
   };

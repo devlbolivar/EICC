@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/config/db";
-import { usersTable, userCompaniesTable } from "@/config/schema";
 import { comparePassword, generateTokenPair, validateEmail } from "@/lib/auth";
 import { validateAndSanitizeEmail } from "@/lib/utils";
-import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";
 
@@ -80,12 +78,12 @@ export async function POST(request: NextRequest) {
       sql`
         SELECT 
           uc.id,
-          uc.user_id,
-          uc.company_id,
-          uc.role_id,
+          uc."userId",
+          uc."companyId",
+          uc."roleId",
           uc."isActive",
           uc."joinedAt",
-          uc.invited_by,
+          uc."invitedBy",
           uc."acceptedAt",
           c.id as company_id,
           c.name as company_name,
@@ -108,9 +106,9 @@ export async function POST(request: NextRequest) {
           r."createdAt" as role_created_at,
           r."updatedAt" as role_updated_at
         FROM user_companies uc
-        LEFT JOIN companies c ON uc.company_id = c.id
-        LEFT JOIN roles r ON uc.role_id = r.id
-        WHERE uc.user_id = ${user.id} AND uc."isActive" = true
+        LEFT JOIN companies c ON uc."companyId" = c.id
+        LEFT JOIN roles r ON uc."roleId" = r.id
+        WHERE uc."userId" = ${user.id} AND uc."isActive" = true
       `
     );
 

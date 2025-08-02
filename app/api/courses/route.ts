@@ -1,11 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/config/db";
 import { courses } from "@/config/schema";
-import { v4 as uuidv4 } from "uuid";
+import { verifyAccessTokenEdge } from "@/lib/auth";
+import { Module, Lesson, Permission } from "@/app/types";
+import { ERROR_MESSAGES } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {
     console.log("🚀 Iniciando creación de curso...");
+
+    // Verificar autenticación
+    const token =
+      request.headers.get("authorization")?.replace("Bearer ", "") ||
+      request.cookies.get("accessToken")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.UNAUTHORIZED },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyAccessTokenEdge(token);
+    if (!payload) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.UNAUTHORIZED },
+        { status: 401 }
+      );
+    }
+
+    // Verificar permisos de administrador
+    const requiredPermissions: Permission[] = [
+      "platform:admin",
+      "courses:create",
+    ];
+    const hasAdminPermission = payload.permissions.some(
+      (permission: Permission) => requiredPermissions.includes(permission)
+    );
+
+    if (!hasAdminPermission) {
+      return NextResponse.json(
+        { error: ERROR_MESSAGES.FORBIDDEN },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     console.log("📝 Datos recibidos:", body);
@@ -26,23 +64,22 @@ export async function POST(request: NextRequest) {
     // Validaciones básicas
     if (!name || !description || !category) {
       return NextResponse.json(
-        { error: "Nombre, descripción y categoría son requeridos" },
+        { error: ERROR_MESSAGES.VALIDATION_ERROR },
         { status: 400 }
       );
     }
 
     // Validar que haya al menos un módulo con una lección válida
-    const hasValidModules = modules?.some((module: any) =>
+    const hasValidModules = modules?.some((module: Module) =>
       module.lessons?.some(
-        (lesson: any) => lesson.title && (lesson.text || lesson.video)
+        (lesson: Lesson) => lesson.title && (lesson.text || lesson.video)
       )
     );
 
     if (!hasValidModules) {
       return NextResponse.json(
         {
-          error:
-            "El curso debe tener al menos un módulo con una lección válida",
+          error: ERROR_MESSAGES.VALIDATION_ERROR,
         },
         { status: 400 }
       );
@@ -70,16 +107,16 @@ export async function POST(request: NextRequest) {
         visibility: visibility || "Público",
         targetCompanies: targetCompanies || [],
         modules: modules || [],
-        createdBy: uuidv4(), // Generar UUID válido
-        companyId: uuidv4(), // Generar UUID válido
-        userEmail: "temp@example.com",
+        createdBy: payload.userId,
+        companyId: payload.companyId || null,
+        userEmail: payload.email,
         isPublic: visibility === "Público",
         isActive: true,
         // Campos legacy para compatibilidad
         numberOfChapters: modules?.length || 0,
         includeVideos:
-          modules?.some((module: any) =>
-            module.lessons?.some((lesson: any) => lesson.video)
+          modules?.some((module: Module) =>
+            module.lessons?.some((lesson: Lesson) => lesson.video)
           ) || false,
         difficulty: level || "Básico",
         courseJson: {},
@@ -104,15 +141,16 @@ export async function POST(request: NextRequest) {
     console.error("❌ Error al crear curso:", error);
     return NextResponse.json(
       {
-        error: "Error interno del servidor",
-        details: error instanceof Error ? error.message : "Error desconocido",
+        error: ERROR_MESSAGES.SERVER_ERROR,
+        details:
+          error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
       },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log("📋 Obteniendo cursos de la base de datos...");
 
@@ -126,8 +164,9 @@ export async function GET(request: NextRequest) {
     console.error("❌ Error al obtener cursos:", error);
     return NextResponse.json(
       {
-        error: "Error interno del servidor",
-        details: error instanceof Error ? error.message : "Error desconocido",
+        error: ERROR_MESSAGES.SERVER_ERROR,
+        details:
+          error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
       },
       { status: 500 }
     );

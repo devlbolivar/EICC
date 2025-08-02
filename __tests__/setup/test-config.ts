@@ -227,8 +227,17 @@ export const GLOBAL_MOCKS = {
   // Mock de Next.js Image
   "next/image": () => "img",
 
-  // Mock de Next.js Link
-  "next/link": ({ children, href }: any) => <a href={href}>{children}</a>,
+  // Mock de Next.js Link - usando función que retorna un objeto en lugar de JSX
+  "next/link": ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => ({
+    type: "a",
+    props: { href, children },
+  }),
 
   // Mock de Next.js router
   "next/navigation": {

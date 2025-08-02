@@ -12,13 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CourseFormData } from "./CourseWizard";
-
-interface CourseBasicInfoProps {
-  formData: CourseFormData;
-  updateFormData: (updates: Partial<CourseFormData>) => void;
-  onNext: () => void;
-}
+import { CourseBasicInfoProps } from "@/app/types";
+import { toast } from "sonner";
 
 export function CourseBasicInfo({
   formData,
@@ -52,11 +47,12 @@ export function CourseBasicInfo({
 
   const handleNext = () => {
     if (validateForm()) {
+      toast.success("Información básica guardada");
       onNext();
     }
   };
 
-  const categories = [
+  const categories: string[] = [
     "Programación",
     "Diseño",
     "Marketing",

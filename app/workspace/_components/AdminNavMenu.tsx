@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 const AdminNavMenu = () => {
   const pathname = usePathname();
@@ -48,7 +49,7 @@ const AdminNavMenu = () => {
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      path: "/workspace/admin/dashboard",
+      path: PAGE_ROUTES.ADMIN.DASHBOARD,
     },
     {
       title: "Usuarios",
@@ -57,12 +58,12 @@ const AdminNavMenu = () => {
         {
           title: "Lista de usuarios",
           icon: List,
-          path: "/workspace/admin/users",
+          path: PAGE_ROUTES.ADMIN.USERS,
         },
         {
           title: "Crear usuario",
           icon: Plus,
-          path: "/workspace/admin/users/create",
+          path: PAGE_ROUTES.ADMIN.USERS_CREATE,
         },
       ],
     },
@@ -73,12 +74,12 @@ const AdminNavMenu = () => {
         {
           title: "Lista de empresas",
           icon: List,
-          path: "/workspace/admin/companies",
+          path: PAGE_ROUTES.ADMIN.COMPANIES,
         },
         {
           title: "Crear empresa",
           icon: Plus,
-          path: "/workspace/admin/companies/create",
+          path: PAGE_ROUTES.ADMIN.COMPANIES_CREATE,
         },
       ],
     },
@@ -89,39 +90,39 @@ const AdminNavMenu = () => {
         {
           title: "Lista de cursos",
           icon: List,
-          path: "/workspace/admin/courses",
+          path: PAGE_ROUTES.ADMIN.COURSES,
         },
         {
           title: "Crear curso",
           icon: Plus,
-          path: "/workspace/admin/courses/create",
+          path: PAGE_ROUTES.ADMIN.COURSES_CREATE,
         },
       ],
     },
     {
       title: "Matrículas",
       icon: GraduationCap,
-      path: "/workspace/admin/enrollments",
+      path: PAGE_ROUTES.ADMIN.ENROLLMENTS,
     },
     {
       title: "Certificaciones",
       icon: Award,
-      path: "/workspace/admin/certificates",
+      path: PAGE_ROUTES.ADMIN.CERTIFICATES,
     },
     {
       title: "Reportes & Analytics",
       icon: BarChart3,
-      path: "/workspace/admin/reports",
+      path: PAGE_ROUTES.ADMIN.REPORTS,
     },
     {
       title: "Configuraciones",
       icon: Settings,
-      path: "/workspace/admin/settings",
+      path: PAGE_ROUTES.ADMIN.SETTINGS,
     },
     {
       title: "Soporte",
       icon: HelpCircle,
-      path: "/workspace/admin/support",
+      path: PAGE_ROUTES.ADMIN.SUPPORT,
     },
   ];
 

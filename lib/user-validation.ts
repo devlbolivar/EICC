@@ -1,6 +1,4 @@
 import db from "@/config/db";
-import { usersTable } from "@/config/schema";
-import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 export async function validateUserActive(userId: string): Promise<boolean> {

@@ -1,16 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CourseFormData } from "./CourseWizard";
+import { CourseReviewProps } from "@/app/types";
 import { CheckCircle, AlertCircle, Clock, Users, BookOpen } from "lucide-react";
-
-interface CourseReviewProps {
-  formData: CourseFormData;
-  updateFormData: (updates: Partial<CourseFormData>) => void;
-  onPrev: () => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
-}
 
 export function CourseReview({
   formData,

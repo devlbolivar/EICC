@@ -3,67 +3,49 @@ import { verifyAccessTokenEdge } from "@/lib/auth";
 import { SYSTEM_ROLES, Permission } from "@/app/types";
 import { validateRouteAccess, getMostRestrictiveRole } from "@/lib/permissions";
 import { validateUserActive, logUserAccess } from "@/lib/user-validation";
-
-// ===== RATE LIMITING SIMPLE =====
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutos
-  const maxRequests = 100; // máximo 100 requests por ventana
-
-  const record = rateLimitMap.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return true;
-  }
-
-  if (record.count >= maxRequests) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
+import {
+  API_ROUTES,
+  PAGE_ROUTES,
+  SYSTEM_ROLES as SYSTEM_ROLES_CONST,
+} from "@/lib/constants";
 
 // ===== RUTAS PÚBLICAS =====
 const publicRoutes = [
   "/",
-  "/sign-in",
-  "/sign-up",
+  PAGE_ROUTES.AUTH.SIGN_IN,
+  PAGE_ROUTES.AUTH.SIGN_UP,
   "/accept-invite",
   "/forgot-password",
   "/reset-password",
   "/verify-email",
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/accept-invite",
-  "/api/auth/forgot-password",
-  "/api/auth/reset-password",
-  "/api/auth/verify-email",
-  "/api/auth/refresh",
+  API_ROUTES.AUTH.LOGIN,
+  API_ROUTES.AUTH.REGISTER,
+  API_ROUTES.AUTH.ACCEPT_INVITE,
+  API_ROUTES.AUTH.FORGOT_PASSWORD,
+  API_ROUTES.AUTH.RESET_PASSWORD,
+  API_ROUTES.AUTH.VERIFY_EMAIL,
+  API_ROUTES.AUTH.REFRESH,
 ];
 
 // ===== RUTAS DE API PÚBLICAS =====
 const publicApiRoutes = [
-  "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/accept-invite",
-  "/api/auth/forgot-password",
-  "/api/auth/reset-password",
-  "/api/auth/verify-email",
-  "/api/auth/refresh",
+  API_ROUTES.AUTH.LOGIN,
+  API_ROUTES.AUTH.REGISTER,
+  API_ROUTES.AUTH.ACCEPT_INVITE,
+  API_ROUTES.AUTH.FORGOT_PASSWORD,
+  API_ROUTES.AUTH.RESET_PASSWORD,
+  API_ROUTES.AUTH.VERIFY_EMAIL,
+  API_ROUTES.AUTH.REFRESH,
 ];
 
 // ===== RUTAS QUE REQUIEREN AUTENTICACIÓN =====
 const protectedRoutes = [
-  "/workspace/admin",
-  "/workspace/company",
-  "/workspace/student",
-  "/api/user",
-  "/api/companies",
-  "/api/invitations",
+  PAGE_ROUTES.WORKSPACE.ADMIN,
+  PAGE_ROUTES.WORKSPACE.COMPANY,
+  PAGE_ROUTES.WORKSPACE.STUDENT,
+  API_ROUTES.USER,
+  API_ROUTES.COMPANIES,
+  API_ROUTES.INVITATIONS,
 ];
 
 // ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA REQUIERE AUTENTICACIÓN =====
@@ -83,9 +65,9 @@ function isProtectedRoute(pathname: string): boolean {
 
 // ===== RUTAS ESPECÍFICAS POR ROL =====
 const roleRoutes = {
-  [SYSTEM_ROLES.ADMIN]: ["/workspace/admin", "/api/admin"],
-  [SYSTEM_ROLES.COMPANY]: ["/workspace/company", "/api/company"],
-  [SYSTEM_ROLES.STUDENT]: ["/workspace/student"],
+  [SYSTEM_ROLES.ADMIN]: [PAGE_ROUTES.WORKSPACE.ADMIN, API_ROUTES.ADMIN],
+  [SYSTEM_ROLES.COMPANY]: [PAGE_ROUTES.WORKSPACE.COMPANY, API_ROUTES.COMPANY],
+  [SYSTEM_ROLES.STUDENT]: [PAGE_ROUTES.WORKSPACE.STUDENT],
 };
 
 // ===== FUNCIÓN PARA VERIFICAR SI UNA RUTA ES PÚBLICA =====
@@ -113,11 +95,11 @@ function isRoleSpecificRoute(pathname: string, roleName: string): boolean {
 function getRedirectRouteByRole(roleName: string): string {
   switch (roleName) {
     case SYSTEM_ROLES.ADMIN:
-      return "/workspace/admin";
+      return PAGE_ROUTES.WORKSPACE.ADMIN;
     case SYSTEM_ROLES.COMPANY:
-      return "/workspace/company";
+      return PAGE_ROUTES.WORKSPACE.COMPANY;
     case SYSTEM_ROLES.STUDENT:
-      return "/workspace/student";
+      return PAGE_ROUTES.WORKSPACE.STUDENT;
     default:
       return "/";
   }
@@ -150,14 +132,6 @@ function getClientIP(request: NextRequest): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const clientIP = getClientIP(request);
-
-  // ===== RATE LIMITING =====
-  /* if (!checkRateLimit(clientIP)) {
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
-  } */
 
   // ===== MANEJAR RUTAS PÚBLICAS =====
   if (isPublicRoute(pathname)) {

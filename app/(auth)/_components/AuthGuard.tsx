@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-interface AuthGuardProps {
-  children: React.ReactNode;
-}
+import { AuthGuardProps } from "@/app/types";
+import { PAGE_ROUTES } from "@/lib/constants";
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const { session, loading } = useAuth();
@@ -30,9 +29,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
       if (isAuthRoute) {
         const roleRedirects = {
-          admin: "/workspace/admin",
-          company: "/workspace/company",
-          student: "/workspace/student",
+          admin: PAGE_ROUTES.WORKSPACE.ADMIN,
+          company: PAGE_ROUTES.WORKSPACE.COMPANY,
+          student: PAGE_ROUTES.WORKSPACE.STUDENT,
         };
 
         const currentRole = session.currentRole?.name;

@@ -1,9 +1,6 @@
 import { createContext, useContext } from "react";
 
-interface SelectedChapterIndexContextType {
-  selectedChapterIndex: number;
-  setSelectedChapterIndex: (index: number) => void;
-}
+import { SelectedChapterIndexContextType } from "@/app/types";
 
 export const SelectedChapterIndexContext =
   createContext<SelectedChapterIndexContextType>({
