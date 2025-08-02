@@ -148,13 +148,13 @@ export const enrollCourseTable = pgTable(
   "enrollCourse",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    courseId: uuid("courseId")
+    courseId: uuid("course_id")
       .notNull()
       .references(() => coursesTable.id, { onDelete: "cascade" }),
-    userId: uuid("userId")
+    userId: uuid("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
-    companyId: uuid("companyId").references(() => companiesTable.id), // para tracking
+    companyId: uuid("company_id").references(() => companiesTable.id), // para tracking
     completedChapters: json().default({}),
     progress: integer().notNull().default(0), // porcentaje de progreso
     isCompleted: boolean().notNull().default(false),

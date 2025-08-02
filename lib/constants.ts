@@ -106,6 +106,97 @@ export const SUCCESS_MESSAGES = {
   REGISTER_SUCCESS: "Registro exitoso",
 } as const;
 
+// ===== TEXTO DE LA INTERFAZ DE USUARIO =====
+export const UI_TEXT = {
+  // Admin Dashboard
+  ADMIN: {
+    TITLE: "Panel de Administración",
+    WELCOME: "Bienvenido",
+    DEFAULT_ADMIN: "Administrador",
+    STATISTICS: {
+      ACTIVE_USERS: "Usuarios Activos",
+      ACTIVE_COMPANIES: "Empresas Activas",
+      PUBLISHED_COURSES: "Cursos Publicados",
+      TOTAL_ENROLLMENTS: "Inscripciones Totales",
+      COMPLETED_COURSES: "Cursos Completados",
+      ACTIVE_USERS_DESCRIPTION: "Usuarios registrados en la plataforma",
+      ACTIVE_COMPANIES_DESCRIPTION: "Empresas registradas en la plataforma",
+      PUBLISHED_COURSES_DESCRIPTION: "Cursos disponibles para estudiantes",
+      TOTAL_ENROLLMENTS_DESCRIPTION: "Total de inscripciones a cursos",
+      COMPLETED_COURSES_DESCRIPTION: "Cursos finalizados por estudiantes",
+    },
+    SECTIONS: {
+      POPULAR_COURSES: "Cursos Más Populares",
+      POPULAR_COURSES_DESCRIPTION:
+        "Cursos con más inscripciones en la plataforma",
+      TOP_COMPANIES: "Empresas con Más Usuarios",
+      TOP_COMPANIES_DESCRIPTION:
+        "Empresas con mayor número de empleados registrados",
+      USER_PERMISSIONS: "Permisos del Usuario",
+      USER_PERMISSIONS_DESCRIPTION: "Permisos asignados a tu cuenta",
+    },
+    LABELS: {
+      ENROLLMENTS: "inscripciones",
+      USERS: "usuarios",
+    },
+  },
+  // Student Dashboard
+  STUDENT: {
+    WELCOME: "Bienvenido",
+    DEFAULT_STUDENT: "Estudiante",
+    WELCOME_MESSAGE:
+      "Bienvenido a tu panel de aprendizaje. Aquí puedes ver tu progreso y",
+    COMPLETED_COURSES: "Cursos completados",
+  },
+  // Company Dashboard
+  COMPANY: {
+    WELCOME: "Bienvenido",
+    DEFAULT_COMPANY_ADMIN: "Administrador de Empresa",
+    TOTAL_ENROLLMENTS: "Inscripciones totales",
+  },
+  // Common UI
+  COMMON: {
+    LOADING: "Cargando...",
+    ERROR: "Error",
+    RETRY: "Reintentar",
+    UNKNOWN_ERROR: "Error desconocido",
+    DASHBOARD_ERROR: "Error al cargar los datos",
+    USER_PERMISSIONS: "Permisos del Usuario",
+    USER_PERMISSIONS_DESCRIPTION: "Permisos asignados a tu cuenta",
+  },
+  // Error Messages
+  ERRORS: {
+    AUTH_CONTEXT_ERROR: "useAuth debe ser usado dentro de un AuthProvider",
+    AUTH_INIT_ERROR: "Error inicializando autenticación",
+    AUTH_VALIDATION_ERROR: "Error validando sesión",
+    REFRESH_IN_PROGRESS: "Refresh ya en progreso, esperando...",
+    TOKEN_EXPIRED: "Token expirado, intentando refresh...",
+    REFRESH_TOKEN_ERROR: "Error en refresh token",
+    FETCH_DASHBOARD_ERROR: "Error al obtener datos del dashboard",
+  },
+  // Log Messages
+  LOGS: {
+    AUTH_INIT: "❌ AuthContext: Error inicializando autenticación:",
+    AUTH_VALIDATION: "❌ AuthContext: Error validando sesión:",
+    REFRESH_PROGRESS: "🔄 Refresh ya en progreso, esperando...",
+    TOKEN_REFRESH: "🔄 Token expirado, intentando refresh...",
+    REFRESH_ERROR: "❌ Error en refresh token:",
+    FETCH_DASHBOARD: "Error fetching dashboard data:",
+    MIDDLEWARE_DEBUG: "🔍 Middleware Debug:",
+    MIDDLEWARE_REDIRECT: "🚫 Middleware: Usuario sin acceso a",
+    MIDDLEWARE_REDIRECTING: "redirigiendo a",
+  },
+  // Middleware Messages
+  MIDDLEWARE: {
+    TOKEN_REQUIRED: "Token de acceso requerido",
+    TOKEN_INVALID: "Token de acceso inválido",
+    ACCOUNT_DISABLED: "account-disabled",
+    UNAUTHORIZED_ACCESS: "Acceso no autorizado",
+    ROLE_REDIRECT: "Redirección por rol",
+    USER_DISABLED: "Usuario desactivado",
+  },
+} as const;
+
 // ===== ROLES DEL SISTEMA =====
 export const SYSTEM_ROLES = {
   ADMIN: "admin",

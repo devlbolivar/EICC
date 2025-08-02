@@ -319,6 +319,45 @@ export interface AuthContextType {
   hasAllPermissions: (permissions: Permission[]) => boolean;
 }
 
+// ===== DASHBOARD TYPES =====
+export interface DashboardStatistics {
+  activeUsers: number;
+  activeCompanies: number;
+  publishedCourses: number;
+  totalEnrollments: number;
+  completedCourses: number;
+}
+
+export interface PopularCourse {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  level: string;
+  enrollmentCount: number;
+}
+
+export interface TopCompany {
+  id: string;
+  name: string;
+  description: string;
+  industry: string;
+  userCount: number;
+}
+
+export interface DashboardData {
+  statistics: DashboardStatistics;
+  popularCourses: PopularCourse[];
+  topCompanies: TopCompany[];
+}
+
+export interface UseAdminDashboardReturn {
+  data: DashboardData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 // ===== API RESPONSES =====
 export interface ApiResponse<T = unknown> {
   success: boolean;

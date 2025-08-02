@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import {
   hashPassword,
@@ -18,9 +18,8 @@ type Invitation = InferSelectModel<typeof schema.invitationTokensTable> & {
   role?: InferSelectModel<typeof schema.rolesTable>;
 };
 
-const connectionString = process.env.DATABASE_URL!;
-const client = postgres(connectionString);
-const db = drizzle<typeof schema>(client, { schema });
+const pg = neon(process.env.DATABASE_URL!);
+const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
@@ -215,8 +214,6 @@ export async function POST(request: NextRequest) {
       { error: "Error interno del servidor" },
       { status: 500 }
     );
-  } finally {
-    await client.end();
   }
 }
 
@@ -293,7 +290,5 @@ export async function GET(request: NextRequest) {
       { error: "Error interno del servidor" },
       { status: 500 }
     );
-  } finally {
-    await client.end();
   }
 }

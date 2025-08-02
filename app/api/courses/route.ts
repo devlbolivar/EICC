@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/config/db";
-import { courses } from "@/config/schema";
+import { db } from "@/lib/database";
+import * as schema from "@/config/schema";
 import { verifyAccessTokenEdge } from "@/lib/auth";
 import { Module, Lesson, Permission } from "@/app/types";
 import { ERROR_MESSAGES } from "@/lib/constants";
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     // Insertar el curso en la base de datos
     const newCourse = await db
-      .insert(courses)
+      .insert(schema.courses)
       .values({
         cid,
         name,
@@ -155,7 +155,7 @@ export async function GET() {
     console.log("📋 Obteniendo cursos de la base de datos...");
 
     // Obtener todos los cursos de la base de datos
-    const allCourses = await db.select().from(courses);
+    const allCourses = await db.select().from(schema.courses);
 
     console.log("✅ Cursos obtenidos de BD:", allCourses.length);
 

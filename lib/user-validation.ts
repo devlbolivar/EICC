@@ -1,17 +1,20 @@
-import db from "@/config/db";
-import { sql } from "drizzle-orm";
+import { db } from "@/lib/database";
+import * as schema from "@/config/schema";
+import { eq } from "drizzle-orm";
 
 export async function validateUserActive(userId: string): Promise<boolean> {
   try {
-    const result = await db.execute(
-      sql`SELECT "isActive" FROM users WHERE id = ${userId}`
-    );
+    const result = await db
+      .select({ isActive: schema.usersTable.isActive })
+      .from(schema.usersTable)
+      .where(eq(schema.usersTable.id, userId))
+      .limit(1);
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return false;
     }
 
-    return Boolean(result.rows[0].isActive);
+    return Boolean(result[0].isActive);
   } catch (error) {
     console.error("Error validando usuario activo:", error);
     return false;
@@ -20,11 +23,13 @@ export async function validateUserActive(userId: string): Promise<boolean> {
 
 export async function validateUserExists(userId: string): Promise<boolean> {
   try {
-    const result = await db.execute(
-      sql`SELECT id FROM users WHERE id = ${userId}`
-    );
+    const result = await db
+      .select({ id: schema.usersTable.id })
+      .from(schema.usersTable)
+      .where(eq(schema.usersTable.id, userId))
+      .limit(1);
 
-    return result.rows.length > 0;
+    return result.length > 0;
   } catch (error) {
     console.error("Error validando existencia de usuario:", error);
     return false;
@@ -35,15 +40,17 @@ export async function validateUserEmailVerified(
   userId: string
 ): Promise<boolean> {
   try {
-    const result = await db.execute(
-      sql`SELECT "emailVerified" FROM users WHERE id = ${userId}`
-    );
+    const result = await db
+      .select({ emailVerified: schema.usersTable.emailVerified })
+      .from(schema.usersTable)
+      .where(eq(schema.usersTable.id, userId))
+      .limit(1);
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return false;
     }
 
-    return Boolean(result.rows[0].emailVerified);
+    return Boolean(result[0].emailVerified);
   } catch (error) {
     console.error("Error validando email verificado:", error);
     return false;
@@ -68,11 +75,16 @@ export async function getUserValidationStatus(userId: string): Promise<{
   hasValidPermissions: boolean;
 }> {
   try {
-    const result = await db.execute(
-      sql`SELECT "isActive", "emailVerified" FROM users WHERE id = ${userId}`
-    );
+    const result = await db
+      .select({
+        isActive: schema.usersTable.isActive,
+        emailVerified: schema.usersTable.emailVerified,
+      })
+      .from(schema.usersTable)
+      .where(eq(schema.usersTable.id, userId))
+      .limit(1);
 
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       return {
         exists: false,
         isActive: false,
@@ -81,7 +93,7 @@ export async function getUserValidationStatus(userId: string): Promise<{
       };
     }
 
-    const user = result.rows[0];
+    const user = result[0];
 
     return {
       exists: true,

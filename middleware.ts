@@ -7,6 +7,7 @@ import {
   API_ROUTES,
   PAGE_ROUTES,
   SYSTEM_ROLES as SYSTEM_ROLES_CONST,
+  UI_TEXT,
 } from "@/lib/constants";
 
 // ===== RUTAS PÚBLICAS =====
@@ -177,7 +178,7 @@ export async function middleware(request: NextRequest) {
 
       if (!token) {
         return NextResponse.json(
-          { error: "Token de acceso requerido" },
+          { error: UI_TEXT.MIDDLEWARE.TOKEN_REQUIRED },
           { status: 401 }
         );
       }
@@ -185,7 +186,7 @@ export async function middleware(request: NextRequest) {
       const payload = await verifyAccessTokenEdge(token);
       if (!payload) {
         return NextResponse.json(
-          { error: "Token de acceso inválido" },
+          { error: UI_TEXT.MIDDLEWARE.TOKEN_INVALID },
           { status: 401 }
         );
       }
@@ -244,10 +245,10 @@ export async function middleware(request: NextRequest) {
         payload.userId,
         pathname,
         false,
-        "Usuario desactivado"
+        UI_TEXT.MIDDLEWARE.USER_DISABLED
       );
       const loginUrl = new URL("/sign-in", request.url);
-      loginUrl.searchParams.set("error", "account-disabled");
+      loginUrl.searchParams.set("error", UI_TEXT.MIDDLEWARE.ACCOUNT_DISABLED);
       return NextResponse.redirect(loginUrl);
     }
 
@@ -257,7 +258,7 @@ export async function middleware(request: NextRequest) {
       pathname
     );
 
-    console.log("🔍 Middleware Debug:", {
+    console.log(UI_TEXT.LOGS.MIDDLEWARE_DEBUG, {
       pathname,
       permissions: payload.permissions,
       hasAccess,
@@ -269,12 +270,12 @@ export async function middleware(request: NextRequest) {
         payload.userId,
         pathname,
         false,
-        "Acceso no autorizado"
+        UI_TEXT.MIDDLEWARE.UNAUTHORIZED_ACCESS
       );
       const roleName = getRoleNameFromPermissions(payload.permissions);
       const redirectRoute = getRedirectRouteByRole(roleName || "student");
       console.log(
-        `🚫 Middleware: Usuario sin acceso a ${pathname}, redirigiendo a ${redirectRoute}`
+        `${UI_TEXT.LOGS.MIDDLEWARE_REDIRECT} ${pathname}, ${UI_TEXT.LOGS.MIDDLEWARE_REDIRECTING} ${redirectRoute}`
       );
       return NextResponse.redirect(new URL(redirectRoute, request.url));
     }
@@ -305,7 +306,7 @@ export async function middleware(request: NextRequest) {
           payload.userId,
           pathname,
           false,
-          "Redirección por rol"
+          UI_TEXT.MIDDLEWARE.ROLE_REDIRECT
         );
         return NextResponse.redirect(new URL(userRedirectRoute, request.url));
       }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import db from "@/config/db";
-import { usersTable } from "@/config/schema";
+import { db } from "@/lib/database";
+import * as schema from "@/config/schema";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
@@ -28,7 +28,7 @@ export async function GET() {
 
     // ===== OBTENER USUARIO =====
     const user = await db.query.usersTable.findFirst({
-      where: eq(usersTable.id, payload.userId),
+      where: eq(schema.usersTable.id, payload.userId),
     });
 
     if (!user || !user.isActive) {

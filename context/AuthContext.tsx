@@ -15,7 +15,7 @@ import {
   Permission,
 } from "@/app/types";
 import { toast } from "sonner";
-import { API_ROUTES, ERROR_MESSAGES } from "@/lib/constants";
+import { API_ROUTES, ERROR_MESSAGES, UI_TEXT } from "@/lib/constants";
 
 // ===== CONTEXTO =====
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
+    throw new Error(UI_TEXT.ERRORS.AUTH_CONTEXT_ERROR);
   }
   return context;
 }
@@ -54,10 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Los tokens están en cookies httpOnly, validar directamente
       await validateAndSetSession();
     } catch (error) {
-      console.error(
-        "❌ AuthContext: Error inicializando autenticación:",
-        error
-      );
+      console.error(UI_TEXT.LOGS.AUTH_INIT, error);
       setSession(null);
     } finally {
       setLoading(false);
@@ -67,16 +64,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const handleTokenExpiration = async () => {
     // Evitar múltiples intentos de refresh simultáneos
     if (isRefreshing) {
-      console.log("🔄 Refresh ya en progreso, esperando...");
+      console.log(UI_TEXT.LOGS.REFRESH_PROGRESS);
       return;
     }
 
     try {
       setIsRefreshing(true);
-      console.log("🔄 Token expirado, intentando refresh...");
+      console.log(UI_TEXT.LOGS.TOKEN_REFRESH);
       await refreshToken();
     } catch (error) {
-      console.error("❌ Error en refresh token:", error);
+      console.error(UI_TEXT.LOGS.REFRESH_ERROR, error);
       // No llamar a logout aquí para evitar el loop
       setSession(null);
     } finally {
@@ -103,7 +100,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(null);
       }
     } catch (error) {
-      console.error("❌ AuthContext: Error validando sesión:", error);
+      console.error(UI_TEXT.LOGS.AUTH_VALIDATION, error);
       setSession(null);
     }
   };

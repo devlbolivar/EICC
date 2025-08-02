@@ -16,7 +16,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:introspect": "drizzle-kit introspect",
-    "db:setup": "node scripts/setup-database-safe.js"
+    "db:setup": "node scripts/setup-database-safe.js",
+    "db:test": "node scripts/test-connection.js"
   },
   "dependencies": {
     "@google/genai": "^0.14.1",
