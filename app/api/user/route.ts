@@ -4,7 +4,6 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { eq } from "drizzle-orm";
-import { ERROR_MESSAGES } from "@/lib/constants";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });

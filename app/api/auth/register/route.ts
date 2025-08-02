@@ -15,9 +15,6 @@ import {
   validateSafeString,
 } from "@/lib/utils";
 import { SYSTEM_ROLES, Permission } from "@/app/types";
-import { verifyAccessToken } from "@/lib/auth";
-import { eq } from "drizzle-orm";
-import { ERROR_MESSAGES } from "@/lib/constants";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });

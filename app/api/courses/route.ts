@@ -1,86 +1,137 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/database";
-import * as schema from "@/config/schema";
-import { verifyAccessTokenEdge } from "@/lib/auth";
-import { Module, Lesson, Permission } from "@/app/types";
-import { ERROR_MESSAGES } from "@/lib/constants";
+import { db } from "@/config/db";
+import { coursesTable } from "@/config/schema";
+import { sql } from "drizzle-orm";
+import { verifyAccessToken } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { Module, Lesson } from "@/app/types";
 
-export async function POST(request: NextRequest) {
+// ===== GET - Listar cursos =====
+export async function GET(request: NextRequest) {
   try {
-    console.log("🚀 Iniciando creación de curso...");
-
     // Verificar autenticación
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken");
 
     if (!token) {
       return NextResponse.json(
-        { error: ERROR_MESSAGES.UNAUTHORIZED },
+        { error: "Token no encontrado" },
         { status: 401 }
       );
     }
 
-    const payload = await verifyAccessTokenEdge(token);
+    const payload = await verifyAccessToken(token.value);
     if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Verificar permisos
+    if (!payload.permissions.includes("courses:read")) {
       return NextResponse.json(
-        { error: ERROR_MESSAGES.UNAUTHORIZED },
+        { error: "Sin permisos para ver cursos" },
+        { status: 403 }
+      );
+    }
+
+    // Obtener parámetros de consulta
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+
+    // Construir consulta base
+    const query = sql`
+      SELECT 
+        c.*,
+        u.name as creator_name,
+        u.email as creator_email,
+        comp.name as company_name
+      FROM courses c
+      LEFT JOIN users u ON c."createdBy" = u.id
+      LEFT JOIN companies comp ON c."companyId" = comp.id
+      WHERE c."isActive" = true
+      ORDER BY c."createdAt" DESC
+      LIMIT ${limit} OFFSET ${(page - 1) * limit}
+    `;
+
+    const result = await db.execute(query);
+
+    // Obtener total de registros para paginación
+    const countQuery = sql`
+      SELECT COUNT(*) as total
+      FROM courses c
+      WHERE c."isActive" = true
+    `;
+
+    const countResult = await db.execute(countQuery);
+    const total = parseInt(String(countResult.rows[0]?.total || "0"));
+
+    const response = {
+      success: true,
+      data: {
+        courses: result.rows || [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("Error al listar cursos:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+// ===== POST - Crear curso =====
+export async function POST(request: NextRequest) {
+  try {
+    // Verificar autenticación
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken");
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token no encontrado" },
         { status: 401 }
       );
     }
 
-    // Verificar permisos de administrador
-    const requiredPermissions: Permission[] = [
-      "platform:admin",
-      "courses:create",
-    ];
-    const hasAdminPermission = payload.permissions.some(
-      (permission: Permission) => requiredPermissions.includes(permission)
-    );
+    const payload = await verifyAccessToken(token.value);
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
 
-    if (!hasAdminPermission) {
+    // Verificar permisos
+    if (!payload.permissions.includes("courses:create")) {
       return NextResponse.json(
-        { error: ERROR_MESSAGES.FORBIDDEN },
+        { error: "Sin permisos para crear cursos" },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    console.log("📝 Datos recibidos:", body);
-
     const {
       name,
       description,
       category,
       level,
-      status,
       estimatedDuration,
-      bannerImage,
       visibility,
       targetCompanies,
       modules,
+      bannerImage,
     } = body;
 
     // Validaciones básicas
-    if (!name || !description || !category) {
+    if (!name || !description || !category || !level) {
       return NextResponse.json(
-        { error: ERROR_MESSAGES.VALIDATION_ERROR },
-        { status: 400 }
-      );
-    }
-
-    // Validar que haya al menos un módulo con una lección válida
-    const hasValidModules = modules?.some((module: Module) =>
-      module.lessons?.some(
-        (lesson: Lesson) => lesson.title && (lesson.text || lesson.video)
-      )
-    );
-
-    if (!hasValidModules) {
-      return NextResponse.json(
-        {
-          error: ERROR_MESSAGES.VALIDATION_ERROR,
-        },
+        { error: "Campos obligatorios faltantes" },
         { status: 400 }
       );
     }
@@ -90,84 +141,48 @@ export async function POST(request: NextRequest) {
       .toString(36)
       .substr(2, 9)}`;
 
-    console.log("📊 Guardando en base de datos...");
-
-    // Insertar el curso en la base de datos
+    // Crear curso
     const newCourse = await db
-      .insert(schema.courses)
+      .insert(coursesTable)
       .values({
         cid,
         name,
         description,
-        category,
-        level: level || "Básico",
-        status: status || "Borrador",
-        estimatedDuration,
-        bannerImage: bannerImage || "",
-        visibility: visibility || "Público",
-        targetCompanies: targetCompanies || [],
-        modules: modules || [],
-        createdBy: payload.userId,
-        companyId: payload.companyId || null,
-        userEmail: payload.email,
-        isPublic: visibility === "Público",
-        isActive: true,
-        // Campos legacy para compatibilidad
         numberOfChapters: modules?.length || 0,
         includeVideos:
           modules?.some((module: Module) =>
             module.lessons?.some((lesson: Lesson) => lesson.video)
           ) || false,
-        difficulty: level || "Básico",
-        courseJson: {},
-        courseContent: {},
+        difficulty: level,
+        category,
+        level,
+        status: "Borrador",
+        estimatedDuration,
+        visibility,
+        targetCompanies: Array.isArray(targetCompanies) ? targetCompanies : [],
+        modules: modules || [],
+        bannerImage: bannerImage || "",
+        createdBy: payload.userId,
+        companyId: payload.companyId,
+        isPublic: visibility === "Público",
+        isActive: true,
       })
       .returning();
-
-    console.log("✅ Curso guardado exitosamente en BD:", newCourse[0]);
 
     return NextResponse.json(
       {
         success: true,
-        course: newCourse[0],
-        message:
-          status === "Publicado"
-            ? "Curso publicado exitosamente"
-            : "Curso guardado como borrador",
+        message: "Curso creado exitosamente",
+        data: {
+          course: newCourse[0],
+        },
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("❌ Error al crear curso:", error);
+    console.error("Error al crear curso:", error);
     return NextResponse.json(
-      {
-        error: ERROR_MESSAGES.SERVER_ERROR,
-        details:
-          error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET() {
-  try {
-    console.log("📋 Obteniendo cursos de la base de datos...");
-
-    // Obtener todos los cursos de la base de datos
-    const allCourses = await db.select().from(schema.courses);
-
-    console.log("✅ Cursos obtenidos de BD:", allCourses.length);
-
-    return NextResponse.json({ courses: allCourses });
-  } catch (error) {
-    console.error("❌ Error al obtener cursos:", error);
-    return NextResponse.json(
-      {
-        error: ERROR_MESSAGES.SERVER_ERROR,
-        details:
-          error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
-      },
+      { error: "Error interno del servidor" },
       { status: 500 }
     );
   }

@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom";
 
+// Polyfill for TextDecoder (needed for Neon database)
+global.TextDecoder = global.TextDecoder || require("util").TextDecoder;
+global.TextEncoder = global.TextEncoder || require("util").TextEncoder;
+
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
   useRouter() {

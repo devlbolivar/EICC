@@ -232,16 +232,16 @@ export const COURSE_STATUS = {
 
 // ===== NIVELES DE CURSOS =====
 export const COURSE_LEVELS = {
-  BEGINNER: "beginner",
-  INTERMEDIATE: "intermediate",
-  ADVANCED: "advanced",
+  BEGINNER: "Básico",
+  INTERMEDIATE: "Intermedio",
+  ADVANCED: "Avanzado",
 } as const;
 
 // ===== VISIBILIDAD DE CURSOS =====
 export const COURSE_VISIBILITY = {
-  PUBLIC: "public",
-  PRIVATE: "private",
-  COMPANY_SPECIFIC: "company_specific",
+  PUBLIC: "Público",
+  PRIVATE: "Privado",
+  COMPANY_SPECIFIC: "Empresas específicas",
 } as const;
 
 // ===== CATEGORÍAS DE CURSOS =====

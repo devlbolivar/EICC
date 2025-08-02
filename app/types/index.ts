@@ -134,6 +134,7 @@ export const SYSTEM_ROLES = {
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   [SYSTEM_ROLES.ADMIN]: [
     "platform:admin",
+    "courses:read",
     "courses:create",
     "courses:edit",
     "courses:delete",
@@ -141,6 +142,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   ],
   [SYSTEM_ROLES.COMPANY]: [
     "company:admin",
+    "courses:read",
     "courses:create",
     "courses:edit",
     "users:invite",

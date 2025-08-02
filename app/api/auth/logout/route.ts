@@ -2,21 +2,18 @@ import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
-    // ===== CONFIGURAR RESPUESTA =====
     const response = NextResponse.json(
-      {
-        success: true,
-        message: "Sesión cerrada exitosamente",
-      },
+      { success: true, message: "Logout exitoso" },
       { status: 200 }
     );
 
-    // ===== LIMPIAR COOKIES =====
+    // Limpiar cookies de autenticación
     response.cookies.set("accessToken", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 0, // Expirar inmediatamente
+      path: "/",
     });
 
     response.cookies.set("refreshToken", "", {
@@ -24,6 +21,7 @@ export async function POST() {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 0, // Expirar inmediatamente
+      path: "/",
     });
 
     return response;

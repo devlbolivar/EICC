@@ -21,11 +21,13 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Course, Module, Lesson } from "@/app/types";
 import { API_ROUTES, PAGE_ROUTES, ERROR_MESSAGES } from "@/lib/constants";
+import { useCourseActions } from "@/hooks/use-course-actions";
 
 // Hook personalizado para obtener cursos
 const useCourses = () => {
@@ -37,19 +39,30 @@ const useCourses = () => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await fetch(API_ROUTES.COURSES);
+        setError(null);
+
+        const response = await fetch(API_ROUTES.COURSES, {
+          method: "GET",
+          credentials: "include", // Incluir cookies automáticamente
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
-          throw new Error(ERROR_MESSAGES.COURSES_FETCH_ERROR);
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || ERROR_MESSAGES.COURSES_FETCH_ERROR
+          );
         }
 
         const data = await response.json();
-        setCourses(data.courses || []);
+        setCourses(data.data?.courses || []);
       } catch (err) {
+        console.error("Error fetching courses:", err);
         setError(
           err instanceof Error ? err.message : ERROR_MESSAGES.UNKNOWN_ERROR
         );
-        console.error("Error fetching courses:", err);
       } finally {
         setLoading(false);
       }
@@ -58,11 +71,29 @@ const useCourses = () => {
     fetchCourses();
   }, []);
 
-  return { courses, loading, error };
+  return {
+    courses,
+    loading,
+    error,
+    refetch: () => {
+      setLoading(true);
+      setError(null);
+      // Trigger re-fetch by updating state
+      setCourses([]);
+    },
+  };
 };
 
 export default function AdminCoursesPage() {
-  const { courses, loading, error } = useCourses();
+  const { courses, loading, error, refetch } = useCourses();
+  const {
+    actionLoading,
+    viewCourse,
+    editCourse,
+    deleteCourse,
+    changeCourseStatus,
+    duplicateCourse,
+  } = useCourseActions();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -102,6 +133,18 @@ export default function AdminCoursesPage() {
         return <Users className="w-4 h-4" />;
     }
   };
+
+  // ===== FUNCIONES DE ACCIONES =====
+
+  // Wrapper functions to use the hook
+  const handleViewCourse = (courseId: string) => viewCourse({ courseId });
+  const handleEditCourse = (courseId: string) => editCourse({ courseId });
+  const handleDeleteCourse = (courseId: string, courseName: string) =>
+    deleteCourse({ courseId, courseName });
+  const handleChangeStatus = (courseId: string, newStatus: string) =>
+    changeCourseStatus({ courseId, newStatus });
+  const handleDuplicateCourse = (courseId: string) =>
+    duplicateCourse({ courseId });
 
   // Calcular estadísticas basadas en los cursos reales
   const totalCourses = courses.length;
@@ -162,7 +205,7 @@ export default function AdminCoursesPage() {
               <p className="text-red-600">
                 Error al cargar los cursos: {error}
               </p>
-              <Button onClick={() => window.location.reload()} className="mt-4">
+              <Button onClick={() => refetch()} className="mt-4">
                 Reintentar
               </Button>
             </div>
@@ -322,6 +365,16 @@ export default function AdminCoursesPage() {
                     courses.map((course) => {
                       const totalLessons = getTotalLessonsCount(course);
                       const validLessons = getValidLessonsCount(course);
+                      const isViewLoading =
+                        actionLoading === `view-${course.id}`;
+                      const isEditLoading =
+                        actionLoading === `edit-${course.id}`;
+                      const isDeleteLoading =
+                        actionLoading === `delete-${course.id}`;
+                      const isStatusLoading =
+                        actionLoading === `status-${course.id}`;
+                      const isDuplicateLoading =
+                        actionLoading === `duplicate-${course.id}`;
 
                       return (
                         <tr key={course.id} className="border-b">
@@ -361,13 +414,49 @@ export default function AdminCoursesPage() {
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-1 rounded-full text-sm ${getStatusColor(
-                                course.status
-                              )}`}
-                            >
-                              {course.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-1 rounded-full text-sm ${getStatusColor(
+                                  course.status
+                                )}`}
+                              >
+                                {course.status}
+                              </span>
+                              {course.status === "Borrador" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleChangeStatus(course.id, "Publicado")
+                                  }
+                                  disabled={isStatusLoading}
+                                  className="text-xs"
+                                >
+                                  {isStatusLoading ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    "Publicar"
+                                  )}
+                                </Button>
+                              )}
+                              {course.status === "Publicado" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleChangeStatus(course.id, "Archivado")
+                                  }
+                                  disabled={isStatusLoading}
+                                  className="text-xs"
+                                >
+                                  {isStatusLoading ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    "Archivar"
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
@@ -403,14 +492,60 @@ export default function AdminCoursesPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-4 h-4" />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewCourse(course.id)}
+                                disabled={isViewLoading}
+                                title="Ver curso"
+                              >
+                                {isViewLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
                               </Button>
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-4 h-4" />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditCourse(course.id)}
+                                disabled={isEditLoading}
+                                title="Editar curso"
+                              >
+                                {isEditLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Edit className="w-4 h-4" />
+                                )}
                               </Button>
-                              <Button variant="outline" size="sm">
-                                <Trash2 className="w-4 h-4" />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDuplicateCourse(course.id)}
+                                disabled={isDuplicateLoading}
+                                title="Duplicar curso"
+                              >
+                                {isDuplicateLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <BookOpen className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeleteCourse(course.id, course.name)
+                                }
+                                disabled={isDeleteLoading}
+                                title="Eliminar curso"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                {isDeleteLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
                               </Button>
                             </div>
                           </td>
