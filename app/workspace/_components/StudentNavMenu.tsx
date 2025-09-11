@@ -43,25 +43,14 @@ const StudentNavMenu = () => {
 
   const studentMenuItems = [
     {
-      title: "Inicio",
+      title: "Dashboard",
       icon: LayoutDashboard,
       path: PAGE_ROUTES.STUDENT.DASHBOARD,
     },
     {
       title: "Mis Cursos",
       icon: BookOpen,
-      subItems: [
-        {
-          title: "Cursos Inscritos",
-          icon: BookOpen,
-          path: PAGE_ROUTES.STUDENT.COURSES,
-        },
-        {
-          title: "Continuar Aprendiendo",
-          icon: PlayCircle,
-          path: PAGE_ROUTES.STUDENT.COURSES_CONTINUE,
-        },
-      ],
+      path: PAGE_ROUTES.STUDENT.COURSES,
     },
     {
       title: "Catálogo de Cursos",
@@ -95,24 +84,7 @@ const StudentNavMenu = () => {
         <SidebarMenu>
           {studentMenuItems.map((item, index) => (
             <SidebarMenuItem key={index}>
-              {item.subItems ? (
-                // Item con submenú
-                <SidebarMenuButton
-                  asChild
-                  className="flex items-center gap-2 p-5"
-                  isActive={item.subItems.some((subItem) =>
-                    isSubItemActive(subItem.path)
-                  )}
-                >
-                  <Link
-                    href={item.subItems[0].path}
-                    className="text-[17px] flex items-center gap-2"
-                  >
-                    <item.icon className="w-7 h-7" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              ) : (
+              {
                 // Item simple
                 <SidebarMenuButton
                   asChild
@@ -130,32 +102,7 @@ const StudentNavMenu = () => {
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
-              )}
-
-              {/* Submenú */}
-              {item.subItems && (
-                <SidebarMenuSub>
-                  {item.subItems.map((subItem, subIndex) => (
-                    <SidebarMenuSubItem key={subIndex}>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={isSubItemActive(subItem.path)}
-                      >
-                        <Link
-                          href={subItem.path}
-                          className={`flex items-center gap-2 ${
-                            isSubItemActive(subItem.path) &&
-                            "text-primary bg-sidebar-primary-foreground"
-                          }`}
-                        >
-                          <subItem.icon className="w-4 h-4" />
-                          <span>{subItem.title}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              )}
+              }
             </SidebarMenuItem>
           ))}
 

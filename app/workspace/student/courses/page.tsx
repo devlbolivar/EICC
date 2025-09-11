@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -10,54 +11,49 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { PlayCircle, BookOpen, Clock, Award } from "lucide-react";
 
-const StudentCourses = () => {
-  const enrolledCourses = [
-    {
-      id: 1,
-      title: "React Fundamentals",
-      description:
-        "Aprende los conceptos básicos de React y construye aplicaciones modernas",
-      progress: 75,
-      totalChapters: 12,
-      completedChapters: 9,
-      estimatedTime: "8 horas",
-      lastAccessed: "Hace 2 horas",
-      image: "/online-education.png",
-    },
-    {
-      id: 2,
-      title: "TypeScript Avanzado",
-      description: "Domina TypeScript para desarrollo de aplicaciones robustas",
-      progress: 45,
-      totalChapters: 15,
-      completedChapters: 7,
-      estimatedTime: "12 horas",
-      lastAccessed: "Hace 1 día",
-      image: "/online-education.png",
-    },
-    {
-      id: 3,
-      title: "Node.js Backend Development",
-      description: "Construye APIs y servidores con Node.js y Express",
-      progress: 90,
-      totalChapters: 10,
-      completedChapters: 9,
-      estimatedTime: "10 horas",
-      lastAccessed: "Hace 3 días",
-      image: "/online-education.png",
-    },
-    {
-      id: 4,
-      title: "Docker & DevOps",
-      description: "Aprende containerización y prácticas DevOps",
-      progress: 30,
-      totalChapters: 8,
-      completedChapters: 2,
-      estimatedTime: "6 horas",
-      lastAccessed: "Hace 1 semana",
-      image: "/online-education.png",
-    },
-  ];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  totalChapters: number;
+  completedChapters: any;
+  estimatedTime: string;
+  lastAccessed: string;
+  image: string;
+}
+
+export default function StudentCourses() {
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch("/api/student/courses");
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+        const data = await response.json();
+        setEnrolledCourses(data);
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -99,13 +95,14 @@ const StudentCourses = () => {
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    {course.completedChapters}/{course.totalChapters}
+                    {Object.keys(course.completedChapters).length}/
+                    {course.totalChapters}
                   </span>
                 </div>
               </div>
 
               <div className="text-xs text-muted-foreground">
-                Último acceso: {course.lastAccessed}
+                Último acceso: {new Date(course.lastAccessed).toLocaleDateString()}
               </div>
 
               <div className="flex gap-2">
@@ -126,6 +123,4 @@ const StudentCourses = () => {
       </div>
     </div>
   );
-};
-
-export default StudentCourses;
+}

@@ -33,15 +33,27 @@ export const useAdmin = () => {
         (permission: Permission) => adminPermissions.includes(permission)
       );
 
+      // Check that user does NOT have company permissions
+      const hasCompanyPermissions = session.permissions.some(
+        (permission: Permission) =>
+          permission === "company:admin" ||
+          permission === "company:write" ||
+          permission === "company:read" ||
+          permission === "company:billing"
+      );
+
       console.log("useAdmin: Permission analysis:", {
         permissions: session.permissions,
         hasAdminPermissions,
+        hasCompanyPermissions,
         adminPermissions: session.permissions.filter((permission: Permission) =>
           adminPermissions.includes(permission)
         ),
+        isAdmin: hasAdminPermissions && !hasCompanyPermissions,
       });
 
-      return hasAdminPermissions;
+      // Es admin si tiene permisos de admin Y NO tiene permisos de company
+      return hasAdminPermissions && !hasCompanyPermissions;
     }
 
     return false;

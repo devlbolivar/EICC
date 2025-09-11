@@ -42,9 +42,9 @@ export const PAGE_ROUTES = {
   },
   // Admin specific routes
   ADMIN: {
-    DASHBOARD: "/workspace/admin/dashboard",
+    DASHBOARD: "/workspace/admin",
     USERS: "/workspace/admin/users",
-    USERS_CREATE: "/workspace/admin/users/create",
+    USERS_CREATE: "/workspace/admin/users",
     COMPANIES: "/workspace/admin/companies",
     COMPANIES_CREATE: "/workspace/admin/companies/create",
     COURSES: "/workspace/admin/courses",
@@ -69,7 +69,7 @@ export const PAGE_ROUTES = {
   },
   // Student specific routes
   STUDENT: {
-    DASHBOARD: "/workspace/student/dashboard",
+    DASHBOARD: "/workspace/student",
     COURSES: "/workspace/student/courses",
     COURSES_CONTINUE: "/workspace/student/courses/continue",
     CATALOG: "/workspace/student/catalog",

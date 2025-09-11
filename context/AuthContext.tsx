@@ -1,21 +1,16 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   AuthSession,
   AuthContextType,
   UserLoginData,
+  AuthProviderProps,
   UserRegistrationData,
   Permission,
 } from "@/app/types";
 import { toast } from "sonner";
-import { API_ROUTES, ERROR_MESSAGES, UI_TEXT } from "@/lib/constants";
+import { API_ROUTES, UI_TEXT } from "@/lib/constants";
 
 // ===== CONTEXTO =====
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,8 +25,6 @@ export function useAuth() {
 }
 
 // ===== PROVIDER =====
-import { AuthProviderProps } from "@/app/types";
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,20 +55,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const handleTokenExpiration = async () => {
-    // Evitar múltiples intentos de refresh simultáneos
     if (isRefreshing) {
-      console.log(UI_TEXT.LOGS.REFRESH_PROGRESS);
       return;
     }
-
+    setIsRefreshing(true);
     try {
-      setIsRefreshing(true);
-      console.log(UI_TEXT.LOGS.TOKEN_REFRESH);
       await refreshToken();
-    } catch (error) {
-      console.error(UI_TEXT.LOGS.REFRESH_ERROR, error);
-      // No llamar a logout aquí para evitar el loop
-      setSession(null);
     } finally {
       setIsRefreshing(false);
     }
@@ -91,23 +76,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const data = await response.json();
         setSession(data.data);
       } else if (response.status === 401) {
-        // Token inválido, intentar refresh solo si no estamos ya refrescando
         if (!isRefreshing) {
           await handleTokenExpiration();
         }
       } else {
-        // Otros errores, simplemente limpiar la sesión
         setSession(null);
       }
     } catch (error) {
-      console.error(UI_TEXT.LOGS.AUTH_VALIDATION, error);
       setSession(null);
     }
   };
 
   const refreshToken = async () => {
     try {
-      // El refresh token está en cookies, no necesitamos enviarlo en el body
       const response = await fetch(API_ROUTES.AUTH.REFRESH, {
         method: "POST",
         headers: {
@@ -121,14 +102,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.setItem("refreshToken", data.data.refreshToken);
         setSession(data.data.session);
       } else {
-        // Refresh token inválido, limpiar sesión sin redirección
         setSession(null);
-        throw new Error("Refresh token inválido");
       }
     } catch (error) {
-      console.error("Error refrescando token:", error);
       setSession(null);
-      throw error;
     }
   };
 

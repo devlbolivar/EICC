@@ -45,11 +45,16 @@ const AdminNavMenu = () => {
     }
   };
 
+  const handleCreateUser = () => {
+    // Navegar a la lista de usuarios y abrir el modal
+    router.push(PAGE_ROUTES.ADMIN.USERS + "?create=true");
+  };
+
   const adminMenuItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      path: PAGE_ROUTES.ADMIN.DASHBOARD,
+      path: PAGE_ROUTES.WORKSPACE.ADMIN,
     },
     {
       title: "Usuarios",
@@ -178,21 +183,31 @@ const AdminNavMenu = () => {
                 <SidebarMenuSub>
                   {item.subItems.map((subItem, subIndex) => (
                     <SidebarMenuSubItem key={subIndex}>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={isSubItemActive(subItem.path)}
-                      >
-                        <Link
-                          href={subItem.path}
-                          className={`flex items-center gap-2 ${
-                            isSubItemActive(subItem.path) &&
-                            "text-primary bg-sidebar-primary-foreground"
-                          }`}
+                      {subItem.title === "Crear usuario" ? (
+                        <SidebarMenuSubButton
+                          onClick={handleCreateUser}
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <subItem.icon className="w-4 h-4" />
                           <span>{subItem.title}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
+                        </SidebarMenuSubButton>
+                      ) : (
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isSubItemActive(subItem.path)}
+                        >
+                          <Link
+                            href={subItem.path}
+                            className={`flex items-center gap-2 ${
+                              isSubItemActive(subItem.path) &&
+                              "text-primary bg-sidebar-primary-foreground"
+                            }`}
+                          >
+                            <subItem.icon className="w-4 h-4" />
+                            <span>{subItem.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      )}
                     </SidebarMenuSubItem>
                   ))}
                 </SidebarMenuSub>

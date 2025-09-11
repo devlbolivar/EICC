@@ -17,9 +17,17 @@ import {
   Users,
   Target,
 } from "lucide-react";
+import { useStudent } from "@/hooks/use-student";
+import { redirect } from "next/navigation";
 
-export default function StudentDashboard() {
+export default function StudentPage() {
   const { session } = useAuth();
+
+  const { isStudent } = useStudent();
+
+  if (!isStudent) {
+    redirect("/");
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -27,8 +35,10 @@ export default function StudentDashboard() {
         <h1 className="text-3xl font-bold text-gray-900">
           Panel del Estudiante
         </h1>
+        <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
         <p className="text-gray-600 mt-2">
           Bienvenido, {session?.user?.name || "Estudiante"}
+          Welcome to your student dashboard.
         </p>
         {session?.currentCompany && (
           <p className="text-gray-500 mt-1">

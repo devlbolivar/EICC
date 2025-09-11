@@ -1,0 +1,223 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+
+interface Company {
+  id: string;
+  name: string;
+  rut: string;
+  email: string;
+  phone: string;
+  address: string;
+  industry: string;
+  plan: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CreateCompanyData {
+  name: string;
+  rut: string;
+  email: string;
+  phone: string;
+  address: string;
+  industry: string;
+  plan: string;
+}
+
+interface UpdateCompanyData {
+  name?: string;
+  rut?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  industry?: string;
+  plan?: string;
+  isActive?: boolean;
+}
+
+interface CompaniesResponse {
+  companies: Company[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+interface UseAdminCompaniesReturn {
+  companies: Company[];
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  fetchCompanies: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => Promise<void>;
+  createCompany: (companyData: CreateCompanyData) => Promise<Company>;
+  updateCompany: (companyId: string, companyData: UpdateCompanyData) => Promise<void>;
+  deleteCompany: (companyId: string) => Promise<void>;
+  clearError: () => void;
+}
+
+export function useAdminCompanies(): UseAdminCompaniesReturn {
+  const { session } = useAuth();
+
+  const getToken = (): string | null => {
+    const token = localStorage.getItem("accessToken");
+    if (token) return token;
+    return null;
+  };
+
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+
+  const clearError = () => setError(null);
+
+  const fetchCompanies = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const token = getToken();
+    if (!token && !session) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const searchParams = new URLSearchParams();
+      const page = params?.page || pagination.page;
+      const limit = params?.limit || pagination.limit;
+      const search = params?.search ?? "";
+
+      searchParams.append("page", page.toString());
+      searchParams.append("limit", limit.toString());
+      if (search) searchParams.append("search", search);
+
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/admin/companies?${searchParams}`, {
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al obtener empresas");
+      }
+
+      const data: CompaniesResponse = await response.json();
+      setCompanies(data.companies);
+      setPagination(data.pagination);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createCompany = async (companyData: CreateCompanyData): Promise<Company> => {
+    const token = getToken();
+    if (!token && !session) throw new Error("No hay token de autenticación");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch("/api/admin/companies/create", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(companyData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al crear empresa");
+    }
+
+    const data = await response.json();
+    return data.company;
+  };
+
+  const updateCompany = async (
+    companyId: string,
+    companyData: UpdateCompanyData
+  ): Promise<void> => {
+    const token = getToken();
+    if (!token && !session) throw new Error("No hay token de autenticación");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`/api/admin/companies/${companyId}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(companyData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al actualizar empresa");
+    }
+  };
+
+  const deleteCompany = async (companyId: string): Promise<void> => {
+    const token = getToken();
+    if (!token && !session) throw new Error("No hay token de autenticación");
+
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`/api/admin/companies/${companyId}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al eliminar empresa");
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [session]);
+
+  return {
+    companies,
+    loading,
+    error,
+    pagination,
+    fetchCompanies,
+    createCompany,
+    updateCompany,
+    deleteCompany,
+    clearError,
+  };
+}
