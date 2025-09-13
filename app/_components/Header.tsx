@@ -78,7 +78,9 @@ const Header = () => {
     const roleRoutes = {
       admin: PAGE_ROUTES.WORKSPACE.ADMIN,
       company: PAGE_ROUTES.WORKSPACE.COMPANY,
-      student: PAGE_ROUTES.WORKSPACE.STUDENT,
+      student: session?.user?.id
+        ? `/workspace/student/${session.user.id}`
+        : PAGE_ROUTES.WORKSPACE.STUDENT,
     };
 
     return (

@@ -1,4 +1,10 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+// UI Components
 import {
   Card,
   CardContent,
@@ -9,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -16,102 +23,249 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BookOpen, Clock, Users, Star, Search } from "lucide-react";
+
+// Icons
+import {
+  BookOpen,
+  Clock,
+  Users,
+  Star,
+  Search,
+  Loader2,
+  CheckCircle,
+  Award,
+  Calendar,
+  Trophy,
+} from "lucide-react";
+import { Loader } from "@/components/ui/loader";
+
+// Hooks and Types
+import { useCourses } from "@/hooks/use-courses";
+import { Course } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
+
+// Constants
+const CONSTANTS = {
+  ICON_SIZES: {
+    SMALL: "h-4 w-4",
+    MEDIUM: "h-5 w-5",
+    LARGE: "h-6 w-6",
+    EXTRA_LARGE: "h-12 w-12",
+  },
+  MESSAGES: {
+    LOADING: "Cargando cursos...",
+    ERROR_LOADING: "Error al cargar los cursos",
+    RETRY: "Reintentar",
+    NO_COURSES_FOUND: "No se encontraron cursos",
+    NO_COURSES_DESCRIPTION: "No hay cursos disponibles en este momento",
+    FILTER_ADJUSTMENT: "Intenta ajustar los filtros de búsqueda",
+    ENROLL_SUCCESS: "¡Te has inscrito exitosamente en el curso!",
+    ENROLL_ERROR: "No se pudo inscribir en el curso. Inténtalo de nuevo.",
+    ENROLL_ERROR_GENERIC:
+      "Error al inscribirse en el curso. Inténtalo de nuevo.",
+    CERTIFICATE_COMING_SOON:
+      "Funcionalidad de certificado próximamente disponible",
+  },
+  FILTERS: {
+    CATEGORIES: [
+      "Todos",
+      "Negocios",
+      "Frontend",
+      "Backend",
+      "DevOps",
+      "Data Science",
+      "Cloud",
+    ],
+    DIFFICULTIES: ["Todos", "Básico", "Intermedio", "Avanzado"],
+  },
+  RATINGS: {
+    DEFAULT: 4.5,
+    LABEL: "Nuevo",
+  },
+} as const;
 
 const StudentCatalog = () => {
-  const availableCourses = [
-    {
-      id: 1,
-      title: "React Fundamentals",
-      description:
-        "Aprende los conceptos básicos de React y construye aplicaciones modernas",
-      category: "Frontend",
-      difficulty: "Principiante",
-      duration: "8 horas",
-      students: 1247,
-      rating: 4.8,
-      price: "Gratis",
-      isEnrolled: false,
-      image: "/online-education.png",
-    },
-    {
-      id: 2,
-      title: "TypeScript Avanzado",
-      description: "Domina TypeScript para desarrollo de aplicaciones robustas",
-      category: "Frontend",
-      difficulty: "Intermedio",
-      duration: "12 horas",
-      students: 892,
-      rating: 4.9,
-      price: "Gratis",
-      isEnrolled: false,
-      image: "/online-education.png",
-    },
-    {
-      id: 3,
-      title: "Node.js Backend Development",
-      description: "Construye APIs y servidores con Node.js y Express",
-      category: "Backend",
-      difficulty: "Intermedio",
-      duration: "10 horas",
-      students: 1563,
-      rating: 4.7,
-      price: "Gratis",
-      isEnrolled: true,
-      image: "/online-education.png",
-    },
-    {
-      id: 4,
-      title: "Docker & DevOps",
-      description: "Aprende containerización y prácticas DevOps",
-      category: "DevOps",
-      difficulty: "Avanzado",
-      duration: "6 horas",
-      students: 734,
-      rating: 4.6,
-      price: "Gratis",
-      isEnrolled: true,
-      image: "/online-education.png",
-    },
-    {
-      id: 5,
-      title: "Python para Data Science",
-      description:
-        "Introducción a Python para análisis de datos y machine learning",
-      category: "Data Science",
-      difficulty: "Principiante",
-      duration: "15 horas",
-      students: 2103,
-      rating: 4.9,
-      price: "Gratis",
-      isEnrolled: false,
-      image: "/online-education.png",
-    },
-    {
-      id: 6,
-      title: "AWS Cloud Practitioner",
-      description:
-        "Certificación AWS Cloud Practitioner - Fundamentos de la nube",
-      category: "Cloud",
-      difficulty: "Intermedio",
-      duration: "20 horas",
-      students: 567,
-      rating: 4.5,
-      price: "Gratis",
-      isEnrolled: false,
-      image: "/online-education.png",
-    },
-  ];
+  const { session } = useAuth();
+  const router = useRouter();
+  const {
+    courses,
+    loading,
+    error,
+    fetchCourses,
+    enrolledCourses,
+    fetchEnrolledCourses,
+    enrollInCourse,
+  } = useCourses();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("Todos");
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(
+    null
+  );
 
-  const categories = [
-    "Todos",
-    "Frontend",
-    "Backend",
-    "DevOps",
-    "Data Science",
-    "Cloud",
-  ];
-  const difficulties = ["Todos", "Principiante", "Intermedio", "Avanzado"];
+  // Helper functions
+  const getCourseGradient = (isCompleted: boolean) => {
+    return isCompleted
+      ? "bg-gradient-to-br from-green-500 to-emerald-600"
+      : "bg-gradient-to-br from-blue-500 to-purple-600";
+  };
+
+  const getCourseIcon = (isCompleted: boolean) => {
+    return isCompleted ? (
+      <Trophy
+        className={`${CONSTANTS.ICON_SIZES.EXTRA_LARGE} text-white opacity-90`}
+      />
+    ) : (
+      <BookOpen
+        className={`${CONSTANTS.ICON_SIZES.EXTRA_LARGE} text-white opacity-80`}
+      />
+    );
+  };
+
+  const getStatusBadge = (isCompleted: boolean, isEnrolled: boolean) => {
+    if (isCompleted) {
+      return (
+        <Badge className="bg-green-600 text-white">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Completado
+        </Badge>
+      );
+    }
+    if (isEnrolled) {
+      return <Badge className="bg-blue-600 text-white">En Progreso</Badge>;
+    }
+    return <Badge className="bg-gray-600 text-white">Disponible</Badge>;
+  };
+
+  const getActionButtons = (
+    course: Course,
+    isEnrolled: boolean,
+    isCompleted: boolean
+  ) => {
+    if (isCompleted) {
+      return (
+        <>
+          <Button
+            className="flex-1"
+            variant="outline"
+            onClick={() => handleContinueCourse(course.id)}
+          >
+            <BookOpen className={`${CONSTANTS.ICON_SIZES.SMALL} mr-2`} />
+            Repasar
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => handleViewCertificate(course.id)}
+          >
+            <Award className={`${CONSTANTS.ICON_SIZES.SMALL} mr-2`} />
+            Certificado
+          </Button>
+        </>
+      );
+    }
+    if (isEnrolled) {
+      return (
+        <Button
+          className="flex-1"
+          variant="outline"
+          onClick={() => handleContinueCourse(course.id)}
+        >
+          <BookOpen className={`${CONSTANTS.ICON_SIZES.SMALL} mr-2`} />
+          Continuar
+        </Button>
+      );
+    }
+    return (
+      <Button
+        className="flex-1"
+        onClick={() => handleEnrollInCourse(course.id)}
+        disabled={enrollingCourseId === course.id}
+      >
+        {enrollingCourseId === course.id ? (
+          <>
+            <Loader2
+              className={`${CONSTANTS.ICON_SIZES.SMALL} mr-2 animate-spin`}
+            />
+            Inscribiendo...
+          </>
+        ) : (
+          <>
+            <BookOpen className={`${CONSTANTS.ICON_SIZES.SMALL} mr-2`} />
+            Inscribirse
+          </>
+        )}
+      </Button>
+    );
+  };
+
+  // Fetch courses and enrolled courses on component mount
+  useEffect(() => {
+    fetchCourses();
+    fetchEnrolledCourses();
+  }, [fetchCourses, fetchEnrolledCourses]);
+
+  // Update enrolled course IDs when enrolled courses change
+  useEffect(() => {
+    const enrolledIds = new Set(enrolledCourses.map((course) => course.id));
+    setEnrolledCourseIds(enrolledIds);
+  }, [enrolledCourses]);
+
+  // Filter courses based on search and filters
+  const filteredCourses = courses?.filter((course: Course) => {
+    const matchesSearch =
+      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "Todos" || course.category === selectedCategory;
+    const matchesDifficulty =
+      selectedDifficulty === "Todos" || course.level === selectedDifficulty;
+
+    return matchesSearch && matchesCategory && matchesDifficulty;
+  });
+
+  const categories = CONSTANTS.FILTERS.CATEGORIES;
+  const difficulties = CONSTANTS.FILTERS.DIFFICULTIES;
+
+  // Handle course enrollment
+  const handleEnrollInCourse = async (courseId: string) => {
+    if (enrollingCourseId) return; // Prevent multiple simultaneous enrollments
+
+    setEnrollingCourseId(courseId);
+    try {
+      const success = await enrollInCourse(courseId);
+      if (success) {
+        // Refresh enrolled courses to update the UI
+        await fetchEnrolledCourses();
+        toast.success(CONSTANTS.MESSAGES.ENROLL_SUCCESS);
+      } else {
+        toast.error(CONSTANTS.MESSAGES.ENROLL_ERROR);
+      }
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      toast.error(CONSTANTS.MESSAGES.ENROLL_ERROR_GENERIC);
+    } finally {
+      setEnrollingCourseId(null);
+    }
+  };
+
+  // Handle continuing a course
+  const handleContinueCourse = (courseId: string) => {
+    router.push(`/workspace/student/courses/${courseId}`);
+  };
+
+  // Handle viewing certificate
+  const handleViewCertificate = (courseId: string) => {
+    // TODO: Implement certificate viewing
+    toast.info(CONSTANTS.MESSAGES.CERTIFICATE_COMING_SOON);
+  };
+
+  // Get enrolled course data for a specific course
+  const getEnrolledCourseData = (courseId: string) => {
+    return enrolledCourses.find((course) => course.id === courseId);
+  };
 
   return (
     <div className="space-y-6">
@@ -128,10 +282,17 @@ const StudentCatalog = () => {
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar cursos..." className="pl-10" />
+          <Search
+            className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${CONSTANTS.ICON_SIZES.SMALL} text-muted-foreground`}
+          />
+          <Input
+            placeholder="Buscar cursos..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <Select defaultValue="Todos">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
@@ -143,7 +304,10 @@ const StudentCatalog = () => {
             ))}
           </SelectContent>
         </Select>
-        <Select defaultValue="Todos">
+        <Select
+          value={selectedDifficulty}
+          onValueChange={setSelectedDifficulty}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Dificultad" />
           </SelectTrigger>
@@ -157,72 +321,156 @@ const StudentCatalog = () => {
         </Select>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <Loader message={CONSTANTS.MESSAGES.LOADING} height="py-12" />
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-12">
+          <p className="text-red-500 mb-4">
+            {CONSTANTS.MESSAGES.ERROR_LOADING}: {error}
+          </p>
+          <Button onClick={() => fetchCourses()}>
+            {CONSTANTS.MESSAGES.RETRY}
+          </Button>
+        </div>
+      )}
+
+      {/* No Courses State */}
+      {!loading && !error && filteredCourses?.length === 0 && (
+        <div className="text-center py-12">
+          <BookOpen
+            className={`${CONSTANTS.ICON_SIZES.EXTRA_LARGE} mx-auto text-muted-foreground mb-4`}
+          />
+          <h3 className="text-lg font-semibold mb-2">
+            {CONSTANTS.MESSAGES.NO_COURSES_FOUND}
+          </h3>
+          <p className="text-muted-foreground">
+            {searchTerm ||
+            selectedCategory !== "Todos" ||
+            selectedDifficulty !== "Todos"
+              ? CONSTANTS.MESSAGES.FILTER_ADJUSTMENT
+              : CONSTANTS.MESSAGES.NO_COURSES_DESCRIPTION}
+          </p>
+        </div>
+      )}
+
       {/* Cursos */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {availableCourses.map((course) => (
-          <Card key={course.id} className="overflow-hidden">
-            <div className="aspect-video relative bg-gradient-to-br from-blue-500 to-purple-600">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <BookOpen className="h-12 w-12 text-white opacity-80" />
-              </div>
-              {course.isEnrolled && (
-                <Badge className="absolute top-2 right-2 bg-green-600">
-                  Inscrito
-                </Badge>
-              )}
-            </div>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">
-                    {course.description}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{course.category}</Badge>
-                <Badge variant="outline">{course.difficulty}</Badge>
-              </div>
+      {!loading && !error && filteredCourses?.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCourses.map((course: Course) => {
+            const isEnrolled = enrolledCourseIds.has(course.id);
+            const enrolledData = getEnrolledCourseData(course.id);
+            const isCompleted = enrolledData?.isCompleted || false;
+            const progress = enrolledData?.progress || 0;
+            const completedAt = enrolledData?.completedAt;
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{course.duration}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{course.students.toLocaleString()}</span>
-                </div>
-              </div>
+            return (
+              <Card
+                key={course.id}
+                className={`overflow-hidden transition-all duration-200 ${
+                  isCompleted
+                    ? "ring-2 ring-green-200 bg-gradient-to-br from-green-50 to-emerald-50"
+                    : isEnrolled
+                    ? "ring-1 ring-blue-200"
+                    : ""
+                }`}
+              >
+                <div
+                  className={`aspect-video relative ${getCourseGradient(
+                    isCompleted
+                  )}`}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {getCourseIcon(isCompleted)}
+                  </div>
 
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{course.rating}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({course.students} estudiantes)
-                </span>
-              </div>
+                  {/* Status Badges */}
+                  <div className="absolute top-2 right-2 flex flex-col gap-1">
+                    {getStatusBadge(isCompleted, isEnrolled)}
+                  </div>
+                </div>
 
-              <div className="flex gap-2">
-                {course.isEnrolled ? (
-                  <Button className="flex-1" variant="outline">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Continuar
-                  </Button>
-                ) : (
-                  <Button className="flex-1">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Inscribirse
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="line-clamp-2">
+                        {course.name}
+                      </CardTitle>
+                      <CardDescription className="line-clamp-2">
+                        {course.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{course.category}</Badge>
+                    <Badge variant="outline">{course.level}</Badge>
+                  </div>
+
+                  {/* Progress Section for Enrolled Courses */}
+                  {isEnrolled && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">Progreso</span>
+                        <span className="text-muted-foreground">
+                          {progress}%
+                        </span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                      {isCompleted && completedAt && (
+                        <div className="flex items-center gap-1 text-xs text-green-600">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            Completado el{" "}
+                            {new Date(completedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock
+                        className={`${CONSTANTS.ICON_SIZES.SMALL} text-muted-foreground`}
+                      />
+                      <span>{course.estimatedDuration || "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users
+                        className={`${CONSTANTS.ICON_SIZES.SMALL} text-muted-foreground`}
+                      />
+                      <span>{course.numberOfChapters} capítulos</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Star
+                      className={`${CONSTANTS.ICON_SIZES.SMALL} fill-yellow-400 text-yellow-400`}
+                    />
+                    <span className="text-sm font-medium">
+                      {CONSTANTS.RATINGS.DEFAULT}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      ({CONSTANTS.RATINGS.LABEL})
+                    </span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {getActionButtons(course, isEnrolled, isCompleted)}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

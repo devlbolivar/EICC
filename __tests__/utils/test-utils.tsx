@@ -120,6 +120,12 @@ export const mockCourse = {
   companyId: "test-company-id",
   isPublic: true,
   isActive: true,
+  level: "Básico" as const,
+  status: "Borrador" as const,
+  estimatedDuration: "2 horas",
+  visibility: "Público" as const,
+  targetCompanies: [],
+  modules: [],
   createdAt: new Date(),
   updatedAt: new Date(),
 };

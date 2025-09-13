@@ -3,6 +3,7 @@ import { db } from "@/config/db";
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { generateCertificateForCompletion } from "@/lib/certificate-service";
 
 // ===== POST - Inscribirse en un curso =====
 export async function POST(
@@ -53,7 +54,7 @@ export async function POST(
     // Verificar si el usuario ya está inscrito
     const existingEnrollment = await db.execute(sql`
       SELECT * FROM "enrollCourse" 
-      WHERE "courseId" = ${courseId} AND "userId" = ${payload.userId}
+      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
     if (existingEnrollment.rows.length > 0) {
@@ -72,13 +73,21 @@ export async function POST(
     }
 
     // Inscribir al usuario
+    console.log("Course data:", {
+      cid: course.cid,
+      courseId,
+      userId: payload.userId,
+      companyId: payload.companyId,
+      email: payload.email,
+    });
+
     const enrollment = await db.execute(sql`
       INSERT INTO "enrollCourse" (
-        "courseId", "userId", "companyId", "progress", "isCompleted", 
+        "course_id", "user_id", "company_id", "progress", "isCompleted", 
         "completedChapters", "cid", "userEmail"
       ) VALUES (
-        ${courseId}, ${payload.userId}, ${payload.companyId}, 0, false, 
-        '{}', ${course.cid}, ${payload.email}
+        ${courseId}, ${payload.userId}, ${payload.companyId || null}, 0, false, 
+        '{}', ${course.cid || ""}, ${payload.email}
       ) RETURNING *
     `);
 
@@ -133,8 +142,8 @@ export async function GET(
         c.description as course_description,
         c.modules as course_modules
       FROM "enrollCourse" ec
-      LEFT JOIN courses c ON ec."courseId" = c.id
-      WHERE ec."courseId" = ${courseId} AND ec."userId" = ${payload.userId}
+      LEFT JOIN courses c ON ec."course_id" = c.id
+      WHERE ec."course_id" = ${courseId} AND ec."user_id" = ${payload.userId}
     `);
 
     if (enrollmentResult.rows.length === 0) {
@@ -190,7 +199,7 @@ export async function PUT(
     // Verificar que el usuario está inscrito
     const existingEnrollment = await db.execute(sql`
       SELECT * FROM "enrollCourse" 
-      WHERE "courseId" = ${courseId} AND "userId" = ${payload.userId}
+      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
     if (existingEnrollment.rows.length === 0) {
@@ -200,43 +209,103 @@ export async function PUT(
       );
     }
 
-    // Actualizar progreso
-    const updateData: Record<string, unknown> = {
-      updatedAt: new Date(),
-    };
+    // Actualizar progreso - use individual field updates
+    let updateQuery = sql`UPDATE "enrollCourse" SET "updatedAt" = ${new Date().toISOString()}`;
 
     if (completedChapters !== undefined) {
-      updateData.completedChapters = completedChapters;
+      updateQuery = sql`${updateQuery}, "completedChapters" = ${JSON.stringify(
+        completedChapters
+      )}`;
     }
     if (progress !== undefined) {
-      updateData.progress = progress;
+      updateQuery = sql`${updateQuery}, "progress" = ${progress}`;
     }
     if (isCompleted !== undefined) {
-      updateData.isCompleted = isCompleted;
+      updateQuery = sql`${updateQuery}, "isCompleted" = ${isCompleted}`;
       if (isCompleted) {
-        updateData.completedAt = new Date();
+        updateQuery = sql`${updateQuery}, "completedAt" = ${new Date()}`;
       }
     }
 
     const updatedEnrollment = await db.execute(sql`
-      UPDATE "enrollCourse" 
-      SET ${sql.raw(
-        Object.entries(updateData)
-          .map(
-            ([key, value]) =>
-              `"${key}" = ${typeof value === "string" ? `'${value}'` : value}`
-          )
-          .join(", ")
-      )}
-      WHERE "courseId" = ${courseId} AND "userId" = ${payload.userId}
+      ${updateQuery}
+      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
       RETURNING *
     `);
+
+    // If course is completed, generate certificate automatically
+    let certificateGenerated = false;
+    if (isCompleted) {
+      console.log(
+        `🔍 Debug: Course completed, generating certificate for user ${payload.userId} and course ${courseId}`
+      );
+
+      try {
+        // Get course details for certificate generation
+        const courseResult = await db.execute(sql`
+          SELECT * FROM courses WHERE id = ${courseId} AND "isActive" = true
+        `);
+
+        console.log(`🔍 Debug: Course query result`, {
+          courseFound: courseResult.rows.length > 0,
+        });
+
+        if (courseResult.rows.length > 0) {
+          const course = courseResult.rows[0] as any;
+          const enrollment = updatedEnrollment.rows[0] as any;
+
+          console.log(`🔍 Debug: Certificate generation data`, {
+            courseId,
+            userId: payload.userId,
+            courseName: course.name,
+            companyId: payload.companyId,
+          });
+
+          const certificateResult = await generateCertificateForCompletion({
+            courseId,
+            userId: payload.userId,
+            course,
+            enrollment,
+            companyId: payload.companyId,
+          });
+
+          certificateGenerated = certificateResult.success;
+
+          console.log(
+            `🔍 Debug: Certificate generation result`,
+            certificateResult
+          );
+
+          if (certificateResult.success) {
+            console.log(
+              `✅ Certificate generated for user ${payload.userId} and course ${courseId}`
+            );
+          } else {
+            console.error(
+              `❌ Failed to generate certificate: ${certificateResult.error}`
+            );
+          }
+        } else {
+          console.error(
+            `❌ Course not found for certificate generation: ${courseId}`
+          );
+        }
+      } catch (error) {
+        console.error("❌ Error generating certificate:", error);
+        // Don't fail the progress update if certificate generation fails
+      }
+    } else {
+      console.log(
+        `🔍 Debug: Course not completed yet (progress: ${progress}%)`
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: "Progreso actualizado exitosamente",
       data: {
         enrollment: updatedEnrollment.rows[0],
+        certificateGenerated,
       },
     });
   } catch (error) {

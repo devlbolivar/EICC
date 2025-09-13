@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    // Verificar permisos
-    if (!payload.permissions.includes("courses:read")) {
+    // Verificar permisos - aceptar tanto courses:read como courses:view
+    if (
+      !payload.permissions.includes("courses:read") &&
+      !payload.permissions.includes("courses:view")
+    ) {
       return NextResponse.json(
         { error: "Sin permisos para ver cursos" },
         { status: 403 }

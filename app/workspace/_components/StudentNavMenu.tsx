@@ -30,7 +30,7 @@ import { PAGE_ROUTES } from "@/lib/constants";
 const StudentNavMenu = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, session } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -41,11 +41,19 @@ const StudentNavMenu = () => {
     }
   };
 
+  // Generate dynamic dashboard path
+  const getDashboardPath = () => {
+    if (session?.user?.id) {
+      return `/workspace/student/${session.user.id}`;
+    }
+    return PAGE_ROUTES.STUDENT.DASHBOARD;
+  };
+
   const studentMenuItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      path: PAGE_ROUTES.STUDENT.DASHBOARD,
+      path: getDashboardPath(),
     },
     {
       title: "Mis Cursos",

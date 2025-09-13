@@ -4,11 +4,13 @@ import {
   CourseCreateData,
   ApiResponse,
   PaginatedResponse,
+  EnrolledCourseResponse,
 } from "@/app/types";
 
 interface UseCoursesReturn {
   // Estado
   courses: Course[];
+  enrolledCourses: EnrolledCourseResponse[];
   loading: boolean;
   error: string | null;
 
@@ -21,6 +23,7 @@ interface UseCoursesReturn {
     status?: string;
     search?: string;
   }) => Promise<void>;
+  fetchEnrolledCourses: () => Promise<void>;
 
   createCourse: (data: CourseCreateData) => Promise<Course | null>;
   updateCourse: (
@@ -40,7 +43,7 @@ interface UseCoursesReturn {
       progress?: number;
       isCompleted?: boolean;
     }
-  ) => Promise<boolean>;
+  ) => Promise<{ success: boolean; certificateGenerated?: boolean }>;
 
   // Utilidades
   clearError: () => void;
@@ -49,6 +52,9 @@ interface UseCoursesReturn {
 
 export function useCourses(): UseCoursesReturn {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<
+    EnrolledCourseResponse[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,12 +69,26 @@ export function useCourses(): UseCoursesReturn {
   // Función para hacer requests
   const makeRequest = useCallback(
     async <T>(url: string, options: RequestInit = {}): Promise<T | null> => {
+      setLoading(true);
+      setError(null);
+
       try {
+        let headers: HeadersInit = {};
+        const accessToken = localStorage.getItem("accessToken");
+        if (accessToken) {
+          headers["Authorization"] = `Bearer ${accessToken}`;
+        }
+        headers = {
+          "Content-Type": "application/json",
+          ...headers,
+        };
+
         const response = await fetch(url, {
-          headers: {
-            "Content-Type": "application/json",
-          },
           ...options,
+          headers: {
+            ...headers,
+            ...options.headers,
+          },
         });
 
         const data: ApiResponse<T> = await response.json();
@@ -102,10 +122,13 @@ export function useCourses(): UseCoursesReturn {
         const url = `/api/courses${
           searchParams.toString() ? `?${searchParams.toString()}` : ""
         }`;
-        const result = await makeRequest<PaginatedResponse<Course>>(url);
+        const result = await makeRequest<{
+          courses: Course[];
+          pagination: any;
+        }>(url);
 
         if (result) {
-          setCourses(result.data);
+          setCourses(result.courses);
         }
       } catch (err) {
         handleError(err);
@@ -116,6 +139,23 @@ export function useCourses(): UseCoursesReturn {
     [makeRequest, handleError]
   );
 
+  const fetchEnrolledCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const url = `/api/student/courses`;
+      const result = await makeRequest<EnrolledCourseResponse[]>(url);
+
+      if (result) {
+        setEnrolledCourses(result);
+      }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [makeRequest, handleError]);
   // Crear curso
   const createCourse = useCallback(
     async (data: CourseCreateData): Promise<Course | null> => {
@@ -281,7 +321,7 @@ export function useCourses(): UseCoursesReturn {
         progress?: number;
         isCompleted?: boolean;
       }
-    ): Promise<boolean> => {
+    ): Promise<{ success: boolean; certificateGenerated?: boolean }> => {
       setLoading(true);
       setError(null);
 
@@ -291,10 +331,13 @@ export function useCourses(): UseCoursesReturn {
           body: JSON.stringify(data),
         });
 
-        return result !== null;
+        return {
+          success: result !== null,
+          certificateGenerated: (result as any)?.certificateGenerated || false,
+        };
       } catch (err) {
         handleError(err);
-        return false;
+        return { success: false };
       } finally {
         setLoading(false);
       }
@@ -314,9 +357,11 @@ export function useCourses(): UseCoursesReturn {
 
   return {
     courses,
+    enrolledCourses,
     loading,
     error,
     fetchCourses,
+    fetchEnrolledCourses,
     createCourse,
     updateCourse,
     deleteCourse,

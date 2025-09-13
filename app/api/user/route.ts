@@ -42,17 +42,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ===== OBTENER RELACIONES USUARIO-EMPRESA =====
-    const userCompanies = await db.query.userCompaniesTable.findMany({
-      where: eq(schema.userCompaniesTable.userId, user.id),
-      with: {
-        company: true,
-        role: true,
-      },
-    });
+    // ===== OBTENER RELACIONES USUARIO-EMPRESA (simplificado) =====
+    const userCompanies = await db
+      .select()
+      .from(schema.userCompaniesTable)
+      .where(eq(schema.userCompaniesTable.userId, user.id));
+
+    // ===== OBTENER DATOS DE EMPRESAS Y ROLES =====
+    const userCompaniesWithDetails = await Promise.all(
+      userCompanies.map(async (uc) => {
+        const [company, role] = await Promise.all([
+          uc.companyId
+            ? db.query.companiesTable.findFirst({
+                where: eq(schema.companiesTable.id, uc.companyId),
+              })
+            : null,
+          db.query.rolesTable.findFirst({
+            where: eq(schema.rolesTable.id, uc.roleId),
+          }),
+        ]);
+
+        return {
+          ...uc,
+          company,
+          role,
+        };
+      })
+    );
 
     // ===== FILTRAR SOLO RELACIONES ACTIVAS =====
-    const activeUserCompanies = userCompanies.filter((uc) => uc.isActive);
+    const activeUserCompanies = userCompaniesWithDetails.filter(
+      (uc) => uc.isActive
+    );
 
     // ===== DETERMINAR ROL PRINCIPAL Y EMPRESA =====
     // Prioridad: admin > company > student
@@ -61,12 +82,12 @@ export async function GET(request: NextRequest) {
     let primaryUserCompany = activeUserCompanies[0];
     let highestPriority =
       rolePriority[
-        primaryUserCompany?.role.name as keyof typeof rolePriority
+        primaryUserCompany?.role?.name as keyof typeof rolePriority
       ] || 0;
 
     for (const userCompany of activeUserCompanies) {
       const priority =
-        rolePriority[userCompany.role.name as keyof typeof rolePriority] || 0;
+        rolePriority[userCompany.role?.name as keyof typeof rolePriority] || 0;
       if (priority > highestPriority) {
         highestPriority = priority;
         primaryUserCompany = userCompany;
@@ -85,6 +106,9 @@ export async function GET(request: NextRequest) {
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        phone: user.phone,
+        location: user.location,
+        bio: user.bio,
       },
       currentCompany: primaryUserCompany?.company
         ? {
@@ -98,7 +122,7 @@ export async function GET(request: NextRequest) {
             subscriptionPlan: primaryUserCompany.company.subscriptionPlan,
           }
         : null,
-      currentRole: primaryUserCompany
+      currentRole: primaryUserCompany?.role
         ? {
             id: primaryUserCompany.role.id,
             name: primaryUserCompany.role.name,
@@ -120,12 +144,14 @@ export async function GET(request: NextRequest) {
               subscriptionPlan: uc.company.subscriptionPlan,
             }
           : null,
-        role: {
-          id: uc.role.id,
-          name: uc.role.name,
-          description: uc.role.description,
-          permissions: uc.role.permissions,
-        },
+        role: uc.role
+          ? {
+              id: uc.role.id,
+              name: uc.role.name,
+              description: uc.role.description,
+              permissions: uc.role.permissions,
+            }
+          : null,
         isActive: uc.isActive,
         joinedAt: uc.joinedAt,
         invitedBy: uc.invitedBy,
@@ -226,12 +252,20 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, avatar } = body;
+    const { name, avatar, phone, location, bio } = body;
 
     // ===== VALIDACIONES =====
     if (!name) {
       return NextResponse.json(
         { error: "El nombre es requerido" },
+        { status: 400 }
+      );
+    }
+
+    // Email no se puede modificar por seguridad
+    if (body.email) {
+      return NextResponse.json(
+        { error: "El correo electrónico no se puede modificar" },
         { status: 400 }
       );
     }
@@ -242,6 +276,9 @@ export async function PUT(request: NextRequest) {
       .set({
         name: name.trim(),
         avatar: avatar || null,
+        phone: phone?.trim() || null,
+        location: location?.trim() || null,
+        bio: bio?.trim() || null,
         updatedAt: new Date(),
       })
       .where(eq(schema.usersTable.id, payload.userId))
@@ -256,6 +293,9 @@ export async function PUT(request: NextRequest) {
           email: updatedUser.email,
           name: updatedUser.name,
           avatar: updatedUser.avatar,
+          phone: updatedUser.phone,
+          location: updatedUser.location,
+          bio: updatedUser.bio,
         },
       },
     });

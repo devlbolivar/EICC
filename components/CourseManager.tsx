@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useCourses } from "@/hooks/use-courses";
-import { Course, CourseCreateData } from "@/app/types";
+import { Course, CourseCreateData, CourseFormData } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,24 +32,17 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Plus, Edit, Trash2, Eye, BookOpen } from "lucide-react";
 
-interface CourseFormData {
-  name: string;
-  description: string;
-  category: string;
-  level: "Básico" | "Intermedio" | "Avanzado";
-  estimatedDuration: string;
-  visibility: "Público" | "Privado" | "Empresas específicas";
-  bannerImage: string;
-}
-
 const initialFormData: CourseFormData = {
   name: "",
   description: "",
   category: "",
   level: "Básico",
+  status: "Borrador",
   estimatedDuration: "",
   visibility: "Público",
   bannerImage: "",
+  targetCompanies: [],
+  modules: [],
 };
 
 export function CourseManager() {
@@ -110,9 +103,12 @@ export function CourseManager() {
       description: course.description,
       category: course.category,
       level: course.level,
+      status: course.status,
       estimatedDuration: course.estimatedDuration || "",
       visibility: course.visibility,
       bannerImage: course.bannerImage || "",
+      targetCompanies: course.targetCompanies || [],
+      modules: course.modules || [],
     });
     setIsDialogOpen(true);
   };

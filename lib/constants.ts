@@ -19,12 +19,17 @@ export const API_ROUTES = {
   COMPANIES: "/api/companies",
   // Course routes
   COURSES: "/api/courses",
+  // Student API routes
+  STUDENT: "/api/student",
   // Admin routes
   ADMIN: "/api/admin",
   // Company API routes
   COMPANY: "/api/company",
   // Invitations
   INVITATIONS: "/api/invitations",
+
+  // Certificates
+  CERTIFICATES: "/api/certificates",
 } as const;
 
 // ===== RUTAS DE PÁGINAS =====
@@ -70,10 +75,12 @@ export const PAGE_ROUTES = {
   // Student specific routes
   STUDENT: {
     DASHBOARD: "/workspace/student",
+    DASHBOARD_DYNAMIC: "/workspace/student/[id]",
     COURSES: "/workspace/student/courses",
     COURSES_CONTINUE: "/workspace/student/courses/continue",
     CATALOG: "/workspace/student/catalog",
     CERTIFICATES: "/workspace/student/certificates",
+    CERTIFICATE_DETAIL: "/workspace/student/certificates/[id]",
     PROFILE: "/workspace/student/profile",
     SUPPORT: "/workspace/student/support",
   },

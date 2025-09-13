@@ -35,7 +35,9 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
       case "company":
         return PAGE_ROUTES.WORKSPACE.COMPANY;
       case "student":
-        return PAGE_ROUTES.WORKSPACE.STUDENT;
+        return session?.user?.id
+          ? `/workspace/student/${session.user.id}`
+          : PAGE_ROUTES.WORKSPACE.STUDENT;
       default:
         return "/";
     }

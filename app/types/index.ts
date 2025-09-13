@@ -118,6 +118,7 @@ export type Permission =
   | "courses:enroll"
   | "courses:edit"
   | "courses:view"
+  | "courses:manage"
 
   // Permisos de contenido
   | "content:read"
@@ -298,6 +299,85 @@ export interface EnrollCourse extends BaseEntity {
   course?: Course;
   user?: User;
   company?: Company;
+}
+
+// ===== CERTIFICADOS =====
+export interface Certificate extends BaseEntity {
+  certificateId: string;
+  courseId: string;
+  userId: string;
+  companyId?: string;
+  title: string;
+  description?: string;
+  grade: number; // Calificación obtenida (0-100)
+  issuedDate: Date;
+  completedDate: Date;
+  duration?: string; // Duración del curso
+  certificateUrl?: string; // URL del certificado PDF
+  isActive: boolean;
+
+  // Relaciones
+  course?: Course;
+  user?: User;
+  company?: Company;
+
+  // Campos adicionales de la API
+  course_name?: string;
+  course_description?: string;
+  course_category?: string;
+  course_level?: string;
+  course_duration?: string;
+  course_banner?: string;
+  user_name?: string;
+  user_email?: string;
+  company_name?: string;
+}
+
+export interface CertificateCreateData {
+  courseId: string;
+  userId: string;
+  companyId?: string;
+  title: string;
+  description?: string;
+  grade: number;
+  completedDate: Date;
+  duration?: string;
+  certificateUrl?: string;
+}
+
+export interface CertificateUpdateData {
+  title?: string;
+  description?: string;
+  grade?: number;
+  certificateUrl?: string;
+  isActive?: boolean;
+}
+
+// ===== CURSOS CON PROGRESO (para vista de estudiante) =====
+export interface CourseWithProgress extends Course {
+  progress: number;
+  totalChapters: number;
+  completedChapters: Record<string, boolean>;
+  estimatedTime: string;
+  lastAccessed: string;
+  image: string;
+}
+
+// ===== RESPUESTA DE CURSOS INSCRITOS (API) =====
+export interface EnrolledCourseResponse {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  totalChapters: number;
+  completedChapters: any;
+  isCompleted: boolean;
+  completedAt?: string;
+  estimatedTime: string;
+  lastAccessed: string;
+  image: string;
+  category: string;
+  level: string;
 }
 
 // ===== AUTENTICACIÓN Y SESIÓN =====

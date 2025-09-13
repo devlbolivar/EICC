@@ -38,6 +38,10 @@ export const usersTable = pgTable("users", {
   // Campos adicionales del schema de drizzle
   age: integer(),
   subscriptionId: varchar({ length: 255 }),
+  // Campos adicionales para el perfil
+  phone: varchar({ length: 50 }),
+  location: varchar({ length: 255 }),
+  bio: text(),
 });
 
 // ===== EMPRESAS/COMPAÑÍAS =====
@@ -169,17 +173,52 @@ export const enrollCourseTable = pgTable(
   })
 );
 
+// ===== CERTIFICADOS =====
+export const certificatesTable = pgTable(
+  "certificates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    certificateId: varchar({ length: 255 }).notNull().unique(), // ID único del certificado
+    courseId: uuid("course_id")
+      .notNull()
+      .references(() => coursesTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id").references(() => companiesTable.id), // para tracking
+    title: varchar({ length: 255 }).notNull(),
+    description: text(),
+    grade: integer().notNull(), // Calificación obtenida (0-100)
+    issuedDate: timestamp().notNull().defaultNow(),
+    completedDate: timestamp().notNull(),
+    duration: varchar({ length: 100 }), // Duración del curso
+    certificateUrl: text(), // URL del certificado PDF
+    isActive: boolean().notNull().default(true),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+  },
+  (table) => ({
+    userCertificateIdx: index("user_certificate_idx").on(
+      table.userId,
+      table.courseId
+    ),
+    certificateIdIdx: index("certificate_id_idx").on(table.certificateId),
+  })
+);
+
 // ===== RELACIONES =====
 export const usersRelations = relations(usersTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),
   createdCourses: many(coursesTable, { relationName: "courseCreator" }),
   enrolledCourses: many(enrollCourseTable),
+  certificates: many(certificatesTable),
   sentInvitations: many(invitationTokensTable, { relationName: "inviter" }),
 }));
 
 export const companiesRelations = relations(companiesTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),
   courses: many(coursesTable),
+  certificates: many(certificatesTable),
   invitationTokens: many(invitationTokensTable),
 }));
 
@@ -222,6 +261,7 @@ export const coursesRelations = relations(coursesTable, ({ one, many }) => ({
     references: [companiesTable.id],
   }),
   enrollments: many(enrollCourseTable),
+  certificates: many(certificatesTable),
 }));
 
 export const enrollCourseRelations = relations(
@@ -237,6 +277,24 @@ export const enrollCourseRelations = relations(
     }),
     company: one(companiesTable, {
       fields: [enrollCourseTable.companyId],
+      references: [companiesTable.id],
+    }),
+  })
+);
+
+export const certificatesRelations = relations(
+  certificatesTable,
+  ({ one }) => ({
+    course: one(coursesTable, {
+      fields: [certificatesTable.courseId],
+      references: [coursesTable.id],
+    }),
+    user: one(usersTable, {
+      fields: [certificatesTable.userId],
+      references: [usersTable.id],
+    }),
+    company: one(companiesTable, {
+      fields: [certificatesTable.companyId],
       references: [companiesTable.id],
     }),
   })
@@ -267,6 +325,7 @@ export const users = usersTable;
 export const companies = companiesTable;
 export const courses = coursesTable;
 export const enrollCourse = enrollCourseTable;
+export const certificates = certificatesTable;
 export const invitationTokens = invitationTokensTable;
 export const roles = rolesTable;
 export const userCompanies = userCompaniesTable;
