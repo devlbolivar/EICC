@@ -9,13 +9,11 @@ export const useStudent = () => {
   const isStudent = useMemo(() => {
     // Si no hay sesión, no es estudiante
     if (!session) {
-      console.log("useStudent: No session available");
       return false;
     }
 
     // Si no hay permisos, no es estudiante
     if (!session.permissions || session.permissions.length === 0) {
-      console.log("useStudent: No permissions available");
       return false;
     }
 
@@ -44,16 +42,10 @@ export const useStudent = () => {
           permission === "company:billing"
       );
 
-      console.log("useStudent: Permission analysis:", {
-        permissions: session.permissions,
-        hasStudentPermissions,
-        hasAdminPermissions,
-        hasCompanyPermissions,
-        isStudent: hasStudentPermissions && !hasAdminPermissions && !hasCompanyPermissions,
-      });
-
       // Es estudiante si tiene permisos de estudiante Y NO tiene permisos de admin o company
-      return hasStudentPermissions && !hasAdminPermissions && !hasCompanyPermissions;
+      return (
+        hasStudentPermissions && !hasAdminPermissions && !hasCompanyPermissions
+      );
     }
 
     return false;

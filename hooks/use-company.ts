@@ -9,13 +9,11 @@ export const useCompany = () => {
   const isCompany = useMemo(() => {
     // Si no hay sesión, no es company
     if (!session) {
-      console.log("useCompany: No session available");
       return false;
     }
 
     // Si no hay permisos, no es company
     if (!session.permissions || session.permissions.length === 0) {
-      console.log("useCompany: No permissions available");
       return false;
     }
 
@@ -36,13 +34,6 @@ export const useCompany = () => {
           permission === "platform:write" ||
           permission === "platform:read"
       );
-
-      console.log("useCompany: Permission analysis:", {
-        permissions: session.permissions,
-        hasCompanyPermissions,
-        hasAdminPermissions,
-        isCompany: hasCompanyPermissions && !hasAdminPermissions,
-      });
 
       // Es company si tiene permisos de company Y NO tiene permisos de admin
       return hasCompanyPermissions && !hasAdminPermissions;

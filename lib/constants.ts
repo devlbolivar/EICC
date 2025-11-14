@@ -42,7 +42,7 @@ export const PAGE_ROUTES = {
   // Workspace routes
   WORKSPACE: {
     ADMIN: "/workspace/admin",
-    COMPANY: "/workspace/company",
+    COMPANY: "/workspace/company/dashboard",
     STUDENT: "/workspace/student",
   },
   // Admin specific routes

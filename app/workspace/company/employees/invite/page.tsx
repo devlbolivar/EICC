@@ -1,83 +1,143 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { UserPlus, Mail, Send, Users, Copy, Check } from "lucide-react";
+  UserPlus,
+  Mail,
+  Users,
+  Copy,
+  Check,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  X,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useCompanyInvitations } from "@/hooks/use-company-invitations";
 
 const InviteEmployees = () => {
-  const [invitations, setInvitations] = React.useState<
-    Array<{
-      email: string;
-      role: string;
-      message: string;
-    }>
-  >([]);
-  const [currentInvitation, setCurrentInvitation] = React.useState({
+  const {
+    pendingInvitations,
+    loading,
+    error,
+    creating,
+    createInvitation,
+    cancelInvitation,
+    refreshInvitations,
+    clearError,
+  } = useCompanyInvitations();
+
+  const [currentInvitation, setCurrentInvitation] = useState({
     email: "",
-    role: "",
     message: "",
   });
-  const [copiedEmail, setCopiedEmail] = React.useState<string | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
-  const roles = [
-    { value: "employee", label: "Empleado" },
-    { value: "manager", label: "Gerente" },
-    { value: "admin", label: "Administrador" },
-  ];
-
-  const addInvitation = () => {
-    if (!currentInvitation.email || !currentInvitation.role) {
-      toast.error("Por favor completa todos los campos requeridos");
+  const handleCreateInvitation = async () => {
+    if (!currentInvitation.email) {
+      toast.error("Por favor completa el email del empleado");
       return;
     }
 
-    setInvitations([...invitations, currentInvitation]);
-    setCurrentInvitation({ email: "", role: "", message: "" });
-    toast.success("Invitación agregada a la lista");
-  };
+    const result = await createInvitation({
+      email: currentInvitation.email,
+      message: currentInvitation.message,
+    });
 
-  const removeInvitation = (index: number) => {
-    setInvitations(invitations.filter((_, i) => i !== index));
-  };
-
-  const sendInvitations = () => {
-    if (invitations.length === 0) {
-      toast.error("No hay invitaciones para enviar");
-      return;
+    if (result) {
+      if (result.emailSent) {
+        toast.success("Invitación enviada por email exitosamente");
+      } else {
+        toast.warning(
+          "Invitación creada, pero el email no se pudo enviar. Revisa la configuración de email."
+        );
+      }
+      setCurrentInvitation({ email: "", message: "" });
     }
-
-    // Aquí iría la lógica para enviar las invitaciones
-    toast.success(`${invitations.length} invitaciones enviadas exitosamente`);
-    setInvitations([]);
   };
 
-  const copyInvitationLink = (email: string) => {
-    const link = `${window.location.origin}/invite?email=${email}&company=techcorp`;
+  const handleCancelInvitation = async (invitationId: string) => {
+    const success = await cancelInvitation(invitationId);
+    if (success) {
+      toast.success("Invitación cancelada exitosamente");
+    }
+  };
+
+  const copyInvitationLink = (token: string) => {
+    const link = `${window.location.origin}/accept-invite?token=${token}`;
     navigator.clipboard.writeText(link);
-    setCopiedEmail(email);
+    setCopiedEmail(token);
     toast.success("Enlace copiado al portapapeles");
 
     setTimeout(() => setCopiedEmail(null), 2000);
   };
 
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const isExpired = (expiresAt: Date) => {
+    return new Date(expiresAt) < new Date();
+  };
+
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <UserPlus className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold">Invitar Empleados</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <UserPlus className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold">Invitar Empleados</h1>
+        </div>
+        <Button
+          variant="outline"
+          onClick={refreshInvitations}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Actualizar
+        </Button>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="text-red-800 font-medium">
+                  Error al cargar invitaciones
+                </p>
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearError}
+                className="ml-auto"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Formulario de invitación */}
@@ -99,28 +159,8 @@ const InviteEmployees = () => {
                     email: e.target.value,
                   })
                 }
+                disabled={creating}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role">Rol en la empresa *</Label>
-              <Select
-                value={currentInvitation.role}
-                onValueChange={(value) =>
-                  setCurrentInvitation({ ...currentInvitation, role: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -136,15 +176,21 @@ const InviteEmployees = () => {
                   })
                 }
                 rows={3}
+                disabled={creating}
               />
             </div>
 
             <Button
-              onClick={addInvitation}
+              onClick={handleCreateInvitation}
+              disabled={creating || !currentInvitation.email}
               className="w-full flex items-center gap-2"
             >
-              <UserPlus className="w-4 h-4" />
-              Agregar a la lista
+              {creating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              {creating ? "Enviando invitación..." : "Enviar invitación"}
             </Button>
           </CardContent>
         </Card>
@@ -152,41 +198,62 @@ const InviteEmployees = () => {
         {/* Invitaciones pendientes */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              Invitaciones Pendientes ({invitations.length})
+            <CardTitle className="flex items-center justify-between">
+              Invitaciones Pendientes ({pendingInvitations.length})
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {invitations.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                  <p className="text-muted-foreground">
+                    Cargando invitaciones...
+                  </p>
+                </div>
+              </div>
+            ) : pendingInvitations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>No hay invitaciones pendientes</p>
-                <p className="text-sm">Agrega empleados usando el formulario</p>
+                <p className="text-sm">
+                  Envía una invitación usando el formulario
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {invitations.map((invitation, index) => (
+                {pendingInvitations.map((invitation) => (
                   <div
-                    key={index}
+                    key={invitation.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">{invitation.email}</span>
+                        {isExpired(invitation.expiresAt) && (
+                          <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                            Expirada
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Rol:{" "}
-                        {roles.find((r) => r.value === invitation.role)?.label}
+                        Rol: {invitation.roleName}
                       </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Clock className="w-3 h-3" />
+                        <span>Expira: {formatDate(invitation.expiresAt)}</span>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => copyInvitationLink(invitation.email)}
+                        onClick={() => copyInvitationLink(invitation.token)}
+                        disabled={isExpired(invitation.expiresAt)}
                       >
-                        {copiedEmail === invitation.email ? (
+                        {copiedEmail === invitation.token ? (
                           <Check className="w-4 h-4" />
                         ) : (
                           <Copy className="w-4 h-4" />
@@ -195,21 +262,14 @@ const InviteEmployees = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => removeInvitation(index)}
+                        onClick={() => handleCancelInvitation(invitation.id)}
+                        className="text-red-600 hover:text-red-700"
                       >
-                        Eliminar
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 ))}
-
-                <Button
-                  onClick={sendInvitations}
-                  className="w-full flex items-center gap-2 mt-4"
-                >
-                  <Send className="w-4 h-4" />
-                  Enviar {invitations.length} invitaciones
-                </Button>
               </div>
             )}
           </CardContent>

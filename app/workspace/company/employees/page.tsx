@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import {
   BookOpen,
   Award,
   MoreHorizontal,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,59 +24,49 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCompanyEmployees } from "@/hooks/use-company-employees";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CompanyEmployees = () => {
-  // Datos de ejemplo - en una implementación real vendrían de la API
-  const employees = [
-    {
-      id: "1",
-      name: "María González",
-      email: "maria.gonzalez@techcorp.cl",
-      phone: "+56 9 1234 5678",
-      role: "Desarrollador Senior",
-      status: "active",
-      joinedAt: "2023-01-15",
-      coursesCompleted: 8,
-      certificates: 5,
-      avatar: "MG",
-    },
-    {
-      id: "2",
-      name: "Juan Pérez",
-      email: "juan.perez@techcorp.cl",
-      phone: "+56 9 2345 6789",
-      role: "Project Manager",
-      status: "active",
-      joinedAt: "2023-03-20",
-      coursesCompleted: 6,
-      certificates: 3,
-      avatar: "JP",
-    },
-    {
-      id: "3",
-      name: "Ana López",
-      email: "ana.lopez@techcorp.cl",
-      phone: "+56 9 3456 7890",
-      role: "UX Designer",
-      status: "active",
-      joinedAt: "2023-02-10",
-      coursesCompleted: 10,
-      certificates: 7,
-      avatar: "AL",
-    },
-    {
-      id: "4",
-      name: "Carlos Rodríguez",
-      email: "carlos.rodriguez@techcorp.cl",
-      phone: "+56 9 4567 8901",
-      role: "QA Engineer",
-      status: "pending",
-      joinedAt: "2024-01-05",
-      coursesCompleted: 2,
-      certificates: 1,
-      avatar: "CR",
-    },
-  ];
+  const {
+    employees,
+    stats,
+    loading,
+    error,
+    filters,
+    setFilters,
+    refreshEmployees,
+    clearError,
+    pagination,
+  } = useCompanyEmployees();
+
+  const [searchValue, setSearchValue] = useState(filters.search || "");
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    setFilters({ search: value, page: 1 });
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setFilters({ status: status === "all" ? "" : status, page: 1 });
+  };
+
+  const handleSort = (sortBy: string) => {
+    const currentOrder = filters.sortOrder || "desc";
+    const newOrder =
+      filters.sortBy === sortBy && currentOrder === "desc" ? "asc" : "desc";
+    setFilters({ sortBy, sortOrder: newOrder as "asc" | "desc" });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setFilters({ page: newPage });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -97,7 +90,12 @@ const CompanyEmployees = () => {
           <Users className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold">Empleados</h1>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button
+          className="flex items-center gap-2"
+          onClick={() =>
+            (window.location.href = "/workspace/company/employees/invite")
+          }
+        >
           <UserPlus className="w-4 h-4" />
           Invitar Empleado
         </Button>
@@ -113,8 +111,12 @@ const CompanyEmployees = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+2 este mes</p>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats?.totalEmployees || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? "Cargando..." : "Empleados registrados"}
+            </p>
           </CardContent>
         </Card>
 
@@ -124,32 +126,50 @@ const CompanyEmployees = () => {
             <div className="h-4 w-4 bg-green-500 rounded-full"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">22</div>
-            <p className="text-xs text-muted-foreground">91.7% del total</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-            <div className="h-4 w-4 bg-yellow-500 rounded-full"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground">Por confirmar</p>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats?.activeEmployees || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loading
+                ? "Cargando..."
+                : stats
+                ? `${Math.round(
+                    (stats.activeEmployees / stats.totalEmployees) * 100
+                  )}% del total`
+                : "0% del total"}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Promedio Cursos
+              Cursos Completados
             </CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6.5</div>
-            <p className="text-xs text-muted-foreground">Por empleado</p>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats?.totalCoursesCompleted || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? "Cargando..." : "Total completados"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Certificados</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats?.totalCertificates || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loading ? "Cargando..." : "Total emitidos"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -161,90 +181,250 @@ const CompanyEmployees = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Buscar empleados..." className="pl-10" />
+                <Input
+                  placeholder="Buscar empleados..."
+                  className="pl-10"
+                  value={searchValue}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
               </div>
             </div>
-            <Button variant="outline">Filtrar</Button>
+            <div className="flex gap-2">
+              <Select
+                value={filters.status || "all"}
+                onValueChange={handleStatusFilter}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Activos</SelectItem>
+                  <SelectItem value="inactive">Inactivos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                onClick={() => handleSort("name")}
+                className="flex items-center gap-2"
+              >
+                Ordenar
+                {filters.sortBy === "name" && (
+                  <span className="text-xs">
+                    {filters.sortOrder === "asc" ? "↑" : "↓"}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={refreshEmployees}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Actualizar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Error State */}
+      {error && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="text-red-800 font-medium">
+                  Error al cargar empleados
+                </p>
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearError}
+                className="ml-auto"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Lista de empleados */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Empleados</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            Lista de Empleados
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Cargando...
+              </div>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {employees.map((employee) => (
-              <div
-                key={employee.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
-                    {employee.avatar}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{employee.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {employee.role}
-                    </p>
-                    <div className="flex items-center gap-4 mt-1">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Mail className="w-3 h-3" />
-                        {employee.email}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(employee.joinedAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-sm">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{employee.coursesCompleted}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Cursos</p>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-sm">
-                      <Award className="w-4 h-4" />
-                      <span>{employee.certificates}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Certificados
-                    </p>
-                  </div>
-
-                  {getStatusBadge(employee.status)}
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Ver perfil</DropdownMenuItem>
-                      <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem>Ver progreso</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        Desactivar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">Cargando empleados...</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : employees.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-2">
+                No se encontraron empleados
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {filters.search || filters.status
+                  ? "Intenta ajustar los filtros de búsqueda"
+                  : "Invita empleados para comenzar"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {employees.map((employee) => (
+                <div
+                  key={employee.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
+                      {employee.avatar}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{employee.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {employee.role}
+                      </p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          {employee.email}
+                        </div>
+                        {employee.phone && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            {employee.phone}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          {employee.joinedAt
+                            ? new Date(employee.joinedAt).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 text-sm">
+                        <BookOpen className="w-4 h-4" />
+                        <span>{employee.coursesCompleted}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Cursos</p>
+                    </div>
+
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Award className="w-4 h-4" />
+                        <span>{employee.certificates}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Certificados
+                      </p>
+                    </div>
+
+                    {getStatusBadge(employee.status)}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Ver perfil</DropdownMenuItem>
+                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem>Ver progreso</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          Desactivar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Paginación */}
+      {pagination && pagination.totalPages > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {(pagination.page - 1) * pagination.limit + 1} a{" "}
+                {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+                de {pagination.total} empleados
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1 || loading}
+                >
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from(
+                    { length: Math.min(5, pagination.totalPages) },
+                    (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            pagination.page === pageNum ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                          disabled={loading}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    }
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.totalPages || loading}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -76,11 +76,6 @@ const CompanyNavMenu = () => {
       path: PAGE_ROUTES.COMPANY.COURSES,
     },
     {
-      title: "Progreso de Empleados",
-      icon: TrendingUp,
-      path: PAGE_ROUTES.COMPANY.PROGRESS,
-    },
-    {
       title: "Certificados",
       icon: Award,
       path: PAGE_ROUTES.COMPANY.CERTIFICATES,

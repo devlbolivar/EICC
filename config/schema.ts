@@ -48,7 +48,8 @@ export const usersTable = pgTable("users", {
 export const companiesTable = pgTable("companies", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar({ length: 255 }).notNull(),
-  rut: varchar({ length: 20 }).notNull().unique(), // RUT chileno
+  rut: varchar({ length: 50 }).notNull().unique(), // Tax ID (expanded length for international formats)
+  taxIdType: varchar({ length: 20 }).default("rut"), // Type of tax ID (rut, vat, ein, cnpj, etc.)
   description: text(),
   logo: text(),
   website: varchar({ length: 255 }),
@@ -206,6 +207,66 @@ export const certificatesTable = pgTable(
   })
 );
 
+// ===== SUBSCRIPCIONES =====
+export const subscriptionsTable = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companiesTable.id, { onDelete: "cascade" }),
+    stripeCustomerId: varchar({ length: 255 }).notNull(),
+    stripeSubscriptionId: varchar({ length: 255 }),
+    stripePriceId: varchar({ length: 255 }),
+    status: varchar({ length: 50 }).notNull().default("inactive"), // active, canceled, past_due, trialing, incomplete
+    planName: varchar({ length: 100 }).notNull(), // free, premium, enterprise
+    currentPeriodStart: timestamp(),
+    currentPeriodEnd: timestamp(),
+    cancelAtPeriodEnd: boolean().notNull().default(false),
+    trialEnd: timestamp(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+  },
+  (table) => ({
+    companySubscriptionIdx: index("company_subscription_idx").on(
+      table.companyId
+    ),
+    stripeCustomerIdx: index("stripe_customer_idx").on(table.stripeCustomerId),
+    stripeSubscriptionIdx: index("stripe_subscription_idx").on(
+      table.stripeSubscriptionId
+    ),
+  })
+);
+
+// ===== FACTURAS =====
+export const invoicesTable = pgTable(
+  "invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companiesTable.id, { onDelete: "cascade" }),
+    stripeInvoiceId: varchar({ length: 255 }).notNull().unique(),
+    stripeCustomerId: varchar({ length: 255 }).notNull(),
+    amount: integer().notNull(), // en centavos
+    currency: varchar({ length: 10 }).notNull().default("usd"),
+    status: varchar({ length: 50 }).notNull(), // paid, open, void, uncollectible
+    invoiceNumber: varchar({ length: 100 }),
+    description: text(),
+    pdfUrl: text(),
+    hostedInvoiceUrl: text(),
+    billingReason: varchar({ length: 100 }), // subscription_create, subscription_cycle, subscription_update
+    dueDate: timestamp(),
+    paidAt: timestamp(),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+  },
+  (table) => ({
+    companyInvoiceIdx: index("company_invoice_idx").on(table.companyId),
+    stripeInvoiceIdx: index("stripe_invoice_idx").on(table.stripeInvoiceId),
+  })
+);
+
 // ===== RELACIONES =====
 export const usersRelations = relations(usersTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),
@@ -215,12 +276,17 @@ export const usersRelations = relations(usersTable, ({ many }) => ({
   sentInvitations: many(invitationTokensTable, { relationName: "inviter" }),
 }));
 
-export const companiesRelations = relations(companiesTable, ({ many }) => ({
-  userCompanies: many(userCompaniesTable),
-  courses: many(coursesTable),
-  certificates: many(certificatesTable),
-  invitationTokens: many(invitationTokensTable),
-}));
+export const companiesRelations = relations(
+  companiesTable,
+  ({ many, one }) => ({
+    userCompanies: many(userCompaniesTable),
+    courses: many(coursesTable),
+    certificates: many(certificatesTable),
+    invitationTokens: many(invitationTokensTable),
+    subscription: one(subscriptionsTable),
+    invoices: many(invoicesTable),
+  })
+);
 
 export const rolesRelations = relations(rolesTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),
@@ -319,6 +385,23 @@ export const invitationTokensRelations = relations(
   })
 );
 
+export const subscriptionsRelations = relations(
+  subscriptionsTable,
+  ({ one }) => ({
+    company: one(companiesTable, {
+      fields: [subscriptionsTable.companyId],
+      references: [companiesTable.id],
+    }),
+  })
+);
+
+export const invoicesRelations = relations(invoicesTable, ({ one }) => ({
+  company: one(companiesTable, {
+    fields: [invoicesTable.companyId],
+    references: [companiesTable.id],
+  }),
+}));
+
 // ===== ALIASES PARA COMPATIBILIDAD =====
 // Exportar con nombres alternativos para mantener compatibilidad con el schema de drizzle
 export const users = usersTable;
@@ -329,3 +412,5 @@ export const certificates = certificatesTable;
 export const invitationTokens = invitationTokensTable;
 export const roles = rolesTable;
 export const userCompanies = userCompaniesTable;
+export const subscriptions = subscriptionsTable;
+export const invoices = invoicesTable;

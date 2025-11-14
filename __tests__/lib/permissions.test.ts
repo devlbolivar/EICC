@@ -104,7 +104,7 @@ describe("Permissions Utilities", () => {
 
     it("allows access to company routes for company users", () => {
       const userPermissions: Permission[] = ["company:admin"];
-      const route = "/workspace/company";
+      const route = "/workspace/company/dashboard";
 
       const result = validateRouteAccess(userPermissions, route);
       expect(result).toBe(true);

@@ -109,6 +109,7 @@ export function validateRouteAccess(
   const routePermissions: Record<string, Permission[]> = {
     "/workspace/admin": ["platform:admin"],
     "/workspace/company": ["company:admin"],
+    "/workspace/company/dashboard": ["company:admin"],
     "/workspace/student": ["courses:read", "courses:enroll", "content:read"],
     "/workspace/my-learning": ["courses:enroll"],
     "/api/admin": ["platform:admin"],
@@ -136,7 +137,10 @@ export function validateRouteAccess(
       return hasRequiredPermissions && !hasCompanyPermissions;
     }
 
-    if (route === "/workspace/company") {
+    if (
+      route === "/workspace/company" ||
+      route === "/workspace/company/dashboard"
+    ) {
       // Para company, verificar que tenga permisos de company y NO tenga permisos de admin
       const hasAdminPermissions = userPermissions.some(
         (permission) =>

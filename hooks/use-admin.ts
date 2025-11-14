@@ -10,13 +10,11 @@ export const useAdmin = () => {
   const isAdmin = useMemo(() => {
     // Si no hay sesión, no es admin
     if (!session) {
-      console.log("useAdmin: No session available");
       return false;
     }
 
     // Si no hay permisos, no es admin
     if (!session.permissions || session.permissions.length === 0) {
-      console.log("useAdmin: No permissions available");
       return false;
     }
 
@@ -41,16 +39,6 @@ export const useAdmin = () => {
           permission === "company:read" ||
           permission === "company:billing"
       );
-
-      console.log("useAdmin: Permission analysis:", {
-        permissions: session.permissions,
-        hasAdminPermissions,
-        hasCompanyPermissions,
-        adminPermissions: session.permissions.filter((permission: Permission) =>
-          adminPermissions.includes(permission)
-        ),
-        isAdmin: hasAdminPermissions && !hasCompanyPermissions,
-      });
 
       // Es admin si tiene permisos de admin Y NO tiene permisos de company
       return hasAdminPermissions && !hasCompanyPermissions;

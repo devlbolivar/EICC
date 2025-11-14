@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const userId = searchParams.get("userId");
     const courseId = searchParams.get("courseId");
+    const search = searchParams.get("search");
+    const status = searchParams.get("status");
 
     // Construir consulta base
     let whereConditions = sql`cert."isActive" = true`;
@@ -46,6 +48,9 @@ export async function GET(request: NextRequest) {
       !payload.permissions.includes("courses:manage")
     ) {
       whereConditions = sql`${whereConditions} AND cert."user_id" = ${payload.userId}`;
+    } else if (payload.companyId) {
+      // Si es empresa, solo puede ver certificados de su empresa
+      whereConditions = sql`${whereConditions} AND cert."company_id" = ${payload.companyId}`;
     }
 
     // Filtros adicionales
@@ -54,6 +59,21 @@ export async function GET(request: NextRequest) {
     }
     if (courseId) {
       whereConditions = sql`${whereConditions} AND cert."course_id" = ${courseId}`;
+    }
+    if (search) {
+      whereConditions = sql`${whereConditions} AND (
+        LOWER(u.name) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(u.email) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(c.name) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(cert."certificateId") LIKE LOWER(${"%" + search + "%"})
+      )`;
+    }
+    if (status && status !== "all") {
+      if (status === "active") {
+        whereConditions = sql`${whereConditions} AND cert."isActive" = true`;
+      } else if (status === "expired") {
+        whereConditions = sql`${whereConditions} AND cert."isActive" = false`;
+      }
     }
 
     const query = sql`

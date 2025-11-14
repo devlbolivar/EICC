@@ -22,21 +22,6 @@ const AppSidebar = () => {
   const { isCompany } = useCompany();
   const { isStudent } = useStudent();
 
-  // Logs de depuración
-  console.log("AppSidebar Debug:", {
-    isAdmin,
-    isCompany,
-    isStudent,
-    session: session
-      ? {
-          user: session.user?.name,
-          currentRole: session.currentRole?.name,
-          permissions: session.permissions,
-          userCompanies: session.userCompanies?.length,
-        }
-      : null,
-  });
-
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center justify-center flex-row mt-2">

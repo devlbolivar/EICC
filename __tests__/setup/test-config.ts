@@ -61,7 +61,7 @@ export const TEST_CONFIG = {
   // Rutas de prueba
   ROUTES: {
     ADMIN: "/workspace/admin",
-    COMPANY: "/workspace/company",
+    COMPANY: "/workspace/company/dashboard",
     STUDENT: "/workspace/student",
     LOGIN: "/sign-in",
     REGISTER: "/sign-up",

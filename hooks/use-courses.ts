@@ -73,18 +73,13 @@ export function useCourses(): UseCoursesReturn {
       setError(null);
 
       try {
-        let headers: HeadersInit = {};
-        const accessToken = localStorage.getItem("accessToken");
-        if (accessToken) {
-          headers["Authorization"] = `Bearer ${accessToken}`;
-        }
-        headers = {
+        const headers: HeadersInit = {
           "Content-Type": "application/json",
-          ...headers,
         };
 
         const response = await fetch(url, {
           ...options,
+          credentials: "include", // Incluir cookies en la petición
           headers: {
             ...headers,
             ...options.headers,
@@ -122,11 +117,13 @@ export function useCourses(): UseCoursesReturn {
         const url = `/api/courses${
           searchParams.toString() ? `?${searchParams.toString()}` : ""
         }`;
+        console.log("Fetching courses from URL:", url);
         const result = await makeRequest<{
           courses: Course[];
           pagination: any;
         }>(url);
 
+        console.log("Courses API result:", result);
         if (result) {
           setCourses(result.courses);
         }
