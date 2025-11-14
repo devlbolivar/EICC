@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
     const authResult = await verifyAdminAuth(request);
@@ -82,7 +82,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return authResult.response;
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // ✅ CRÍTICO: Validar dependencias antes de eliminar
 
