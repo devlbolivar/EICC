@@ -139,6 +139,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .where(eq(subscriptionsTable.companyId, companyId))
     .limit(1);
 
+  const sub = subscription as unknown as Record<string, unknown>;
   const subscriptionData = {
     companyId,
     stripeCustomerId: customerId,
@@ -146,11 +147,11 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     stripePriceId: priceId,
     status: subscription.status,
     planName,
-    currentPeriodStart: new Date((subscription.current_period_start as number) * 1000),
-    currentPeriodEnd: new Date((subscription.current_period_end as number) * 1000),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end as boolean,
-    trialEnd: subscription.trial_end
-      ? new Date((subscription.trial_end as number) * 1000)
+    currentPeriodStart: new Date((sub.current_period_start as number) * 1000),
+    currentPeriodEnd: new Date((sub.current_period_end as number) * 1000),
+    cancelAtPeriodEnd: sub.cancel_at_period_end as boolean,
+    trialEnd: sub.trial_end
+      ? new Date((sub.trial_end as number) * 1000)
       : null,
     updatedAt: new Date(),
   };
