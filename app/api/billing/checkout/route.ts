@@ -12,6 +12,9 @@ import {
 } from "@/config/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, handleApiError } from "@/lib/api-helpers";
+import { APP_CONFIG } from "@/lib/config";
+import { HTTP_STATUS } from "@/lib/http-status";
+import { SystemRole } from "@/lib/enums";
 
 /**
  * POST /api/billing/checkout
@@ -28,14 +31,14 @@ export async function POST(req: NextRequest) {
     if (!priceId) {
       return NextResponse.json(
         { error: "Se requiere priceId" },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
     if (!companyId) {
       return NextResponse.json(
         { error: "Se requiere companyId" },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!plan) {
       return NextResponse.json(
         { error: "Plan no encontrado" },
-        { status: 404 }
+        { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
@@ -58,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (!company.length) {
       return NextResponse.json(
         { error: "Empresa no encontrada" },
-        { status: 404 }
+        { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
           error:
             "No tienes permisos para gestionar la facturación de esta empresa",
         },
-        { status: 403 }
+        { status: HTTP_STATUS.FORBIDDEN }
       );
     }
 
@@ -93,14 +96,14 @@ export async function POST(req: NextRequest) {
 
     if (
       !roleResult ||
-      (roleResult.name !== "company" && roleResult.name !== "admin")
+      (roleResult.name !== SystemRole.COMPANY && roleResult.name !== SystemRole.ADMIN)
     ) {
       return NextResponse.json(
         {
           error:
             "Solo administradores y gestores de empresa pueden modificar la facturación",
         },
-        { status: 403 }
+        { status: HTTP_STATUS.FORBIDDEN }
       );
     }
 
@@ -124,7 +127,7 @@ export async function POST(req: NextRequest) {
             error:
               "Ya tiene una suscripción activa. Use el portal para cambiar de plan.",
           },
-          { status: 400 }
+          { status: HTTP_STATUS.BAD_REQUEST }
         );
       }
     } else {
@@ -148,13 +151,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Crear la sesión de checkout
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
     const session = await createCheckoutSession(
       customerId,
       priceId,
       companyId,
-      `${baseUrl}/workspace/company/billing?success=true`,
-      `${baseUrl}/workspace/company/billing?canceled=true`
+      `${APP_CONFIG.BASE_URL}/workspace/company/billing?success=true`,
+      `${APP_CONFIG.BASE_URL}/workspace/company/billing?canceled=true`
     );
 
     return NextResponse.json({

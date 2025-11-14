@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import { Permission, SYSTEM_ROLES, ROLE_PERMISSIONS } from "@/app/types";
 import type { SignOptions } from "jsonwebtoken";
+import { SECURITY_CONFIG, TIMEOUT_CONFIG } from "@/lib/config";
 
 // ===== CONFIGURACIÓN =====
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -32,8 +33,7 @@ import { JWTPayload, TokenPair } from "@/app/types";
 
 // ===== HASH DE CONTRASEÑAS =====
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 12;
-  return bcrypt.hash(password, saltRounds);
+  return bcrypt.hash(password, SECURITY_CONFIG.BCRYPT_SALT_ROUNDS);
 }
 
 export async function comparePassword(
@@ -110,15 +110,15 @@ export { verifyTokenEdge, verifyAccessTokenEdge } from "@/lib/auth-edge";
 
 // ===== GENERACIÓN DE TOKENS ESPECIALES =====
 export function generateEmailVerificationToken(): string {
-  return randomBytes(32).toString("hex");
+  return randomBytes(SECURITY_CONFIG.TOKEN_LENGTH_BYTES).toString("hex");
 }
 
 export function generatePasswordResetToken(): string {
-  return randomBytes(32).toString("hex");
+  return randomBytes(SECURITY_CONFIG.TOKEN_LENGTH_BYTES).toString("hex");
 }
 
 export function generateInvitationToken(): string {
-  return randomBytes(32).toString("hex");
+  return randomBytes(SECURITY_CONFIG.TOKEN_LENGTH_BYTES).toString("hex");
 }
 
 // ===== VALIDACIÓN DE PERMISOS =====
@@ -169,8 +169,8 @@ export function validatePassword(password: string): {
 } {
   const errors: string[] = [];
 
-  if (password.length < 8) {
-    errors.push("La contraseña debe tener al menos 8 caracteres");
+  if (password.length < PASSWORD_REQUIREMENTS.MIN_LENGTH) {
+    errors.push(`La contraseña debe tener al menos ${PASSWORD_REQUIREMENTS.MIN_LENGTH} caracteres`);
   }
 
   if (!/[A-Z]/.test(password)) {
@@ -232,13 +232,13 @@ export function sanitizeSlug(slug: string): string {
 
 // ===== CONSTANTES =====
 export const TOKEN_EXPIRY = {
-  EMAIL_VERIFICATION: 24 * 60 * 60 * 1000, // 24 horas
-  PASSWORD_RESET: 1 * 60 * 60 * 1000, // 1 hora
-  INVITATION: 7 * 24 * 60 * 60 * 1000, // 7 días
+  EMAIL_VERIFICATION: TIMEOUT_CONFIG.EMAIL_VERIFICATION_TOKEN_MS, // 24 horas
+  PASSWORD_RESET: TIMEOUT_CONFIG.PASSWORD_RESET_TOKEN_MS, // 1 hora
+  INVITATION: TIMEOUT_CONFIG.INVITATION_TOKEN_MS, // 7 días
 } as const;
 
 export const PASSWORD_REQUIREMENTS = {
-  MIN_LENGTH: 8,
+  MIN_LENGTH: SECURITY_CONFIG.PASSWORD_MIN_LENGTH,
   REQUIRE_UPPERCASE: true,
   REQUIRE_LOWERCASE: true,
   REQUIRE_NUMBERS: true,

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { APP_CONFIG, EMAIL_COLORS, EMAIL_STYLES } from "@/lib/config";
 
 interface EmailOptions {
   to: string;
@@ -106,13 +107,13 @@ class EmailService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Invitación a ${companyName}</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
-          .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-          .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
+          body { font-family: ${EMAIL_STYLES.FONT_FAMILY}; line-height: ${EMAIL_STYLES.LINE_HEIGHT}; color: ${EMAIL_COLORS.TEXT_DEFAULT}; }
+          .container { max-width: ${EMAIL_STYLES.MAX_WIDTH}; margin: 0 auto; padding: ${EMAIL_STYLES.PADDING_LARGE}; }
+          .header { background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: ${EMAIL_STYLES.PADDING_LARGE}; text-align: center; border-radius: ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE} 0 0; }
+          .content { background: ${EMAIL_COLORS.BACKGROUND}; padding: ${EMAIL_STYLES.PADDING_XL}; border-radius: 0 0 ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE}; }
+          .button { display: inline-block; background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: 12px 24px; text-decoration: none; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
+          .footer { text-align: center; margin-top: ${EMAIL_STYLES.PADDING_XL}; color: ${EMAIL_COLORS.TEXT_MUTED}; font-size: ${EMAIL_STYLES.FONT_SIZE_SMALL}; }
+          .warning { background: ${EMAIL_COLORS.WARNING_BG}; border: 1px solid ${EMAIL_COLORS.WARNING_BORDER}; padding: ${EMAIL_STYLES.PADDING_MEDIUM}; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -138,7 +139,7 @@ class EmailService {
             </div>
             
             <p>Si el botón no funciona, puedes copiar y pegar este enlace en tu navegador:</p>
-            <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace;">
+            <p style="word-break: break-all; background: ${EMAIL_COLORS.CODE_BG}; padding: ${EMAIL_STYLES.PADDING_SMALL}; border-radius: 4px; font-family: monospace;">
               ${invitationUrl}
             </p>
             
@@ -212,7 +213,7 @@ Si no esperabas esta invitación, puedes ignorar este mensaje.
     }
 
     try {
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${APP_CONFIG.BASE_URL}/reset-password?token=${resetToken}`;
       const subject = "Restablecer tu contraseña";
       const html = this.generatePasswordResetHTML(userName, resetUrl);
       const text = this.generatePasswordResetText(userName, resetUrl);
@@ -240,13 +241,13 @@ Si no esperabas esta invitación, puedes ignorar este mensaje.
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Restablecer Contraseña</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
-          .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
-          .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
+          body { font-family: ${EMAIL_STYLES.FONT_FAMILY}; line-height: ${EMAIL_STYLES.LINE_HEIGHT}; color: ${EMAIL_COLORS.TEXT_DEFAULT}; }
+          .container { max-width: ${EMAIL_STYLES.MAX_WIDTH}; margin: 0 auto; padding: ${EMAIL_STYLES.PADDING_LARGE}; }
+          .header { background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: ${EMAIL_STYLES.PADDING_LARGE}; text-align: center; border-radius: ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE} 0 0; }
+          .content { background: ${EMAIL_COLORS.BACKGROUND}; padding: ${EMAIL_STYLES.PADDING_XL}; border-radius: 0 0 ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE}; }
+          .button { display: inline-block; background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: 12px 24px; text-decoration: none; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
+          .footer { text-align: center; margin-top: ${EMAIL_STYLES.PADDING_XL}; color: ${EMAIL_COLORS.TEXT_MUTED}; font-size: ${EMAIL_STYLES.FONT_SIZE_SMALL}; }
+          .warning { background: ${EMAIL_COLORS.WARNING_BG}; border: 1px solid ${EMAIL_COLORS.WARNING_BORDER}; padding: ${EMAIL_STYLES.PADDING_MEDIUM}; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -269,7 +270,7 @@ Si no esperabas esta invitación, puedes ignorar este mensaje.
             </div>
 
             <p>Si el botón no funciona, puedes copiar y pegar este enlace en tu navegador:</p>
-            <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace;">
+            <p style="word-break: break-all; background: ${EMAIL_COLORS.CODE_BG}; padding: ${EMAIL_STYLES.PADDING_SMALL}; border-radius: 4px; font-family: monospace;">
               ${resetUrl}
             </p>
 
