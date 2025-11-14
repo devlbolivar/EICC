@@ -5,8 +5,12 @@ import {
   getBillingPlanByPriceId,
 } from "@/lib/stripe";
 import { db } from "@/config/db";
-import { subscriptionsTable, companiesTable } from "@/config/schema";
-import { eq } from "drizzle-orm";
+import {
+  subscriptionsTable,
+  companiesTable,
+  userCompaniesTable,
+} from "@/config/schema";
+import { eq, and } from "drizzle-orm";
 import { verifyAuth } from "@/lib/auth";
 
 /**
@@ -58,6 +62,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Empresa no encontrada" },
         { status: 404 }
+      );
+    }
+
+    // 🔒 SEGURIDAD: Verificar que el usuario pertenece a esta empresa
+    const userCompany = await db
+      .select()
+      .from(userCompaniesTable)
+      .where(
+        and(
+          eq(userCompaniesTable.userId, authResult.user.id),
+          eq(userCompaniesTable.companyId, companyId),
+          eq(userCompaniesTable.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!userCompany.length) {
+      return NextResponse.json(
+        {
+          error:
+            "No tienes permisos para gestionar la facturación de esta empresa",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verificar que el usuario tiene un rol apropiado (company o admin)
+    // Solo admins y company managers pueden modificar facturación
+    const roleResult = await db.query.rolesTable.findFirst({
+      where: (roles, { eq }) => eq(roles.id, userCompany[0].roleId),
+    });
+
+    if (
+      !roleResult ||
+      (roleResult.name !== "company" && roleResult.name !== "admin")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Solo administradores y gestores de empresa pueden modificar la facturación",
+        },
+        { status: 403 }
       );
     }
 

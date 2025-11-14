@@ -55,10 +55,18 @@ npm install
 
 3. **Configurar variables de entorno**
 
+Opción A - Setup Automático (RECOMENDADO):
 ```bash
-cp env.example .env.local
+node scripts/setup-env.js
+```
+
+Opción B - Setup Manual:
+```bash
+cp .env.example .env.local
 # Editar .env.local con tus configuraciones
 ```
+
+**IMPORTANTE:** El script de setup genera automáticamente un JWT_SECRET seguro.
 
 4. **Configurar base de datos**
 
