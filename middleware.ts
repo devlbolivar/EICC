@@ -259,13 +259,6 @@ export async function middleware(request: NextRequest) {
       pathname
     );
 
-    console.log(UI_TEXT.LOGS.MIDDLEWARE_DEBUG, {
-      pathname,
-      permissions: payload.permissions,
-      hasAccess,
-      roleName: getRoleNameFromPermissions(payload.permissions),
-    });
-
     if (!hasAccess) {
       await logUserAccess(
         payload.userId,
@@ -275,9 +268,6 @@ export async function middleware(request: NextRequest) {
       );
       const roleName = getRoleNameFromPermissions(payload.permissions);
       const redirectRoute = getRedirectRouteByRole(roleName || "student");
-      console.log(
-        `${UI_TEXT.LOGS.MIDDLEWARE_REDIRECT} ${pathname}, ${UI_TEXT.LOGS.MIDDLEWARE_REDIRECTING} ${redirectRoute}`
-      );
       return NextResponse.redirect(new URL(redirectRoute, request.url));
     }
 

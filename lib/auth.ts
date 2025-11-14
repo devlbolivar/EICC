@@ -257,3 +257,7 @@ export const PASSWORD_REQUIREMENTS = {
   REQUIRE_NUMBERS: true,
   REQUIRE_SPECIAL_CHARS: false,
 } as const;
+
+// ===== RE-EXPORTS =====
+// Re-export verifyAuth from admin-auth for convenience
+export { verifyAuth } from "@/lib/admin-auth";

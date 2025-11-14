@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 import { hasPermission, hasAnyPermission } from "@/lib/permissions";
-import { Permission, SYSTEM_ROLES } from "@/app/types";
+import type { Permission } from "@/app/types";
 
 /**
  * Verifica que el usuario esté autenticado Y tenga permisos de administrador

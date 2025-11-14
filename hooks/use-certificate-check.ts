@@ -47,7 +47,6 @@ export function useCertificateCheck(): UseCertificateCheckReturn {
             checkResult.data &&
             checkResult.data.length > 0
           ) {
-            console.log("Certificate already exists, navigating to it");
             toast.success("¡Certificado encontrado! 🎉");
             return true;
           }

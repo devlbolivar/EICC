@@ -3,7 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { validateUserData, validateUUID } from "@/lib/validation";
+import { validateUUID } from "@/lib/validation";
 import { eq, and } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -22,7 +22,6 @@ export async function GET(
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
     // ===== VALIDAR UUID =====
     const idValidation = validateUUID(id, 'ID de usuario');
@@ -85,7 +84,15 @@ export async function GET(
 
     // ===== FORMATEAR RESPUESTA =====
     const baseUser = userData[0];
-    const userCompanies: any[] = [];
+    const userCompanies: Array<{
+      id: string;
+      role: { id: string; name: string; description: string | null; permissions: unknown };
+      company: { id: string; name: string; description: string | null } | null;
+      isActive: boolean;
+      joinedAt: Date | null;
+      acceptedAt: Date | null;
+      invitedBy: { id: string; name: string; email: string } | null;
+    }> = [];
 
     // Procesar las relaciones de empresa
     userData.forEach((row) => {
