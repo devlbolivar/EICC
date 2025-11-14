@@ -11,7 +11,7 @@ import {
   userCompaniesTable,
 } from "@/config/schema";
 import { eq, and } from "drizzle-orm";
-import { verifyAuth } from "@/lib/auth";
+import { requireAuth, handleApiError } from "@/lib/api-helpers";
 
 /**
  * POST /api/billing/checkout
@@ -19,11 +19,8 @@ import { verifyAuth } from "@/lib/auth";
  */
 export async function POST(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const authResult = await verifyAuth(req);
-    if (!authResult.valid || !authResult.user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    }
+    // ✅ CORREGIDO: Verificar autenticación correctamente
+    const { payload } = await requireAuth(req);
 
     const { priceId, companyId } = await req.json();
 
@@ -71,7 +68,7 @@ export async function POST(req: NextRequest) {
       .from(userCompaniesTable)
       .where(
         and(
-          eq(userCompaniesTable.userId, authResult.user.id),
+          eq(userCompaniesTable.userId, payload.userId),
           eq(userCompaniesTable.companyId, companyId),
           eq(userCompaniesTable.isActive, true)
         )
@@ -133,7 +130,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Crear un nuevo cliente en Stripe
       const customer = await stripe.customers.create({
-        email: authResult.user.email,
+        email: payload.email,
         name: company[0].name,
         metadata: {
           companyId: companyId,
@@ -166,9 +163,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating checkout session:", error);
-    return NextResponse.json(
-      { error: "Error al crear la sesión de pago" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
