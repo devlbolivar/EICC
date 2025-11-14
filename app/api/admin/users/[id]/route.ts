@@ -161,7 +161,7 @@ export async function PUT(
     const { id } = await params;
 
     // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
-    const { payload } = await requireAdmin(request);
+    await requireAdmin(request);
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
