@@ -4,7 +4,8 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { validateUUID } from "@/lib/validation";
-import { eq, and } from "drizzle-orm";
+import { requireAdmin, handleApiError, errorResponse, successResponse } from "@/lib/api-helpers";
+import { eq, and, not } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -159,42 +160,8 @@ export async function PUT(
   try {
     const { id } = await params;
 
-    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS =====
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
-
-    // Verificar que el usuario sea admin
-    const currentUser = await db
-      .select()
-      .from(schema.usersTable)
-      .where(eq(schema.usersTable.id, payload.userId))
-      .limit(1);
-
-    if (!currentUser.length) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
-    }
-
-    // Verificar permisos de admin (simplificado por ahora)
-    // TODO: Implementar verificación completa de permisos
+    // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
+    const { payload } = await requireAdmin(request);
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
@@ -208,20 +175,20 @@ export async function PUT(
       );
     }
 
-    // Verificar si el email ya existe (excluyendo el usuario actual)
+    // ✅ CORREGIDO: Verificar si el email ya existe (excluyendo el usuario actual)
     const existingUser = await db
       .select()
       .from(schema.usersTable)
       .where(
-        and(eq(schema.usersTable.email, email), eq(schema.usersTable.id, id))
+        and(
+          eq(schema.usersTable.email, email),
+          not(eq(schema.usersTable.id, id))
+        )
       )
       .limit(1);
 
-    if (existingUser.length > 0 && existingUser[0].id !== id) {
-      return NextResponse.json(
-        { error: "El email ya está en uso" },
-        { status: 400 }
-      );
+    if (existingUser.length > 0) {
+      return errorResponse("El email ya está en uso", 400);
     }
 
     // ===== ACTUALIZAR USUARIO =====
@@ -245,16 +212,13 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({
+    return successResponse({
       message: "Usuario actualizado correctamente",
       user: updatedUser[0],
     });
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
@@ -266,49 +230,12 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS =====
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
-
-    // Verificar que el usuario sea admin
-    const currentUser = await db
-      .select()
-      .from(schema.usersTable)
-      .where(eq(schema.usersTable.id, payload.userId))
-      .limit(1);
-
-    if (!currentUser.length) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
-    }
-
-    // Verificar permisos de admin (simplificado por ahora)
-    // TODO: Implementar verificación completa de permisos
+    // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
+    const { payload } = await requireAdmin(request);
 
     // ===== VERIFICAR QUE NO SE ELIMINE A SÍ MISMO =====
     if (id === payload.userId) {
-      return NextResponse.json(
-        { error: "No puedes eliminar tu propia cuenta" },
-        { status: 400 }
-      );
+      return errorResponse("No puedes eliminar tu propia cuenta", 400);
     }
 
     // ===== VERIFICAR QUE EL USUARIO EXISTA =====
@@ -328,14 +255,11 @@ export async function DELETE(
     // ===== ELIMINAR USUARIO =====
     await db.delete(schema.usersTable).where(eq(schema.usersTable.id, id));
 
-    return NextResponse.json({
+    return successResponse({
       message: "Usuario eliminado correctamente",
     });
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
