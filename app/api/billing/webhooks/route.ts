@@ -172,7 +172,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .update(companiesTable)
     .set({
       subscriptionPlan: planName,
-      subscriptionExpiresAt: new Date(subscription.current_period_end * 1000),
+      subscriptionExpiresAt: new Date((sub.current_period_end as number) * 1000),
       updatedAt: new Date(),
     })
     .where(eq(companiesTable.id, companyId));
