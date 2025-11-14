@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
     // ===== OBTENER ESTADÍSTICAS DE LA BASE DE DATOS =====
 

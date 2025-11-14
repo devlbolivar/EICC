@@ -15,14 +15,12 @@ export async function GET(request: NextRequest) {
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
     // ===== OBTENER PARÁMETROS DE QUERY =====
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
-    const role = searchParams.get("role") || "";
     const status = searchParams.get("status") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
@@ -160,7 +158,7 @@ export async function GET(request: NextRequest) {
       const rolePriority = { admin: 3, company: 2, student: 1 };
       const primaryRole =
         user.roles.length > 0
-          ? user.roles.sort((a: any, b: any) => {
+          ? user.roles.sort((a: { role: string }, b: { role: string }) => {
               const priorityA =
                 rolePriority[a.role as keyof typeof rolePriority] || 0;
               const priorityB =

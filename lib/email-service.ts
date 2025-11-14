@@ -77,10 +77,8 @@ class EmailService {
       };
 
       await this.transporter.sendMail(mailOptions);
-      console.log(`Invitation email sent successfully to ${recipientEmail}`);
       return true;
-    } catch (error) {
-      console.error("Error sending invitation email:", error);
+    } catch {
       return false;
     }
   }
@@ -202,7 +200,120 @@ Este es un mensaje automático, por favor no respondas a este email.
 Si no esperabas esta invitación, puedes ignorar este mensaje.
     `.trim();
   }
+
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+    userName: string
+  ): Promise<boolean> {
+    if (!this.transporter) {
+      console.warn("Email service not configured. Skipping password reset email.");
+      return false;
+    }
+
+    try {
+      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      const subject = "Restablecer tu contraseña";
+      const html = this.generatePasswordResetHTML(userName, resetUrl);
+      const text = this.generatePasswordResetText(userName, resetUrl);
+
+      const mailOptions: EmailOptions = {
+        to: email,
+        subject,
+        html,
+        text,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private generatePasswordResetHTML(userName: string, resetUrl: string): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Restablecer Contraseña</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px; }
+          .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
+          .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Restablecer tu Contraseña</h1>
+          </div>
+          <div class="content">
+            <p>Hola ${userName},</p>
+            <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
+
+            <p>Para crear una nueva contraseña, haz clic en el siguiente botón:</p>
+
+            <div style="text-align: center;">
+              <a href="${resetUrl}" class="button">Restablecer Contraseña</a>
+            </div>
+
+            <div class="warning">
+              <strong>⚠️ Importante:</strong> Este enlace expirará en 1 hora.
+            </div>
+
+            <p>Si el botón no funciona, puedes copiar y pegar este enlace en tu navegador:</p>
+            <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px; font-family: monospace;">
+              ${resetUrl}
+            </p>
+
+            <p><strong>¿No solicitaste restablecer tu contraseña?</strong></p>
+            <p>Si no realizaste esta solicitud, puedes ignorar este mensaje de forma segura. Tu contraseña no será cambiada.</p>
+          </div>
+          <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generatePasswordResetText(userName: string, resetUrl: string): string {
+    return `
+Restablecer tu Contraseña
+
+Hola ${userName},
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta.
+
+Para crear una nueva contraseña, visita este enlace:
+${resetUrl}
+
+IMPORTANTE: Este enlace expirará en 1 hora.
+
+¿No solicitaste restablecer tu contraseña?
+Si no realizaste esta solicitud, puedes ignorar este mensaje de forma segura. Tu contraseña no será cambiada.
+
+Este es un mensaje automático, por favor no respondas a este email.
+    `.trim();
+  }
 }
 
 // Export singleton instance
 export const emailService = new EmailService();
+
+// Export convenience function
+export async function sendPasswordResetEmail(
+  email: string,
+  resetToken: string,
+  userName: string
+): Promise<boolean> {
+  return emailService.sendPasswordResetEmail(email, resetToken, userName);
+}

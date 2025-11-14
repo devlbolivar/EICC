@@ -50,9 +50,8 @@ export async function POST(request: NextRequest) {
     // Enviar email con instrucciones
     try {
       await sendPasswordResetEmail(user.email, resetToken, user.name);
-    } catch (emailError) {
-      console.error("Error enviando email de reset:", emailError);
-      // No fallar si el email no se puede enviar, pero registrar el error
+    } catch {
+      // No fallar si el email no se puede enviar
       // En producción, esto debería ir a un sistema de monitoreo
     }
 
@@ -61,8 +60,7 @@ export async function POST(request: NextRequest) {
       message:
         "Si el email existe en nuestro sistema, recibirás instrucciones para resetear tu contraseña",
     });
-  } catch (error) {
-    console.error("Error en forgot-password:", error);
+  } catch {
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

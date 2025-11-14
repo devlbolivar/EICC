@@ -16,7 +16,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
     const { id } = params;
 
@@ -84,9 +83,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
-    const { id } = params;
+    const { id} = params;
 
     await db.delete(schema.companiesTable).where(eq(schema.companiesTable.id, id));
 

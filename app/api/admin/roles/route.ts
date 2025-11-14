@@ -3,7 +3,6 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { eq } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -15,7 +14,6 @@ export async function GET(request: NextRequest) {
     if (!authResult.authorized) {
       return authResult.response;
     }
-    const payload = authResult.payload;
 
     // ===== OBTENER TODOS LOS ROLES =====
     const roles = await db

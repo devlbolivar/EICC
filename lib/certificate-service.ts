@@ -1,6 +1,6 @@
 import { db } from "@/config/db";
 import { certificatesTable } from "@/config/schema";
-import { sql, eq, and } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { Course, EnrollCourse } from "@/app/types";
 
 export interface CertificateGenerationData {
@@ -52,15 +52,6 @@ export function createCertificateData(data: CertificateGenerationData) {
   const grade = calculateCertificateGrade(enrollment, course);
   const completedDate = enrollment.completedAt || new Date();
 
-  console.log("🔍 Debug: Creating certificate data", {
-    courseId,
-    userId,
-    courseName: course.name,
-    completedDate: completedDate,
-    completedDateType: typeof completedDate,
-    isDate: completedDate instanceof Date,
-  });
-
   const certificateData = {
     certificateId,
     courseId,
@@ -76,12 +67,6 @@ export function createCertificateData(data: CertificateGenerationData) {
     duration: course.estimatedDuration || "N/A",
     certificateUrl: null, // Will be generated later if needed
   };
-
-  console.log("🔍 Debug: Certificate data created", {
-    ...certificateData,
-    completedDate: certificateData.completedDate,
-    completedDateType: typeof certificateData.completedDate,
-  });
 
   return certificateData;
 }

@@ -3,8 +3,8 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { validateUserData, validateEmail } from "@/lib/validation";
-import { eq, and } from "drizzle-orm";
+import { validateEmail } from "@/lib/validation";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -18,17 +18,6 @@ export async function POST(request: NextRequest) {
       return authResult.response;
     }
     const payload = authResult.payload;
-
-    const body = await request.json();
-
-    // ===== VALIDAR EMAIL =====
-    const emailValidation = validateEmail(body.email || '');
-    if (!emailValidation.isValid) {
-      return NextResponse.json(
-        { error: emailValidation.errors?.[0] || 'Email inválido' },
-        { status: 400 }
-      );
-    }
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
@@ -52,10 +41,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== VALIDAR EMAIL =====
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
       return NextResponse.json(
-        { error: "Formato de email inválido" },
+        { error: emailValidation.errors?.[0] || 'Email inválido' },
         { status: 400 }
       );
     }
@@ -202,8 +191,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error al crear usuario:", error);
+  } catch {
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

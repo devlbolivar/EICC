@@ -58,6 +58,24 @@ export function hasPermissionHierarchical(
   return false;
 }
 
+// Función para verificar un permiso específico (sin jerarquía)
+export function hasPermission(
+  userPermissions: Permission[],
+  requiredPermission: Permission
+): boolean {
+  return userPermissions.includes(requiredPermission);
+}
+
+// Función para verificar si tiene al menos uno de los permisos dados
+export function hasAnyPermission(
+  userPermissions: Permission[],
+  requiredPermissions: Permission[]
+): boolean {
+  return requiredPermissions.some((permission) =>
+    userPermissions.includes(permission)
+  );
+}
+
 // Función para obtener el rol más restrictivo
 export function getMostRestrictiveRole(
   permissions: Permission[]

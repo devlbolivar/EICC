@@ -8,13 +8,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Link from "next/link";
 
-interface InvitationData {
-  email: string;
-  companyName: string;
-  roleName: string;
-  invitedBy: string;
-}
-
 export default function AcceptInvitePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -22,7 +15,6 @@ export default function AcceptInvitePage() {
 
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
-  const [inviteData, setInviteData] = useState<InvitationData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +36,7 @@ export default function AcceptInvitePage() {
         // Por ahora, validamos directamente en el submit
         // En una implementación completa, habría un endpoint de validación
         setValidating(false);
-      } catch (error) {
+      } catch {
         setError("Error al validar la invitación");
         setValidating(false);
       }
