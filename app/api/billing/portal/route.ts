@@ -4,6 +4,8 @@ import { db } from "@/config/db";
 import { subscriptionsTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth, handleApiError } from "@/lib/api-helpers";
+import { APP_CONFIG } from "@/lib/config";
+import { HTTP_STATUS } from "@/lib/http-status";
 
 /**
  * POST /api/billing/portal
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!companyId) {
       return NextResponse.json(
         { error: "Se requiere companyId" },
-        { status: 400 }
+        { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
 
@@ -34,13 +36,12 @@ export async function POST(req: NextRequest) {
     if (!subscription.length || !subscription[0].stripeCustomerId) {
       return NextResponse.json(
         { error: "No se encontró suscripción para esta empresa" },
-        { status: 404 }
+        { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
     // Crear la sesión del portal
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
-    const returnUrl = `${baseUrl}/workspace/company/billing`;
+    const returnUrl = `${APP_CONFIG.BASE_URL}/workspace/company/billing`;
 
     const portalSession = await createPortalSession(
       subscription[0].stripeCustomerId,

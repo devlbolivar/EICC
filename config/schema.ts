@@ -13,6 +13,14 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+  CourseLevel,
+  CourseStatus,
+  CourseVisibility,
+  SubscriptionPlan,
+  SubscriptionStatus,
+  Currency
+} from "@/lib/enums";
 
 // ===== ENUMERACIONES =====
 export const roleEnum = pgTable("role_enum", {
@@ -56,7 +64,7 @@ export const companiesTable = pgTable("companies", {
   industry: varchar({ length: 255 }),
   size: varchar({ length: 50 }), // small, medium, large
   isActive: boolean().notNull().default(true),
-  subscriptionPlan: varchar({ length: 50 }).default("free"), // free, basic, premium
+  subscriptionPlan: varchar({ length: 50 }).default(SubscriptionPlan.FREE), // free, premium, enterprise
   subscriptionExpiresAt: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
@@ -140,11 +148,11 @@ export const coursesTable = pgTable("courses", {
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
   // Campos adicionales del schema de drizzle
-  level: varchar({ length: 50 }).default("Básico").notNull(), // Básico, Intermedio, Avanzado
-  status: varchar({ length: 50 }).default("Borrador").notNull(), // Borrador, Publicado, Archivado
+  level: varchar({ length: 50 }).default(CourseLevel.BASIC).notNull(), // basic, intermediate, advanced
+  status: varchar({ length: 50 }).default(CourseStatus.DRAFT).notNull(), // draft, published, archived
   estimatedDuration: varchar({ length: 100 }), // Duración estimada en formato libre
-  visibility: varchar({ length: 50 }).default("Público").notNull(), // Público, Privado, Empresas específicas
-  targetCompanies: json().default([]), // Lista de empresas específicas si visibility = "Empresas específicas"
+  visibility: varchar({ length: 50 }).default(CourseVisibility.PUBLIC).notNull(), // public, private, specific_companies
+  targetCompanies: json().default([]), // Lista de empresas específicas si visibility = "specific_companies"
   modules: json().default([]), // Estructura de módulos y lecciones
 });
 
@@ -218,7 +226,7 @@ export const subscriptionsTable = pgTable(
     stripeCustomerId: varchar({ length: 255 }).notNull(),
     stripeSubscriptionId: varchar({ length: 255 }),
     stripePriceId: varchar({ length: 255 }),
-    status: varchar({ length: 50 }).notNull().default("inactive"), // active, canceled, past_due, trialing, incomplete
+    status: varchar({ length: 50 }).notNull().default(SubscriptionStatus.INACTIVE), // active, inactive, cancelled, past_due, trialing
     planName: varchar({ length: 100 }).notNull(), // free, premium, enterprise
     currentPeriodStart: timestamp(),
     currentPeriodEnd: timestamp(),
@@ -249,7 +257,7 @@ export const invoicesTable = pgTable(
     stripeInvoiceId: varchar({ length: 255 }).notNull().unique(),
     stripeCustomerId: varchar({ length: 255 }).notNull(),
     amount: integer().notNull(), // en centavos
-    currency: varchar({ length: 10 }).notNull().default("usd"),
+    currency: varchar({ length: 10 }).notNull().default(Currency.USD),
     status: varchar({ length: 50 }).notNull(), // paid, open, void, uncollectible
     invoiceNumber: varchar({ length: 100 }),
     description: text(),
