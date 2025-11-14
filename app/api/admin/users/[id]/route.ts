@@ -106,7 +106,7 @@ export async function GET(
             description: row.roleDescription,
             permissions: row.rolePermissions,
           },
-          company: row.companyName
+          company: row.companyName && row.userCompanyCompanyId
             ? {
                 id: row.userCompanyCompanyId,
                 name: row.companyName,
