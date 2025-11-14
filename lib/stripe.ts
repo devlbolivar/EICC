@@ -1,7 +1,14 @@
 import Stripe from "stripe";
 
+// Skip Stripe initialization during build phase
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+// Use a dummy key during build to prevent initialization errors
+// Stripe requires a non-empty key, so we use a test key format during build
+const stripeKey = process.env.STRIPE_SECRET_KEY || (isBuildPhase ? 'sk_test_build_dummy_key_for_nextjs_build_only' : '');
+
 // Inicializar Stripe con la clave secreta
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+export const stripe = new Stripe(stripeKey, {
   apiVersion: "2024-10-28.acacia",
   typescript: true,
 });

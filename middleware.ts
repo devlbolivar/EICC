@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAccessTokenEdge } from "@/lib/auth";
+import { verifyAccessTokenEdge } from "@/lib/auth-edge";
 import { SYSTEM_ROLES, Permission } from "@/app/types";
 import { validateRouteAccess, getMostRestrictiveRole } from "@/lib/permissions";
 import { validateUserActive, logUserAccess } from "@/lib/user-validation";

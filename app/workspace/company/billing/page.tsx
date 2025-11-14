@@ -1,11 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
-// Force dynamic rendering for this page (uses useSearchParams)
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const runtime = 'nodejs';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

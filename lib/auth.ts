@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import { Permission, SYSTEM_ROLES, ROLE_PERMISSIONS } from "@/app/types";
 import type { SignOptions } from "jsonwebtoken";
-import * as jose from "jose";
 
 // ===== CONFIGURACIÓN =====
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -105,31 +104,9 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
 }
 
 // ===== VERIFICACIÓN DE TOKENS (Edge Runtime - Middleware) =====
-export async function verifyTokenEdge(
-  token: string
-): Promise<JWTPayload | null> {
-  try {
-    if (!JWT_SECRET) {
-      console.error("JWT_SECRET not configured");
-      return null;
-    }
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    const { payload } = await jose.jwtVerify(token, secret);
-    return payload as unknown as JWTPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function verifyAccessTokenEdge(
-  token: string
-): Promise<JWTPayload | null> {
-  const payload = await verifyTokenEdge(token);
-  if (payload && payload.type === "access") {
-    return payload;
-  }
-  return null;
-}
+// Edge Runtime functions moved to lib/auth-edge.ts to avoid Node.js module conflicts
+// Import from @/lib/auth-edge for middleware usage
+export { verifyTokenEdge, verifyAccessTokenEdge } from "@/lib/auth-edge";
 
 // ===== GENERACIÓN DE TOKENS ESPECIALES =====
 export function generateEmailVerificationToken(): string {
