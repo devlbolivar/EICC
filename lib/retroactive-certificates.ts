@@ -68,7 +68,7 @@ export async function createRetroactiveCertificate(
       throw new Error("Course not found");
     }
 
-    const course = courseResult.rows[0] as any;
+    const course = courseResult.rows[0] as Record<string, unknown>;
 
     // Get enrollment details
     const enrollmentResult = await db.execute(sql`
@@ -82,7 +82,7 @@ export async function createRetroactiveCertificate(
       throw new Error("Completed enrollment not found");
     }
 
-    const enrollment = enrollmentResult.rows[0] as any;
+    const enrollment = enrollmentResult.rows[0] as Record<string, unknown>;
 
     // Create certificate data
     const certificateData = {
@@ -140,7 +140,7 @@ export async function ensureCertificatesForUser(
     const missingCertificates = [];
 
     for (const course of completedCourses.rows) {
-      const courseId = (course as any).course_id;
+      const courseId = (course as Record<string, unknown>).course_id as string;
       const hasCertificate = await checkCertificateExists(courseId, userId);
 
       if (!hasCertificate) {

@@ -9,7 +9,7 @@
 // TIPOS
 // ============================================
 
-export interface ValidationResult<T = any> {
+export interface ValidationResult<T = unknown> {
   isValid: boolean;
   data?: T;
   errors?: string[];
@@ -181,7 +181,7 @@ export function validateText(
     return { isValid: false, errors: [`${fieldName} debe ser texto`] };
   }
 
-  let sanitized = trimWhitespace ? text.trim() : text;
+  const sanitized = trimWhitespace ? text.trim() : text;
 
   if (sanitized.length < minLength) {
     return {
@@ -249,7 +249,7 @@ export interface CompanyData {
 
 export function validateCompanyData(data: Partial<CompanyData>): ValidationResult<CompanyData> {
   const errors: string[] = [];
-  const sanitized: any = {};
+  const sanitized: Partial<CompanyData> = {};
 
   // Nombre (requerido)
   const nameValidation = validateText(data.name || '', 'Nombre de empresa', {
@@ -353,7 +353,7 @@ export interface CourseData {
 
 export function validateCourseData(data: Partial<CourseData>): ValidationResult<CourseData> {
   const errors: string[] = [];
-  const sanitized: any = {};
+  const sanitized: Partial<CourseData> = {};
 
   // Nombre (requerido)
   const nameValidation = validateText(data.name || '', 'Nombre del curso', {
@@ -428,7 +428,7 @@ export interface UserData {
 
 export function validateUserData(data: Partial<UserData>): ValidationResult<UserData> {
   const errors: string[] = [];
-  const sanitized: any = {};
+  const sanitized: Partial<UserData> = {};
 
   // Nombre (requerido)
   const nameValidation = validateText(data.name || '', 'Nombre', {

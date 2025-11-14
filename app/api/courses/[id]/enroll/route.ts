@@ -251,8 +251,8 @@ export async function PUT(
         });
 
         if (courseResult.rows.length > 0) {
-          const course = courseResult.rows[0] as any;
-          const enrollment = updatedEnrollment.rows[0] as any;
+          const course = courseResult.rows[0] as Record<string, unknown>;
+          const enrollment = updatedEnrollment.rows[0] as Record<string, unknown>;
 
           console.log(`🔍 Debug: Certificate generation data`, {
             courseId,

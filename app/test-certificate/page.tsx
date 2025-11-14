@@ -9,7 +9,7 @@ import { toast } from "sonner";
 export default function TestCertificatePage() {
   const [courseId, setCourseId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
   const testCourseCompletion = async () => {
     if (!courseId) {

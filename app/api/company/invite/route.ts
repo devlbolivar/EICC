@@ -5,6 +5,7 @@ import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { emailService } from "@/lib/email-service";
+import { randomBytes } from "crypto";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== GENERAR TOKEN DE INVITACIÓN =====
-    const invitationToken = require("crypto").randomBytes(32).toString("hex");
+    const invitationToken = randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 días
 

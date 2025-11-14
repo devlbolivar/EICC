@@ -13,7 +13,7 @@ export interface CertificateGenerationData {
 
 export interface CertificateGenerationResult {
   success: boolean;
-  certificate?: any;
+  certificate?: Record<string, unknown>;
   error?: string;
 }
 
@@ -30,11 +30,11 @@ export function generateCertificateId(): string {
  * Calculates the grade based on course completion and performance
  */
 export function calculateCertificateGrade(
-  enrollment: EnrollCourse,
-  course: Course
+  _enrollment: EnrollCourse,
+  _course: Course
 ): number {
   // Base grade for completion
-  let grade = 100;
+  const grade = 100;
 
   // You can add more sophisticated grading logic here
   // For example, based on time taken, retries, etc.
@@ -144,7 +144,7 @@ export async function generateCertificateForCompletion(
 export async function getCertificateForCourse(
   courseId: string,
   userId: string
-): Promise<any | null> {
+): Promise<Record<string, unknown> | null> {
   try {
     const result = await db.execute(sql`
       SELECT 
