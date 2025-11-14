@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import {
-  certificatesTable,
-  coursesTable,
-  usersTable,
-  companiesTable,
-} from "@/config/schema";
-import { sql, eq, and, desc } from "drizzle-orm";
+import { certificatesTable } from "@/config/schema";
+import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
-import { Certificate, CertificateCreateData } from "@/app/types";
+import { CertificateCreateData } from "@/app/types";
 
 // ===== GET - Listar certificados =====
 export async function GET(request: NextRequest) {

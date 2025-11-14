@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { sql } from "drizzle-orm";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verificar autenticación
     const cookieStore = await cookies();

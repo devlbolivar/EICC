@@ -10,7 +10,7 @@ import { eq, and, count as drizzleCount } from "drizzle-orm";
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
     const authResult = await verifyAdminAuth(request);
@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return authResult.response;
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // ===== VALIDAR UUID =====
     const idValidation = validateUUID(id, 'ID de empresa');
@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
     const authResult = await verifyAdminAuth(request);
@@ -82,7 +82,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return authResult.response;
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // ✅ CRÍTICO: Validar dependencias antes de eliminar
 

@@ -11,10 +11,20 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || "30d";
 
 // ===== VALIDACIÓN DE CONFIGURACIÓN =====
-if (!JWT_SECRET || JWT_SECRET === "your-secret-key-change-in-production") {
+// Skip validation during build phase (Vercel, local builds, etc.)
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+if (!isBuildPhase && !JWT_SECRET) {
   if (process.env.NODE_ENV === "production") {
+    console.error("❌ JWT_SECRET must be set in production environment");
+    console.error("📝 Set this in your Vercel Environment Variables:");
+    console.error("   Settings → Environment Variables → JWT_SECRET");
     throw new Error("JWT_SECRET must be set in production environment");
   }
+  console.warn("⚠️ JWT_SECRET not set - using dummy value for development");
+}
+
+if (!isBuildPhase && JWT_SECRET === "your-secret-key-change-in-production") {
   console.warn("⚠️ Using default JWT_SECRET - NOT SECURE FOR PRODUCTION");
 }
 

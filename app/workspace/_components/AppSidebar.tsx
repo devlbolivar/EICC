@@ -17,7 +17,6 @@ import { useStudent } from "@/hooks/use-student";
 import { useAuth } from "@/context/AuthContext";
 
 const AppSidebar = () => {
-  const { session } = useAuth();
   const { isAdmin } = useAdmin();
   const { isCompany } = useCompany();
   const { isStudent } = useStudent();

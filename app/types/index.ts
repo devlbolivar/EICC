@@ -370,7 +370,7 @@ export interface EnrolledCourseResponse {
   description: string;
   progress: number;
   totalChapters: number;
-  completedChapters: any;
+  completedChapters: number;
   isCompleted: boolean;
   completedAt?: string;
   estimatedTime: string;
