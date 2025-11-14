@@ -60,6 +60,9 @@ export async function GET(
         rolePermissions: schema.rolesTable.permissions,
         companyName: schema.companiesTable.name,
         companyDescription: schema.companiesTable.description,
+        // Usuario invitador
+        inviterName: sql`inviter.name`.as('inviter_name'),
+        inviterEmail: sql`inviter.email`.as('inviter_email'),
       })
       .from(schema.usersTable)
       .leftJoin(
@@ -73,6 +76,10 @@ export async function GET(
       .leftJoin(
         schema.companiesTable,
         eq(schema.userCompaniesTable.companyId, schema.companiesTable.id)
+      )
+      .leftJoin(
+        sql`${schema.usersTable} as inviter`,
+        eq(schema.userCompaniesTable.invitedBy, sql`inviter.id`)
       )
       .where(eq(schema.usersTable.id, id));
 
@@ -119,8 +126,8 @@ export async function GET(
           invitedBy: row.userCompanyInvitedBy
             ? {
                 id: row.userCompanyInvitedBy,
-                name: "Usuario invitador", // TODO: Obtener nombre del invitador
-                email: "email@example.com", // TODO: Obtener email del invitador
+                name: row.inviterName || "Usuario desconocido",
+                email: row.inviterEmail || "email@desconocido.com",
               }
             : null,
         });
