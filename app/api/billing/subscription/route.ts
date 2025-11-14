@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { subscriptionsTable, companiesTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
-import { verifyAuth } from "@/lib/auth";
+import { requireAuth, handleApiError } from "@/lib/api-helpers";
 import { getBillingPlan } from "@/lib/stripe";
 
 /**
@@ -11,11 +11,8 @@ import { getBillingPlan } from "@/lib/stripe";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const authResult = await verifyAuth(req);
-    if (!authResult.valid || !authResult.user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    }
+    // ✅ CORREGIDO: Verificar autenticación correctamente
+    const { payload } = await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId");
@@ -84,9 +81,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching subscription:", error);
-    return NextResponse.json(
-      { error: "Error al obtener la suscripción" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
