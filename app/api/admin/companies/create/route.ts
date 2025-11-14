@@ -2,39 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
-import { verifyAccessToken } from "@/lib/auth";
+import { requireAdmin, handleApiError, successResponse, errorResponse } from "@/lib/api-helpers";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
+    // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
+    const { payload } = await requireAdmin(request);
 
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
-    }
+    const { name, rut, description, website, industry, size } = await request.json();
 
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
-
-    const { name, rut, email, phone, address, industry, plan } = await request.json();
-
-    if (!name || !rut || !email) {
-      return NextResponse.json(
-        { error: "Nombre, RUT y email son requeridos" },
-        { status: 400 }
-      );
+    if (!name || !rut) {
+      return errorResponse("Nombre y RUT son requeridos", 400);
     }
 
     const newCompany = await db
@@ -42,20 +23,17 @@ export async function POST(request: NextRequest) {
       .values({
         name,
         rut,
-        email,
-        phone,
-        address,
-        industry,
-        plan,
+        description: description || null,
+        website: website || null,
+        industry: industry || null,
+        size: size || null,
+        isActive: true,
       })
       .returning();
 
-    return NextResponse.json({ company: newCompany[0] });
+    return successResponse({ company: newCompany[0] });
   } catch (error) {
     console.error("Error al crear empresa:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

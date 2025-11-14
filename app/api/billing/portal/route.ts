@@ -3,7 +3,7 @@ import { createPortalSession } from "@/lib/stripe";
 import { db } from "@/config/db";
 import { subscriptionsTable } from "@/config/schema";
 import { eq } from "drizzle-orm";
-import { verifyAuth } from "@/lib/auth";
+import { requireAuth, handleApiError } from "@/lib/api-helpers";
 
 /**
  * POST /api/billing/portal
@@ -12,11 +12,8 @@ import { verifyAuth } from "@/lib/auth";
  */
 export async function POST(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const authResult = await verifyAuth(req);
-    if (!authResult.valid || !authResult.user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    }
+    // ✅ CORREGIDO: Verificar autenticación correctamente
+    const { payload } = await requireAuth(req);
 
     const { companyId } = await req.json();
 
@@ -55,9 +52,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating portal session:", error);
-    return NextResponse.json(
-      { error: "Error al crear la sesión del portal" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

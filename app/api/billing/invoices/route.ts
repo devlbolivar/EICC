@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { invoicesTable } from "@/config/schema";
 import { eq, desc } from "drizzle-orm";
-import { verifyAuth } from "@/lib/auth";
+import { requireAuth, handleApiError } from "@/lib/api-helpers";
 
 /**
  * GET /api/billing/invoices?companyId={id}
@@ -10,11 +10,8 @@ import { verifyAuth } from "@/lib/auth";
  */
 export async function GET(req: NextRequest) {
   try {
-    // Verificar autenticación
-    const authResult = await verifyAuth(req);
-    if (!authResult.valid || !authResult.user) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-    }
+    // ✅ CORREGIDO: Verificar autenticación correctamente
+    const { payload } = await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId");
@@ -85,9 +82,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching invoices:", error);
-    return NextResponse.json(
-      { error: "Error al obtener las facturas" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
+import { requireAuth, handleApiError, successResponse } from "@/lib/api-helpers";
 import { eq } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -174,6 +175,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CORREGIDO: Verificar autenticación antes de permitir crear usuarios
+    const { payload } = await requireAuth(request);
+
     const { name, email } = await request.json();
 
     // ===== VALIDACIONES =====
@@ -216,16 +220,10 @@ export async function POST(request: NextRequest) {
         email: schema.usersTable.email,
       });
 
-    return NextResponse.json({
-      success: true,
-      data: newUser,
-    });
+    return successResponse(newUser);
   } catch (error) {
     console.error("Error creando usuario:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 

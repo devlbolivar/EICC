@@ -98,8 +98,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("accessToken", data.data.accessToken);
-        localStorage.setItem("refreshToken", data.data.refreshToken);
+        // ✅ CORREGIDO: Tokens se manejan automáticamente en cookies httpOnly
+        // No necesitamos localStorage (previene vulnerabilidades XSS)
         setSession(data.data.session);
       } else {
         setSession(null);
@@ -194,16 +194,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const switchCompany = async (companyId: string) => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        throw new Error("No hay token de acceso");
-      }
-
+      // ✅ CORREGIDO: Tokens están en cookies httpOnly, no necesitamos pasarlos manualmente
       const response = await fetch(API_ROUTES.AUTH.SWITCH_COMPANY, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ companyId }),
       });
@@ -214,9 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(result.error || "Error cambiando empresa");
       }
 
-      // Actualizar tokens
-      localStorage.setItem("accessToken", result.data.accessToken);
-      localStorage.setItem("refreshToken", result.data.refreshToken);
+      // Las cookies se actualizan automáticamente en el backend
       setSession(result.data.session);
 
       toast.success("Empresa cambiada exitosamente");

@@ -6,6 +6,8 @@ import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { Module, Lesson } from "@/app/types";
+import { validateUUIDParam } from "@/lib/uuid-validator";
+import { handleApiError } from "@/lib/api-helpers";
 
 // ===== GET - Obtener curso por ID =====
 export async function GET(
@@ -30,6 +32,10 @@ export async function GET(
     }
 
     const { id: courseId } = await params;
+
+    // ✅ VALIDAR UUID
+    const uuidError = validateUUIDParam(courseId, "Course ID");
+    if (uuidError) return uuidError;
 
     // Obtener curso con información del creador y empresa
     const result = await db.execute(sql`
@@ -72,10 +78,7 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error al obtener curso:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }
 
