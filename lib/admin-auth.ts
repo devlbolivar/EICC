@@ -46,10 +46,10 @@ export async function verifyAdminAuth(request: NextRequest) {
   const permissions = payload.permissions as Permission[];
 
   const hasAdminPermissions = hasAnyPermission(permissions, [
-    Permission.MANAGE_USERS,
-    Permission.MANAGE_COMPANIES,
-    Permission.MANAGE_ROLES,
-    Permission.MANAGE_COURSES,
+    "users:manage",
+    "company:admin",
+    "platform:admin",
+    "courses:manage",
   ]);
 
   if (!hasAdminPermissions) {
@@ -58,7 +58,7 @@ export async function verifyAdminAuth(request: NextRequest) {
       response: NextResponse.json(
         {
           error: "Permisos insuficientes. Se requiere rol de administrador",
-          requiredPermissions: ["MANAGE_USERS", "MANAGE_COMPANIES", "MANAGE_ROLES"]
+          requiredPermissions: ["users:manage", "company:admin", "platform:admin", "courses:manage"]
         },
         { status: 403 }
       ),
