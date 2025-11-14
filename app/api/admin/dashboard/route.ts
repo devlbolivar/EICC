@@ -1,40 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/database";
 import * as schema from "@/config/schema";
-import { verifyAccessToken } from "@/lib/auth";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq, and, count, sql, isNotNull } from "drizzle-orm";
 import { ERROR_MESSAGES } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   try {
-    // ===== VERIFICAR AUTENTICACIÓN =====
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.UNAUTHORIZED },
-        { status: 401 }
-      );
+    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return authResult.response;
     }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.UNAUTHORIZED },
-        { status: 401 }
-      );
-    }
-
-    // ===== VERIFICAR PERMISOS DE ADMINISTRADOR =====
-    const hasAdminPermission = payload.permissions?.includes("platform:admin");
-    if (!hasAdminPermission) {
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.FORBIDDEN },
-        { status: 403 }
-      );
-    }
+    const payload = authResult.payload;
 
     // ===== OBTENER ESTADÍSTICAS DE LA BASE DE DATOS =====
 

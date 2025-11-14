@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
+import { validateCompanyData, validateUUID } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -18,23 +19,53 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const payload = authResult.payload;
 
     const { id } = params;
-    const { name, rut, email, phone, address, industry, plan, isActive } = await request.json();
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(id, 'ID de empresa');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    // ===== VALIDAR DATOS DE EMPRESA =====
+    const validation = validateCompanyData({
+      name: body.name,
+      rut: body.rut,
+      email: body.email,
+      phone: body.phone,
+      website: body.website,
+      industry: body.industry,
+      size: body.size,
+      description: body.description,
+    });
+
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: validation.errors?.[0] || 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
 
     const updatedCompany = await db
       .update(schema.companiesTable)
       .set({
-        name,
-        rut,
-        email,
-        phone,
-        address,
-        industry,
-        plan,
-        isActive,
+        ...validation.data,
+        isActive: body.isActive !== undefined ? body.isActive : undefined,
         updatedAt: new Date(),
       })
       .where(eq(schema.companiesTable.id, id))
       .returning();
+
+    if (!updatedCompany.length) {
+      return NextResponse.json(
+        { error: 'Empresa no encontrada' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ company: updatedCompany[0] });
   } catch (error) {
