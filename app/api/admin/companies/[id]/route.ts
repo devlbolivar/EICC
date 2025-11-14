@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
-import { verifyAccessToken } from "@/lib/auth";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -10,24 +10,12 @@ const db = drizzle(pg, { schema });
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
+    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return authResult.response;
     }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
+    const payload = authResult.payload;
 
     const { id } = params;
     const { name, rut, email, phone, address, industry, plan, isActive } = await request.json();
@@ -60,24 +48,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
+    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return authResult.response;
     }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
+    const payload = authResult.payload;
 
     const { id } = params;
 
