@@ -30,6 +30,12 @@ export function validateEnv() {
     return;
   }
 
+  // No validar durante el build de Next.js
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('⏭️  Skipping env validation during build');
+    return;
+  }
+
   const errors: string[] = [];
   const warnings: string[] = [];
 
