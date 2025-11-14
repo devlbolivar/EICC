@@ -11,7 +11,7 @@ import { requireAuth, handleApiError } from "@/lib/api-helpers";
 export async function GET(req: NextRequest) {
   try {
     // ✅ CORREGIDO: Verificar autenticación correctamente
-    const { payload } = await requireAuth(req);
+    await requireAuth(req);
 
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId");

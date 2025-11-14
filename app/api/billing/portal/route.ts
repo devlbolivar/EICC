@@ -13,7 +13,7 @@ import { requireAuth, handleApiError } from "@/lib/api-helpers";
 export async function POST(req: NextRequest) {
   try {
     // ✅ CORREGIDO: Verificar autenticación correctamente
-    const { payload } = await requireAuth(req);
+    await requireAuth(req);
 
     const { companyId } = await req.json();
 

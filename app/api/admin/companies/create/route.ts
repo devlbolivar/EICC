@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
@@ -10,7 +10,7 @@ const db = drizzle(pg, { schema });
 export async function POST(request: NextRequest) {
   try {
     // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
-    const { payload } = await requireAdmin(request);
+    await requireAdmin(request);
 
     const { name, rut, description, website, industry, size } = await request.json();
 

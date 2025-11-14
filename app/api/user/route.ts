@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // ✅ CORREGIDO: Verificar autenticación antes de permitir crear usuarios
-    const { payload } = await requireAuth(request);
+    await requireAuth(request);
 
     const { name, email } = await request.json();
 
