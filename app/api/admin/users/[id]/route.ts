@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
-import { verifyAccessToken } from "@/lib/auth";
+import { verifyAdminAuth } from "@/lib/admin-auth";
+import { validateUserData, validateUUID } from "@/lib/validation";
 import { eq, and } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -16,42 +17,21 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS =====
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
+    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return authResult.response;
+    }
+    const payload = authResult.payload;
 
-    if (!token) {
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(id, 'ID de usuario');
+    if (!idValidation.isValid) {
       return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
       );
     }
-
-    const payload = verifyAccessToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
-
-    // Verificar que el usuario sea admin
-    const currentUser = await db
-      .select()
-      .from(schema.usersTable)
-      .where(eq(schema.usersTable.id, payload.userId))
-      .limit(1);
-
-    if (!currentUser.length) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
-    }
-
-    // Verificar permisos de admin (simplificado por ahora)
-    // TODO: Implementar verificación completa de permisos
 
     // ===== OBTENER USUARIO =====
     const userData = await db

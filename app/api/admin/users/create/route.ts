@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
-import { verifyAccessToken } from "@/lib/auth";
+import { verifyAdminAuth } from "@/lib/admin-auth";
+import { validateUserData, validateEmail } from "@/lib/validation";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -11,53 +12,21 @@ const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
-    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS =====
-    const token =
-      request.headers.get("authorization")?.replace("Bearer ", "") ||
-      request.cookies.get("accessToken")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token de acceso requerido" },
-        { status: 401 }
-      );
+    // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return authResult.response;
     }
+    const payload = authResult.payload;
 
-    const payload = verifyAccessToken(token);
-    if (!payload) {
+    const body = await request.json();
+
+    // ===== VALIDAR EMAIL =====
+    const emailValidation = validateEmail(body.email || '');
+    if (!emailValidation.isValid) {
       return NextResponse.json(
-        { error: "Token de acceso inválido" },
-        { status: 401 }
-      );
-    }
-
-    // Verificar que el usuario sea admin
-    const currentUser = await db.query.usersTable.findFirst({
-      where: eq(schema.usersTable.id, payload.userId),
-      with: {
-        userCompanies: {
-          with: {
-            role: true,
-          },
-        },
-      },
-    });
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 }
-      );
-    }
-
-    const isAdmin = currentUser.userCompanies.some(
-      (uc) => uc.role.name === "admin" && uc.isActive
-    );
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "Acceso denegado. Se requieren permisos de administrador" },
-        { status: 403 }
+        { error: emailValidation.errors?.[0] || 'Email inválido' },
+        { status: 400 }
       );
     }
 
