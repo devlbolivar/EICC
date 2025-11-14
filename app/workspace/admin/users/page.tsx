@@ -1,10 +1,5 @@
 "use client";
 
-// Force dynamic rendering (uses useSearchParams)
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const runtime = 'nodejs';
-
 import { useAdmin } from "@/hooks/use-admin";
 import { useAdminUsers } from "@/hooks/use-admin-users";
 import { redirect } from "next/navigation";

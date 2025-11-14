@@ -1,10 +1,5 @@
 "use client";
 
-// Force dynamic rendering (uses useSearchParams)
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const runtime = 'nodejs';
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
