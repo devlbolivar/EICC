@@ -97,7 +97,7 @@ export async function GET(
 
     // Procesar las relaciones de empresa
     userData.forEach((row) => {
-      if (row.userCompanyId && row.userCompanyIsActive && row.roleName) {
+      if (row.userCompanyId && row.userCompanyIsActive && row.roleName && row.userCompanyRoleId) {
         userCompanies.push({
           id: row.userCompanyId,
           role: {
