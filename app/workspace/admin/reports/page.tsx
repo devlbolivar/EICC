@@ -1,6 +1,7 @@
 "use client";
 
 import { useAdmin } from "@/hooks/use-admin";
+import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import { redirect } from "next/navigation";
 import {
   Card,
@@ -10,10 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, Building2, TrendingUp, Download } from "lucide-react";
+import { Users, BookOpen, Building2, TrendingUp, Download, Loader2 } from "lucide-react";
 
 export default function AdminReportsPage() {
   const { isAdmin } = useAdmin();
+  const { data, loading, error } = useAdminDashboard();
 
   // Redirigir si no es administrador
   if (!isAdmin) {
@@ -34,63 +36,81 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Usuarios Totales
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">
-              +12% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="flex justify-center items-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-16 text-red-600">
+          Error: {error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Usuarios Activos
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.statistics?.activeUsers || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total de usuarios activos
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Cursos Activos
-            </CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">
-              +5% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Cursos Publicados
+              </CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.statistics?.publishedCourses || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cursos disponibles
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Empresas</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">
-              +8% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Empresas Activas</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.statistics?.activeCompanies || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Empresas registradas
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Matrículas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2,567</div>
-            <p className="text-xs text-muted-foreground">
-              +15% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Matrículas Totales</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.statistics?.totalEnrollments || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {data?.statistics?.completedCourses || 0} cursos completados
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Reportes disponibles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
