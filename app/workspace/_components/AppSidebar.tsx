@@ -14,7 +14,6 @@ import StudentNavMenu from "./StudentNavMenu";
 import { useAdmin } from "@/hooks/use-admin";
 import { useCompany } from "@/hooks/use-company";
 import { useStudent } from "@/hooks/use-student";
-import { useAuth } from "@/context/AuthContext";
 
 const AppSidebar = () => {
   const { isAdmin } = useAdmin();

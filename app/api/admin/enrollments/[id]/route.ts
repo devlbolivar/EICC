@@ -37,7 +37,7 @@ export async function PUT(
     }
 
     // ===== PREPARAR DATOS A ACTUALIZAR =====
-    const updateData: any = {
+    const updateData: Partial<typeof schema.enrollCourseTable.$inferInsert> = {
       updatedAt: new Date(),
     };
 

@@ -8,9 +8,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -19,7 +16,6 @@ import {
   User,
   HelpCircle,
   LogOut,
-  PlayCircle,
   Search,
 } from "lucide-react";
 import Link from "next/link";
@@ -83,7 +79,6 @@ const StudentNavMenu = () => {
   ];
 
   const isActive = (path: string) => pathname === path;
-  const isSubItemActive = (path: string) => pathname === path;
 
   return (
     <SidebarGroup>
