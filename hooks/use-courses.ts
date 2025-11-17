@@ -35,6 +35,7 @@ interface UseCoursesReturn {
 
   // Inscripciones
   enrollInCourse: (courseId: string) => Promise<boolean>;
+  unenrollFromCourse: (courseId: string) => Promise<boolean>;
   getEnrollment: (courseId: string) => Promise<any | null>;
   updateProgress: (
     courseId: string,
@@ -286,6 +287,33 @@ export function useCourses(): UseCoursesReturn {
     [makeRequest, handleError]
   );
 
+  // Desinscribirse de un curso
+  const unenrollFromCourse = useCallback(
+    async (courseId: string): Promise<boolean> => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await makeRequest(`/api/courses/${courseId}/enroll`, {
+          method: "DELETE",
+        });
+
+        if (result !== null) {
+          // Actualizar la lista de cursos inscritos
+          await fetchEnrolledCourses();
+        }
+
+        return result !== null;
+      } catch (err) {
+        handleError(err);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [makeRequest, handleError, fetchEnrolledCourses]
+  );
+
   // Obtener inscripción
   const getEnrollment = useCallback(
     async (courseId: string): Promise<any | null> => {
@@ -362,6 +390,7 @@ export function useCourses(): UseCoursesReturn {
     deleteCourse,
     getCourse,
     enrollInCourse,
+    unenrollFromCourse,
     getEnrollment,
     updateProgress,
     clearError,

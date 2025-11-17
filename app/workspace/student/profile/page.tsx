@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 
 // Icons
-import { User, Mail, Calendar, Edit, Save, X, Loader2 } from "lucide-react";
+import { User, Mail, Calendar, Edit, Save, X, Loader2, Camera, Trash2 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 
 // Hooks and Types
@@ -96,8 +96,10 @@ const StudentProfile = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const { profile, loading, updating, updateProfile, changePassword } =
+  const { profile, loading, updating, updateProfile, changePassword, uploadAvatar, deleteAvatar } =
     useUserProfile();
   const {
     enrolledCourses,
@@ -211,6 +213,53 @@ const StudentProfile = () => {
     resetFormData();
     resetPasswordData();
     setIsEditing(false);
+  };
+
+  const handleAvatarClick = () => {
+    if (isEditing && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor selecciona una imagen válida");
+      return;
+    }
+
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La imagen es demasiado grande. Máximo 5MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      // Convertir a base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        await uploadAvatar(base64String);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (confirm("¿Estás seguro de que quieres eliminar tu avatar?")) {
+      await deleteAvatar();
+    }
   };
 
   if (loading || coursesLoading) {
@@ -457,20 +506,58 @@ const StudentProfile = () => {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
                   <div
-                    className={`${CONSTANTS.AVATAR_SIZE} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
+                    className={`${CONSTANTS.AVATAR_SIZE} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden ${
+                      isEditing ? "cursor-pointer" : ""
+                    }`}
+                    onClick={handleAvatarClick}
                   >
-                    <User
-                      className={`${CONSTANTS.AVATAR_ICON_SIZE} text-white`}
-                    />
+                    {profile.avatar ? (
+                      <img
+                        src={profile.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User
+                        className={`${CONSTANTS.AVATAR_ICON_SIZE} text-white`}
+                      />
+                    )}
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      </div>
+                    )}
                   </div>
                   {isEditing && (
-                    <Button
-                      size="sm"
-                      className="absolute -bottom-2 -right-2 rounded-full w-8 h-8"
-                    >
-                      <Edit className={`${CONSTANTS.ICON_SIZES.SMALL}`} />
-                    </Button>
+                    <div className="absolute -bottom-2 -right-2 flex gap-1">
+                      <Button
+                        size="sm"
+                        className="rounded-full w-8 h-8 p-0"
+                        onClick={handleAvatarClick}
+                        disabled={isUploadingAvatar}
+                      >
+                        <Camera className={`${CONSTANTS.ICON_SIZES.SMALL}`} />
+                      </Button>
+                      {profile.avatar && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="rounded-full w-8 h-8 p-0"
+                          onClick={handleDeleteAvatar}
+                          disabled={isUploadingAvatar}
+                        >
+                          <Trash2 className={`${CONSTANTS.ICON_SIZES.SMALL}`} />
+                        </Button>
+                      )}
+                    </div>
                   )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
                 </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold">{profile.name}</h3>

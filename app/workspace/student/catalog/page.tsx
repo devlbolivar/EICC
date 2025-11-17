@@ -106,6 +106,8 @@ const StudentCatalog = () => {
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(
     null
   );
+  const [categories, setCategories] = useState<string[]>(["Todos"]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // Helper functions
   const getCourseGradient = (isCompleted: boolean) => {
@@ -202,6 +204,33 @@ const StudentCatalog = () => {
     );
   };
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await fetch("/api/courses/categories", {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const fetchedCategories = data.data?.categories || [];
+          // Agregar "Todos" al inicio si no está
+          setCategories(["Todos", ...fetchedCategories]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        // Usar categorías por defecto en caso de error
+        setCategories(CONSTANTS.FILTERS.CATEGORIES);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   // Fetch courses and enrolled courses on component mount
   useEffect(() => {
     fetchCourses();
@@ -227,7 +256,6 @@ const StudentCatalog = () => {
     return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
-  const categories = CONSTANTS.FILTERS.CATEGORIES;
   const difficulties = CONSTANTS.FILTERS.DIFFICULTIES;
 
   // Handle course enrollment
