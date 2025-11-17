@@ -378,6 +378,7 @@ export interface EnrolledCourseResponse {
   image: string;
   category: string;
   level: string;
+  certificateId?: string | null; // ID del certificado si el curso está completado
 }
 
 // ===== AUTENTICACIÓN Y SESIÓN =====

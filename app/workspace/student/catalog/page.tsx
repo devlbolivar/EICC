@@ -63,8 +63,9 @@ const CONSTANTS = {
     ENROLL_ERROR: "No se pudo inscribir en el curso. Inténtalo de nuevo.",
     ENROLL_ERROR_GENERIC:
       "Error al inscribirse en el curso. Inténtalo de nuevo.",
-    CERTIFICATE_COMING_SOON:
-      "Funcionalidad de certificado próximamente disponible",
+    CERTIFICATE_NOT_FOUND: "No se encontró información del curso inscrito",
+    CERTIFICATE_NOT_AVAILABLE:
+      "El certificado aún no está disponible para este curso",
   },
   FILTERS: {
     CATEGORIES: [
@@ -258,8 +259,20 @@ const StudentCatalog = () => {
 
   // Handle viewing certificate
   const handleViewCertificate = (courseId: string) => {
-    // TODO: Implement certificate viewing
-    toast.info(CONSTANTS.MESSAGES.CERTIFICATE_COMING_SOON);
+    const enrolledData = getEnrolledCourseData(courseId);
+
+    if (!enrolledData) {
+      toast.error(CONSTANTS.MESSAGES.CERTIFICATE_NOT_FOUND);
+      return;
+    }
+
+    if (!enrolledData.certificateId) {
+      toast.error(CONSTANTS.MESSAGES.CERTIFICATE_NOT_AVAILABLE);
+      return;
+    }
+
+    // Navegar a la página del certificado
+    router.push(`/workspace/student/certificates/${enrolledData.certificateId}`);
   };
 
   // Get enrolled course data for a specific course
