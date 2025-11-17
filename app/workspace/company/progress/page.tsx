@@ -16,7 +16,15 @@ import {
   Calendar,
   Download,
   Loader2,
+  X,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Employee {
@@ -50,6 +58,9 @@ const CompanyProgress = () => {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [progressFilter, setProgressFilter] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -80,11 +91,25 @@ const CompanyProgress = () => {
     }
   };
 
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter((employee) => {
+    const matchesSearch =
+      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.role.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole = !roleFilter || employee.role.toLowerCase().includes(roleFilter.toLowerCase());
+
+    let matchesProgress = true;
+    if (progressFilter === "high") {
+      matchesProgress = employee.coursesCompleted >= 5;
+    } else if (progressFilter === "medium") {
+      matchesProgress = employee.coursesCompleted >= 2 && employee.coursesCompleted < 5;
+    } else if (progressFilter === "low") {
+      matchesProgress = employee.coursesCompleted < 2;
+    }
+
+    return matchesSearch && matchesRole && matchesProgress;
+  });
 
   const getProgressPercentage = (completed: number, total: number) => {
     if (total === 0) return 0;
@@ -120,6 +145,47 @@ const CompanyProgress = () => {
     return date.toLocaleDateString();
   };
 
+  const handleExportReport = async () => {
+    try {
+      setExportLoading(true);
+
+      // Crear CSV con los datos filtrados
+      const headers = ["Nombre", "Email", "Rol", "Estado", "Cursos Completados", "Certificados", "Última Actividad"];
+      const csvData = filteredEmployees.map(emp => [
+        emp.name,
+        emp.email,
+        emp.role,
+        emp.status === "active" ? "Activo" : "Inactivo",
+        emp.coursesCompleted.toString(),
+        emp.certificates.toString(),
+        formatDate(emp.lastLoginAt)
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      // Crear y descargar el archivo
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `reporte-progreso-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Reporte exportado exitosamente");
+    } catch (error) {
+      console.error("Error exporting report:", error);
+      toast.error("Error al exportar el reporte");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -135,9 +201,22 @@ const CompanyProgress = () => {
           <TrendingUp className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold">Progreso de Empleados</h1>
         </div>
-        <Button className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Exportar Reporte
+        <Button
+          className="flex items-center gap-2"
+          onClick={handleExportReport}
+          disabled={exportLoading}
+        >
+          {exportLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Exportando...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Exportar Reporte
+            </>
+          )}
         </Button>
       </div>
 
@@ -220,14 +299,42 @@ const CompanyProgress = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filtrar por Rol
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filtrar por Progreso
-              </Button>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por Rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los roles</SelectItem>
+                  <SelectItem value="desarrollador">Desarrollador</SelectItem>
+                  <SelectItem value="gerente">Gerente</SelectItem>
+                  <SelectItem value="analista">Analista</SelectItem>
+                  <SelectItem value="diseñador">Diseñador</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={progressFilter} onValueChange={setProgressFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por Progreso" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="high">Alto (5+ cursos)</SelectItem>
+                  <SelectItem value="medium">Medio (2-4 cursos)</SelectItem>
+                  <SelectItem value="low">Bajo (&lt;2 cursos)</SelectItem>
+                </SelectContent>
+              </Select>
+              {(roleFilter || progressFilter) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setRoleFilter("");
+                    setProgressFilter("");
+                  }}
+                  title="Limpiar filtros"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

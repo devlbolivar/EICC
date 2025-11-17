@@ -17,6 +17,10 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Edit,
+  UserX,
+  Eye,
+  TrendingUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,6 +28,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 import { useCompanyEmployees } from "@/hooks/use-company-employees";
 import {
   Select,
@@ -32,6 +55,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import type { CompanyEmployee } from "@/hooks/use-company-employees";
 
 const CompanyEmployees = () => {
   const {
@@ -47,6 +72,16 @@ const CompanyEmployees = () => {
   } = useCompanyEmployees();
 
   const [searchValue, setSearchValue] = useState(filters.search || "");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<CompanyEmployee | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+  });
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleSearch = (value: string) => {
     setSearchValue(value);
@@ -80,6 +115,86 @@ const CompanyEmployees = () => {
         return <Badge className="bg-red-100 text-red-800">Inactivo</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const handleOpenEditDialog = (employee: CompanyEmployee) => {
+    setSelectedEmployee(employee);
+    setEditForm({
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone || "",
+      role: employee.role,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleOpenDeactivateDialog = (employee: CompanyEmployee) => {
+    setSelectedEmployee(employee);
+    setDeactivateDialogOpen(true);
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      setActionLoading(true);
+      const token = localStorage.getItem("accessToken");
+
+      const response = await fetch(`/api/company/employees/${selectedEmployee.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al actualizar empleado");
+      }
+
+      toast.success("Empleado actualizado exitosamente");
+      setEditDialogOpen(false);
+      refreshEmployees();
+    } catch (err) {
+      console.error("Error updating employee:", err);
+      toast.error(err instanceof Error ? err.message : "Error al actualizar empleado");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeactivateEmployee = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      setActionLoading(true);
+      const token = localStorage.getItem("accessToken");
+
+      const response = await fetch(`/api/company/employees/${selectedEmployee.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ status: "inactive" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al desactivar empleado");
+      }
+
+      toast.success("Empleado desactivado exitosamente");
+      setDeactivateDialogOpen(false);
+      refreshEmployees();
+    } catch (err) {
+      console.error("Error deactivating employee:", err);
+      toast.error(err instanceof Error ? err.message : "Error al desactivar empleado");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -356,11 +471,25 @@ const CompanyEmployees = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Ver perfil</DropdownMenuItem>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Ver progreso</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Desactivar
+                        <DropdownMenuItem>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Ver perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenEditDialog(employee)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          Ver progreso
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleOpenDeactivateDialog(employee)}
+                          disabled={employee.status === "inactive"}
+                        >
+                          <UserX className="w-4 h-4 mr-2" />
+                          {employee.status === "inactive" ? "Ya desactivado" : "Desactivar"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -425,6 +554,106 @@ const CompanyEmployees = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Diálogo de Edición */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Empleado</DialogTitle>
+            <DialogDescription>
+              Actualiza la información del empleado
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nombre</Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nombre del empleado"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@ejemplo.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input
+                id="phone"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                placeholder="Teléfono"
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Cargo</Label>
+              <Input
+                id="role"
+                value={editForm.role}
+                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                placeholder="Cargo"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateEmployee} disabled={actionLoading}>
+              {actionLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar cambios"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Desactivación */}
+      <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desactivar empleado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro que deseas desactivar a {selectedEmployee?.name}? Esta acción
+              puede ser revertida más adelante.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeactivateEmployee}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {actionLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Desactivando...
+                </>
+              ) : (
+                "Desactivar"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
