@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/database";
-import { enrollCourseTable } from "@/config/schema";
+import { enrollCourseTable, certificatesTable } from "@/config/schema";
 import { coursesTable } from "@/config/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export async function GET(req: Request) {
   // Get user ID from headers set by middleware
@@ -28,9 +28,18 @@ export async function GET(req: Request) {
         image: coursesTable.bannerImage,
         category: coursesTable.category,
         level: coursesTable.level,
+        certificateId: certificatesTable.certificateId,
       })
       .from(enrollCourseTable)
       .innerJoin(coursesTable, eq(enrollCourseTable.courseId, coursesTable.id))
+      .leftJoin(
+        certificatesTable,
+        and(
+          eq(certificatesTable.courseId, coursesTable.id),
+          eq(certificatesTable.userId, userId),
+          eq(certificatesTable.isActive, true)
+        )
+      )
       .where(eq(enrollCourseTable.userId, userId));
 
     return NextResponse.json({
