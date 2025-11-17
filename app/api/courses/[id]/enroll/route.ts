@@ -316,3 +316,72 @@ export async function PUT(
     );
   }
 }
+
+// ===== DELETE - Desinscribirse de un curso =====
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verificar autenticación
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken");
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token no encontrado" },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyAccessToken(token.value);
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    const { id: courseId } = await params;
+
+    // Verificar que el usuario está inscrito
+    const existingEnrollment = await db.execute(sql`
+      SELECT * FROM "enrollCourse"
+      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
+    `);
+
+    if (existingEnrollment.rows.length === 0) {
+      return NextResponse.json(
+        { error: "No estás inscrito en este curso" },
+        { status: 404 }
+      );
+    }
+
+    const enrollment = existingEnrollment.rows[0];
+
+    // Evitar desinscripción de cursos completados (opcional)
+    if (enrollment.isCompleted) {
+      return NextResponse.json(
+        {
+          error: "No puedes desinscribirte de un curso completado. El certificado ya ha sido emitido.",
+          code: "COURSE_COMPLETED"
+        },
+        { status: 400 }
+      );
+    }
+
+    // Eliminar inscripción (soft delete o hard delete)
+    await db.execute(sql`
+      DELETE FROM "enrollCourse"
+      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
+    `);
+
+    return NextResponse.json({
+      success: true,
+      message: "Te has desinscrito del curso exitosamente",
+    });
+  } catch (error) {
+    console.error("Error al desinscribirse del curso:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}

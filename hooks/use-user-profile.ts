@@ -168,6 +168,70 @@ export const useUserProfile = () => {
     }
   };
 
+  // Upload avatar
+  const uploadAvatar = async (avatarBase64: string) => {
+    try {
+      setUpdating(true);
+      const response = await fetch("/api/user/avatar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ avatar: avatarBase64 }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const updatedUser = result.data?.user || result.user;
+        if (updatedUser) {
+          setProfile((prev) => (prev ? { ...prev, avatar: updatedUser.avatar } : null));
+        }
+        toast.success("Avatar actualizado exitosamente");
+        return true;
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Error al actualizar avatar");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar avatar"
+      );
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Delete avatar
+  const deleteAvatar = async () => {
+    try {
+      setUpdating(true);
+      const response = await fetch("/api/user/avatar", {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        setProfile((prev) => (prev ? { ...prev, avatar: null } : null));
+        toast.success("Avatar eliminado exitosamente");
+        return true;
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Error al eliminar avatar");
+      }
+    } catch (error) {
+      console.error("Error deleting avatar:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error al eliminar avatar"
+      );
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Load profile on mount
   useEffect(() => {
     if (session?.user) {
@@ -184,5 +248,7 @@ export const useUserProfile = () => {
     changePassword,
     loadProfile,
     loadUserStatistics,
+    uploadAvatar,
+    deleteAvatar,
   };
 };

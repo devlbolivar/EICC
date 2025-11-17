@@ -19,6 +19,7 @@ import {
   Trophy,
   Loader2,
   AlertCircle,
+  UserMinus,
 } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { useCourses } from "@/hooks/use-courses";
@@ -28,9 +29,10 @@ import { useRouter } from "next/navigation";
 
 export default function StudentCourses() {
   const router = useRouter();
-  const { enrolledCourses, loading, error, fetchEnrolledCourses } =
+  const { enrolledCourses, loading, error, fetchEnrolledCourses, unenrollFromCourse } =
     useCourses();
   const { checkAndCreateCertificate, isCreating } = useCertificateCheck();
+  const [unenrollingCourseId, setUnenrollingCourseId] = React.useState<string | null>(null);
 
   // Constants
   const LOADING_HEIGHT = "h-64";
@@ -93,6 +95,24 @@ export default function StudentCourses() {
 
   const handleContinueCourse = (courseId: string) => {
     router.push(`/workspace/student/courses/${courseId}`);
+  };
+
+  const handleUnenroll = async (courseId: string, courseTitle: string) => {
+    if (!confirm(`¿Estás seguro de que quieres desinscribirte de "${courseTitle}"? Perderás todo tu progreso.`)) {
+      return;
+    }
+
+    setUnenrollingCourseId(courseId);
+    try {
+      const success = await unenrollFromCourse(courseId);
+      if (success) {
+        // La lista se actualiza automáticamente en el hook
+      }
+    } catch (error) {
+      console.error("Error al desinscribirse:", error);
+    } finally {
+      setUnenrollingCourseId(null);
+    }
   };
 
   if (loading) {
@@ -221,7 +241,7 @@ export default function StudentCourses() {
                 >
                   {getActionButton(course)}
                 </Button>
-                {course.isCompleted && (
+                {course.isCompleted ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -230,6 +250,25 @@ export default function StudentCourses() {
                   >
                     <Award className={`${ICON_SIZE} mr-2`} />
                     {isCreating(course.id) ? "Generando..." : "Ver Certificado"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUnenroll(course.id, course.title)}
+                    disabled={unenrollingCourseId === course.id}
+                  >
+                    {unenrollingCourseId === course.id ? (
+                      <>
+                        <Loader2 className={`${ICON_SIZE} mr-2 animate-spin`} />
+                        Desinscribiendo...
+                      </>
+                    ) : (
+                      <>
+                        <UserMinus className={`${ICON_SIZE} mr-2`} />
+                        Desinscribirse
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
