@@ -16,8 +16,18 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useCompanyCertificates } from "@/hooks/use-company-certificates";
+import { toast } from "sonner";
+import type { CompanyCertificate } from "@/hooks/use-company-certificates";
 
 const CompanyCertificates = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +35,9 @@ const CompanyCertificates = () => {
     "all" | "active" | "expired"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState<CompanyCertificate | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const {
     certificates,
@@ -85,6 +98,124 @@ const CompanyCertificates = () => {
     setCurrentPage(1);
   };
 
+  const handleViewCertificate = (certificate: CompanyCertificate) => {
+    setSelectedCertificate(certificate);
+    setViewDialogOpen(true);
+  };
+
+  const handleDownloadCertificate = async (certificate: CompanyCertificate) => {
+    try {
+      setActionLoading(true);
+
+      // Si ya tiene URL de certificado, descargar directamente
+      if (certificate.certificateUrl) {
+        window.open(certificate.certificateUrl, "_blank");
+        toast.success("Certificado abierto en nueva pestaña");
+        return;
+      }
+
+      // Si no, generar el certificado
+      const response = await fetch(`/api/certificates/${certificate.id}/download`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el certificado");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `certificado-${certificate.certificateId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Certificado descargado exitosamente");
+    } catch (error) {
+      console.error("Error downloading certificate:", error);
+      toast.error("Error al descargar el certificado");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRenewCertificate = async (certificate: CompanyCertificate) => {
+    try {
+      setActionLoading(true);
+
+      const response = await fetch(`/api/certificates/${certificate.id}/renew`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al renovar el certificado");
+      }
+
+      toast.success("Certificado renovado exitosamente");
+      fetchCertificates();
+      fetchStats();
+    } catch (error) {
+      console.error("Error renewing certificate:", error);
+      toast.error(error instanceof Error ? error.message : "Error al renovar el certificado");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExportCertificates = async () => {
+    try {
+      setActionLoading(true);
+
+      const headers = ["ID Certificado", "Empleado", "Email", "Curso", "Puntuación", "Fecha Emisión", "Fecha Vencimiento", "Estado"];
+      const csvData = certificates.map(cert => {
+        const issuedDate = new Date(cert.issuedDate);
+        const expiryDate = new Date(issuedDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+
+        return [
+          cert.certificateId,
+          cert.user_name,
+          cert.user_email,
+          cert.course_name,
+          cert.grade.toString(),
+          issuedDate.toLocaleDateString(),
+          expiryDate.toLocaleDateString(),
+          cert.isActive ? "Activo" : "Expirado"
+        ];
+      });
+
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(","))
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `certificados-${new Date().toISOString().split("T")[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Certificados exportados exitosamente");
+    } catch (error) {
+      console.error("Error exporting certificates:", error);
+      toast.error("Error al exportar certificados");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading && !certificates.length) {
     return (
       <div className="p-6 space-y-6">
@@ -129,9 +260,22 @@ const CompanyCertificates = () => {
           <Award className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold">Certificados</h1>
         </div>
-        <Button className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Exportar Certificados
+        <Button
+          className="flex items-center gap-2"
+          onClick={handleExportCertificates}
+          disabled={actionLoading}
+        >
+          {actionLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Exportando...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Exportar Certificados
+            </>
+          )}
         </Button>
       </div>
 
@@ -328,10 +472,21 @@ const CompanyCertificates = () => {
                     {getStatusBadge(certificate.isActive)}
 
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewCertificate(certificate)}
+                        title="Ver detalles"
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadCertificate(certificate)}
+                        disabled={actionLoading}
+                        title="Descargar certificado"
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
@@ -420,8 +575,20 @@ const CompanyCertificates = () => {
                         </p>
                       </div>
 
-                      <Button variant="outline" size="sm">
-                        Renovar
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRenewCertificate(certificate)}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Renovar
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -482,6 +649,110 @@ const CompanyCertificates = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Diálogo de Vista de Certificado */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalles del Certificado</DialogTitle>
+            <DialogDescription>
+              Información completa del certificado
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCertificate && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">ID Certificado</h4>
+                  <p className="text-lg font-semibold">{selectedCertificate.certificateId}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Estado</h4>
+                  {getStatusBadge(selectedCertificate.isActive)}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-500">Empleado</h4>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
+                    {getInitials(selectedCertificate.user_name)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{selectedCertificate.user_name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedCertificate.user_email}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-500">Curso</h4>
+                <p className="font-medium">{selectedCertificate.course_name}</p>
+                {selectedCertificate.course_description && (
+                  <p className="text-sm text-muted-foreground">{selectedCertificate.course_description}</p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="outline">{selectedCertificate.course_category}</Badge>
+                  <Badge variant="outline">{selectedCertificate.course_level}</Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Puntuación</h4>
+                  <p className={`text-2xl font-bold ${getScoreColor(selectedCertificate.grade)}`}>
+                    {selectedCertificate.grade}%
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Duración</h4>
+                  <p className="text-lg font-medium">{selectedCertificate.duration || selectedCertificate.course_duration || "N/A"}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Fecha de Emisión</h4>
+                  <p className="font-medium">{new Date(selectedCertificate.issuedDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Fecha de Vencimiento</h4>
+                  <p className="font-medium">
+                    {new Date(
+                      new Date(selectedCertificate.issuedDate).getTime() + 365 * 24 * 60 * 60 * 1000
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={() => handleDownloadCertificate(selectedCertificate)}
+                  disabled={actionLoading}
+                  className="flex-1"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar Certificado
+                </Button>
+                {!selectedCertificate.isActive && (
+                  <Button
+                    onClick={() => {
+                      handleRenewCertificate(selectedCertificate);
+                      setViewDialogOpen(false);
+                    }}
+                    disabled={actionLoading}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Renovar
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

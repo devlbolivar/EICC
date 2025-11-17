@@ -118,6 +118,7 @@ export default function CompanyCourseViewPage() {
   const [expandedLessons, setExpandedLessons] = useState<Set<string>>(
     new Set()
   );
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -223,6 +224,63 @@ export default function CompanyCourseViewPage() {
     return expandedLessons.has(lessonId);
   };
 
+  const handleStartCourse = async () => {
+    try {
+      setEnrolling(true);
+
+      // Inscribir al usuario en el curso
+      const response = await fetch(`/api/enrollments`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          courseId: courseId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al inscribirse en el curso");
+      }
+
+      toast.success("Inscrito exitosamente en el curso");
+
+      // Redirigir al curso en la vista de estudiante
+      router.push(`/workspace/student/courses/${courseId}`);
+    } catch (err) {
+      console.error("Error enrolling in course:", err);
+      toast.error(err instanceof Error ? err.message : "Error al inscribirse en el curso");
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handleViewContent = () => {
+    // Expandir todas las lecciones
+    if (course?.modules) {
+      const allLessonIds = new Set<string>();
+      course.modules.forEach((module: Module, moduleIndex: number) => {
+        module.lessons?.forEach((_: Lesson, lessonIndex: number) => {
+          allLessonIds.add(`${moduleIndex}-${lessonIndex}`);
+        });
+      });
+      setExpandedLessons(allLessonIds);
+
+      // Scroll a la sección de contenido
+      const contentSection = document.querySelector('[data-content-section]');
+      if (contentSection) {
+        contentSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleViewCertificate = () => {
+    // Navegar a la página de certificados
+    router.push(`/workspace/company/certificates?course=${courseId}`);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -282,9 +340,22 @@ export default function CompanyCourseViewPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button className="flex items-center gap-2">
-              <Play className="w-4 h-4" />
-              Iniciar Curso
+            <Button
+              className="flex items-center gap-2"
+              onClick={handleStartCourse}
+              disabled={enrolling}
+            >
+              {enrolling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Inscribiendo...
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4" />
+                  Iniciar Curso
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -406,7 +477,7 @@ export default function CompanyCourseViewPage() {
           </Card>
 
           {/* Módulos y lecciones */}
-          <Card>
+          <Card data-content-section>
             <CardHeader>
               <CardTitle>Contenido del Curso</CardTitle>
               <CardDescription>
@@ -655,13 +726,27 @@ export default function CompanyCourseViewPage() {
               <CardTitle>Acciones</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                Iniciar Curso
+              <Button
+                className="w-full flex items-center gap-2"
+                onClick={handleStartCourse}
+                disabled={enrolling}
+              >
+                {enrolling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Inscribiendo...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    Iniciar Curso
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
                 className="w-full flex items-center gap-2"
+                onClick={handleViewContent}
               >
                 <BookOpen className="w-4 h-4" />
                 Ver Contenido
@@ -669,6 +754,7 @@ export default function CompanyCourseViewPage() {
               <Button
                 variant="outline"
                 className="w-full flex items-center gap-2"
+                onClick={handleViewCertificate}
               >
                 <Award className="w-4 h-4" />
                 Ver Certificado
