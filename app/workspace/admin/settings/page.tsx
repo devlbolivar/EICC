@@ -2,6 +2,8 @@
 
 import { useAdmin } from "@/hooks/use-admin";
 import { redirect } from "next/navigation";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -22,12 +24,157 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Save, Globe, Shield, Mail, Database } from "lucide-react";
 
+interface Settings {
+  // General
+  appName: string;
+  appUrl: string;
+  timezone: string;
+  language: string;
+  // Security
+  sessionTimeout: string;
+  maxLoginAttempts: string;
+  require2FA: string;
+  requireEmailVerification: string;
+  // Email
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpPass: string;
+  fromEmail: string;
+  // Database
+  autoBackup: string;
+  backupRetention: string;
+  autoOptimize: string;
+  maxConnections: string;
+}
+
 export default function AdminSettingsPage() {
   const { isAdmin } = useAdmin();
+  const [settings, setSettings] = useState<Settings>({
+    appName: "",
+    appUrl: "",
+    timezone: "",
+    language: "",
+    sessionTimeout: "",
+    maxLoginAttempts: "",
+    require2FA: "false",
+    requireEmailVerification: "true",
+    smtpHost: "",
+    smtpPort: "",
+    smtpUser: "",
+    smtpPass: "",
+    fromEmail: "",
+    autoBackup: "true",
+    backupRetention: "",
+    autoOptimize: "true",
+    maxConnections: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Redirigir si no es administrador
   if (!isAdmin) {
     redirect("/");
+  }
+
+  // Cargar configuraciones al montar el componente
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/admin/settings");
+        if (!response.ok) {
+          throw new Error("Error al cargar configuraciones");
+        }
+        const result = await response.json();
+        if (result.success) {
+          setSettings(result.data);
+        }
+      } catch (error) {
+        console.error("Error cargando configuraciones:", error);
+        toast.error("Error al cargar las configuraciones");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Manejar cambios en los inputs
+  const handleInputChange = (key: keyof Settings, value: string) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Manejar cambios en los switches
+  const handleSwitchChange = (key: keyof Settings, checked: boolean) => {
+    setSettings((prev) => ({ ...prev, [key]: String(checked) }));
+  };
+
+  // Guardar configuraciones
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al guardar configuraciones");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success("Configuraciones guardadas exitosamente");
+      }
+    } catch (error) {
+      console.error("Error guardando configuraciones:", error);
+      toast.error("Error al guardar las configuraciones");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Restaurar valores por defecto
+  const handleRestore = async () => {
+    const confirmed = confirm(
+      "¿Estás seguro de que deseas restaurar los valores por defecto?"
+    );
+    if (!confirmed) return;
+
+    setSettings({
+      appName: "EICCC",
+      appUrl: "https://eiccc.com",
+      timezone: "america/santiago",
+      language: "es",
+      sessionTimeout: "120",
+      maxLoginAttempts: "5",
+      require2FA: "false",
+      requireEmailVerification: "true",
+      smtpHost: "",
+      smtpPort: "587",
+      smtpUser: "",
+      smtpPass: "",
+      fromEmail: "noreply@eiccc.com",
+      autoBackup: "true",
+      backupRetention: "30",
+      autoOptimize: "true",
+      maxConnections: "100",
+    });
+    toast.info("Valores restaurados. No olvides guardar los cambios.");
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-600">Cargando configuraciones...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -58,7 +205,8 @@ export default function AdminSettingsPage() {
               <Label htmlFor="appName">Nombre de la aplicación</Label>
               <Input
                 id="appName"
-                defaultValue="EICCC"
+                value={settings.appName}
+                onChange={(e) => handleInputChange("appName", e.target.value)}
                 placeholder="Nombre de la aplicación"
               />
             </div>
@@ -66,13 +214,17 @@ export default function AdminSettingsPage() {
               <Label htmlFor="appUrl">URL de la aplicación</Label>
               <Input
                 id="appUrl"
-                defaultValue="https://eiccc.com"
+                value={settings.appUrl}
+                onChange={(e) => handleInputChange("appUrl", e.target.value)}
                 placeholder="https://ejemplo.com"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="timezone">Zona horaria</Label>
-              <Select defaultValue="america/santiago">
+              <Select
+                value={settings.timezone}
+                onValueChange={(value) => handleInputChange("timezone", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona zona horaria" />
                 </SelectTrigger>
@@ -90,7 +242,10 @@ export default function AdminSettingsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="language">Idioma por defecto</Label>
-              <Select defaultValue="es">
+              <Select
+                value={settings.language}
+                onValueChange={(value) => handleInputChange("language", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona idioma" />
                 </SelectTrigger>
@@ -121,7 +276,10 @@ export default function AdminSettingsPage() {
               <Input
                 id="sessionTimeout"
                 type="number"
-                defaultValue="120"
+                value={settings.sessionTimeout}
+                onChange={(e) =>
+                  handleInputChange("sessionTimeout", e.target.value)
+                }
                 min="30"
                 max="1440"
               />
@@ -133,7 +291,10 @@ export default function AdminSettingsPage() {
               <Input
                 id="maxLoginAttempts"
                 type="number"
-                defaultValue="5"
+                value={settings.maxLoginAttempts}
+                onChange={(e) =>
+                  handleInputChange("maxLoginAttempts", e.target.value)
+                }
                 min="3"
                 max="10"
               />
@@ -145,7 +306,12 @@ export default function AdminSettingsPage() {
                   Requerir 2FA para todos los usuarios
                 </p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.require2FA === "true"}
+                onCheckedChange={(checked) =>
+                  handleSwitchChange("require2FA", checked)
+                }
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -154,7 +320,12 @@ export default function AdminSettingsPage() {
                   Requerir verificación de email al registrarse
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.requireEmailVerification === "true"}
+                onCheckedChange={(checked) =>
+                  handleSwitchChange("requireEmailVerification", checked)
+                }
+              />
             </div>
           </CardContent>
         </Card>
@@ -173,30 +344,48 @@ export default function AdminSettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="smtpHost">Servidor SMTP</Label>
-              <Input id="smtpHost" placeholder="smtp.gmail.com" />
+              <Input
+                id="smtpHost"
+                value={settings.smtpHost}
+                onChange={(e) => handleInputChange("smtpHost", e.target.value)}
+                placeholder="smtp.gmail.com"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="smtpPort">Puerto SMTP</Label>
               <Input
                 id="smtpPort"
                 type="number"
-                defaultValue="587"
+                value={settings.smtpPort}
+                onChange={(e) => handleInputChange("smtpPort", e.target.value)}
                 placeholder="587"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="smtpUser">Usuario SMTP</Label>
-              <Input id="smtpUser" placeholder="usuario@ejemplo.com" />
+              <Input
+                id="smtpUser"
+                value={settings.smtpUser}
+                onChange={(e) => handleInputChange("smtpUser", e.target.value)}
+                placeholder="usuario@ejemplo.com"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="smtpPass">Contraseña SMTP</Label>
-              <Input id="smtpPass" type="password" placeholder="Contraseña" />
+              <Input
+                id="smtpPass"
+                type="password"
+                value={settings.smtpPass}
+                onChange={(e) => handleInputChange("smtpPass", e.target.value)}
+                placeholder="Contraseña"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="fromEmail">Email remitente</Label>
               <Input
                 id="fromEmail"
-                defaultValue="noreply@eiccc.com"
+                value={settings.fromEmail}
+                onChange={(e) => handleInputChange("fromEmail", e.target.value)}
                 placeholder="noreply@ejemplo.com"
               />
             </div>
@@ -222,7 +411,12 @@ export default function AdminSettingsPage() {
                   Realizar respaldos diarios automáticos
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.autoBackup === "true"}
+                onCheckedChange={(checked) =>
+                  handleSwitchChange("autoBackup", checked)
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="backupRetention">
@@ -231,7 +425,10 @@ export default function AdminSettingsPage() {
               <Input
                 id="backupRetention"
                 type="number"
-                defaultValue="30"
+                value={settings.backupRetention}
+                onChange={(e) =>
+                  handleInputChange("backupRetention", e.target.value)
+                }
                 min="7"
                 max="365"
               />
@@ -243,14 +440,22 @@ export default function AdminSettingsPage() {
                   Optimizar base de datos semanalmente
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.autoOptimize === "true"}
+                onCheckedChange={(checked) =>
+                  handleSwitchChange("autoOptimize", checked)
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="maxConnections">Conexiones máximas</Label>
               <Input
                 id="maxConnections"
                 type="number"
-                defaultValue="100"
+                value={settings.maxConnections}
+                onChange={(e) =>
+                  handleInputChange("maxConnections", e.target.value)
+                }
                 min="10"
                 max="1000"
               />
@@ -261,11 +466,13 @@ export default function AdminSettingsPage() {
 
       {/* Botones de acción */}
       <div className="mt-8 flex gap-4">
-        <Button>
+        <Button onClick={handleSave} disabled={saving}>
           <Save className="w-4 h-4 mr-2" />
-          Guardar Configuración
+          {saving ? "Guardando..." : "Guardar Configuración"}
         </Button>
-        <Button variant="outline">Restaurar Valores por Defecto</Button>
+        <Button variant="outline" onClick={handleRestore} disabled={saving}>
+          Restaurar Valores por Defecto
+        </Button>
       </div>
     </div>
   );

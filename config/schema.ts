@@ -275,6 +275,18 @@ export const invoicesTable = pgTable(
   })
 );
 
+// ===== CONFIGURACIONES DEL SISTEMA =====
+export const settingsTable = pgTable("settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: varchar({ length: 100 }).notNull().unique(), // Clave única de la configuración
+  value: text(), // Valor de la configuración (puede ser JSON para valores complejos)
+  category: varchar({ length: 50 }).notNull(), // general, security, email, database
+  description: text(), // Descripción de la configuración
+  isEncrypted: boolean().notNull().default(false), // Si el valor está encriptado (para passwords)
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow(),
+});
+
 // ===== RELACIONES =====
 export const usersRelations = relations(usersTable, ({ many }) => ({
   userCompanies: many(userCompaniesTable),
@@ -422,3 +434,4 @@ export const roles = rolesTable;
 export const userCompanies = userCompaniesTable;
 export const subscriptions = subscriptionsTable;
 export const invoices = invoicesTable;
+export const settings = settingsTable;
