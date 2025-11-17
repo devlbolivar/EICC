@@ -14,7 +14,6 @@ import {
   Clock,
   AlertCircle,
   Loader2,
-  TrendingUp,
   Calendar,
 } from "lucide-react";
 import { useCompany } from "@/hooks/use-company";

@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/database";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
-import { eq, desc, sql, gte } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { ERROR_MESSAGES } from "@/lib/constants";
 
 // ===== Helper para convertir datos a CSV =====
-function convertToCSV(data: any[], headers: string[]): string {
+function convertToCSV(data: Record<string, unknown>[], headers: string[]): string {
   const headerRow = headers.join(",");
   const rows = data.map((row) =>
     headers.map((header) => {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let reportData: any;
+    let reportData: { rows: Record<string, unknown>[] };
     let headers: string[] = [];
     let filename = `reporte-${reportType}-${Date.now()}`;
 

@@ -17,7 +17,6 @@ import {
   Building2,
   Users,
   BookOpen,
-  TrendingUp,
   Award,
   CreditCard,
   HelpCircle,

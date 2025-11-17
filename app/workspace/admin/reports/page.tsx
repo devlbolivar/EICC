@@ -13,12 +13,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, BookOpen, Building2, TrendingUp, Download, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function AdminReportsPage() {
   const { isAdmin } = useAdmin();
   const { data, loading, error } = useAdminDashboard();
-  const { toast } = useToast();
   const [downloadingReport, setDownloadingReport] = useState<string | null>(null);
 
   // ===== FUNCIÓN PARA DESCARGAR REPORTES =====
@@ -45,17 +44,10 @@ export default function AdminReportsPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({
-        title: "Reporte descargado",
-        description: `El reporte "${reportName}" se ha descargado exitosamente.`,
-      });
+      toast.success(`El reporte "${reportName}" se ha descargado exitosamente.`);
     } catch (error) {
       console.error("Error descargando reporte:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo descargar el reporte. Intenta nuevamente.",
-        variant: "destructive",
-      });
+      toast.error("No se pudo descargar el reporte. Intenta nuevamente.");
     } finally {
       setDownloadingReport(null);
     }
