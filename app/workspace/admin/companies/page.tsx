@@ -2,7 +2,9 @@
 
 import { useAdmin } from "@/hooks/use-admin";
 import { useAdminCompanies } from "@/hooks/use-admin-companies";
+import { useDebounce } from "@/hooks/use-debounce";
 import { redirect } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -11,13 +13,54 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter, Building2, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, Building2, Edit, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminCompaniesPage() {
   const { isAdmin } = useAdmin();
   const { companies, loading, error, pagination, fetchCompanies, deleteCompany } = useAdminCompanies();
+
+  // ===== ESTADO DE FILTROS =====
+  const [searchTerm, setSearchTerm] = useState("");
+  const [industryFilter, setIndustryFilter] = useState<string>("");
+  const [planFilter, setPlanFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // ===== DEBOUNCE DE LA BÚSQUEDA =====
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // ===== EFECTO PARA BÚSQUEDA EN TIEMPO REAL =====
+  useEffect(() => {
+    const filters: any = {
+      search: debouncedSearch,
+      page: 1, // Reset a la primera página cuando se busca
+    };
+
+    if (industryFilter) filters.industry = industryFilter;
+    if (planFilter) filters.plan = planFilter;
+    if (statusFilter) {
+      filters.isActive = statusFilter === "active";
+    }
+
+    fetchCompanies(filters);
+  }, [debouncedSearch, industryFilter, planFilter, statusFilter]);
+
+  // ===== FUNCIÓN PARA LIMPIAR FILTROS =====
+  const clearFilters = () => {
+    setSearchTerm("");
+    setIndustryFilter("");
+    setPlanFilter("");
+    setStatusFilter("");
+  };
 
   // Redirigir si no es administrador
   if (!isAdmin) {
@@ -46,20 +89,92 @@ export default function AdminCompaniesPage() {
       {/* Filtros y búsqueda */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar empresas..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => fetchCompanies({ search: e.target.value })}
-              />
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, RUT, email o teléfono..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filtros
+              </Button>
+              {(searchTerm || industryFilter || planFilter || statusFilter) && (
+                <Button variant="ghost" onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  Limpiar
+                </Button>
+              )}
             </div>
-            <Button variant="outline">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros
-            </Button>
+
+            {/* Filtros avanzados */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Industria
+                  </label>
+                  <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas las industrias" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas las industrias</SelectItem>
+                      <SelectItem value="Tecnología">Tecnología</SelectItem>
+                      <SelectItem value="Finanzas">Finanzas</SelectItem>
+                      <SelectItem value="Salud">Salud</SelectItem>
+                      <SelectItem value="Educación">Educación</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="Manufactura">Manufactura</SelectItem>
+                      <SelectItem value="Servicios">Servicios</SelectItem>
+                      <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plan
+                  </label>
+                  <Select value={planFilter} onValueChange={setPlanFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los planes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos los planes</SelectItem>
+                      <SelectItem value="startup">Startup</SelectItem>
+                      <SelectItem value="corporate">Corporate</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Estado
+                  </label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los estados" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos los estados</SelectItem>
+                      <SelectItem value="active">Activas</SelectItem>
+                      <SelectItem value="inactive">Inactivas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

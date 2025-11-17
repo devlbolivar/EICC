@@ -3,6 +3,7 @@
 import { useAdmin } from "@/hooks/use-admin";
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import { redirect } from "next/navigation";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -12,10 +13,53 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, BookOpen, Building2, TrendingUp, Download, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminReportsPage() {
   const { isAdmin } = useAdmin();
   const { data, loading, error } = useAdminDashboard();
+  const { toast } = useToast();
+  const [downloadingReport, setDownloadingReport] = useState<string | null>(null);
+
+  // ===== FUNCIÓN PARA DESCARGAR REPORTES =====
+  const downloadReport = async (reportType: string, reportName: string) => {
+    try {
+      setDownloadingReport(reportType);
+
+      const response = await fetch(`/api/admin/reports?type=${reportType}&format=csv`);
+
+      if (!response.ok) {
+        throw new Error("Error al descargar el reporte");
+      }
+
+      // Obtener el blob del CSV
+      const blob = await response.blob();
+
+      // Crear un enlace temporal para descargar el archivo
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${reportName}-${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Reporte descargado",
+        description: `El reporte "${reportName}" se ha descargado exitosamente.`,
+      });
+    } catch (error) {
+      console.error("Error descargando reporte:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el reporte. Intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingReport(null);
+    }
+  };
 
   // Redirigir si no es administrador
   if (!isAdmin) {
@@ -129,8 +173,17 @@ export default function AdminReportsPage() {
                   Usuarios nuevos registrados
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("users-monthly", "usuarios-por-mes")}
+                disabled={downloadingReport === "users-monthly"}
+              >
+                {downloadingReport === "users-monthly" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -141,8 +194,17 @@ export default function AdminReportsPage() {
                   Sesiones y tiempo de uso
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("users-activity", "actividad-usuarios")}
+                disabled={downloadingReport === "users-activity"}
+              >
+                {downloadingReport === "users-activity" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -153,8 +215,17 @@ export default function AdminReportsPage() {
                   Usuarios por tipo de rol
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("users-by-role", "usuarios-por-rol")}
+                disabled={downloadingReport === "users-by-role"}
+              >
+                {downloadingReport === "users-by-role" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -174,8 +245,17 @@ export default function AdminReportsPage() {
                   Ranking por inscripciones
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("courses-popular", "cursos-populares")}
+                disabled={downloadingReport === "courses-popular"}
+              >
+                {downloadingReport === "courses-popular" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -186,8 +266,17 @@ export default function AdminReportsPage() {
                   Porcentaje de cursos completados
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("courses-completion", "tasa-finalizacion")}
+                disabled={downloadingReport === "courses-completion"}
+              >
+                {downloadingReport === "courses-completion" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -198,8 +287,17 @@ export default function AdminReportsPage() {
                   Calificaciones y feedback
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("courses-ratings", "evaluaciones-cursos")}
+                disabled={downloadingReport === "courses-ratings"}
+              >
+                {downloadingReport === "courses-ratings" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -221,8 +319,17 @@ export default function AdminReportsPage() {
                   Distribución de suscripciones
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("companies-by-plan", "empresas-por-plan")}
+                disabled={downloadingReport === "companies-by-plan"}
+              >
+                {downloadingReport === "companies-by-plan" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -233,8 +340,17 @@ export default function AdminReportsPage() {
                   Tasas de renovación de suscripciones
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("companies-renewals", "renovaciones")}
+                disabled={downloadingReport === "companies-renewals"}
+              >
+                {downloadingReport === "companies-renewals" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -245,8 +361,17 @@ export default function AdminReportsPage() {
                   Uso del sistema por empresa
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("companies-activity", "actividad-empresas")}
+                disabled={downloadingReport === "companies-activity"}
+              >
+                {downloadingReport === "companies-activity" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -266,8 +391,17 @@ export default function AdminReportsPage() {
                 <h4 className="font-medium">Ingresos mensuales</h4>
                 <p className="text-sm text-gray-500">Facturación por mes</p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("financial-monthly", "ingresos-mensuales")}
+                disabled={downloadingReport === "financial-monthly"}
+              >
+                {downloadingReport === "financial-monthly" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -278,8 +412,17 @@ export default function AdminReportsPage() {
                   Ranking de suscripciones
                 </p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("financial-plans", "planes-vendidos")}
+                disabled={downloadingReport === "financial-plans"}
+              >
+                {downloadingReport === "financial-plans" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>
@@ -288,8 +431,17 @@ export default function AdminReportsPage() {
                 <h4 className="font-medium">Churn rate</h4>
                 <p className="text-sm text-gray-500">Tasa de cancelación</p>
               </div>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadReport("financial-churn", "churn-rate")}
+                disabled={downloadingReport === "financial-churn"}
+              >
+                {downloadingReport === "financial-churn" ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Descargar
               </Button>
             </div>

@@ -20,12 +20,41 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
+    const industry = searchParams.get("industry") || "";
+    const plan = searchParams.get("plan") || "";
+    const isActive = searchParams.get("isActive");
 
     const offset = (page - 1) * limit;
 
     const filters = [];
+
+    // ===== BÚSQUEDA AVANZADA - Buscar en múltiples campos =====
     if (search) {
-      filters.push(like(schema.companiesTable.name, `%${search}%`));
+      // Buscar en nombre, RUT, email, o teléfono
+      filters.push(
+        sql`(
+          LOWER(${schema.companiesTable.name}) LIKE LOWER(${`%${search}%`}) OR
+          LOWER(${schema.companiesTable.rut}) LIKE LOWER(${`%${search}%`}) OR
+          LOWER(${schema.companiesTable.email}) LIKE LOWER(${`%${search}%`}) OR
+          ${schema.companiesTable.phone} LIKE ${`%${search}%`}
+        )`
+      );
+    }
+
+    // ===== FILTRO POR INDUSTRIA =====
+    if (industry) {
+      filters.push(sql`${schema.companiesTable.industry} = ${industry}`);
+    }
+
+    // ===== FILTRO POR PLAN =====
+    if (plan) {
+      filters.push(sql`${schema.companiesTable.plan} = ${plan}`);
+    }
+
+    // ===== FILTRO POR ESTADO ACTIVO =====
+    if (isActive !== null && isActive !== undefined && isActive !== "") {
+      const activeValue = isActive === "true";
+      filters.push(sql`${schema.companiesTable.isActive} = ${activeValue}`);
     }
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
