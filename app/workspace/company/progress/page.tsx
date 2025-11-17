@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,66 +15,79 @@ import {
   Award,
   Calendar,
   Download,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  joinedAt: string;
+  coursesCompleted: number;
+  certificates: number;
+  avatar: string;
+  lastLoginAt: string | null;
+}
+
+interface CompanyStats {
+  totalEmployees: number;
+  activeEmployees: number;
+  totalCoursesCompleted: number;
+  totalCertificates: number;
+}
 
 const CompanyProgress = () => {
-  // Datos de ejemplo - en una implementación real vendrían de la API
-  const employees = [
-    {
-      id: "1",
-      name: "María González",
-      email: "maria.gonzalez@techcorp.cl",
-      role: "Desarrollador Senior",
-      totalCourses: 8,
-      completedCourses: 6,
-      inProgressCourses: 2,
-      certificates: 5,
-      lastActivity: "2024-01-15",
-      averageScore: 92,
-      avatar: "MG",
-    },
-    {
-      id: "2",
-      name: "Juan Pérez",
-      email: "juan.perez@techcorp.cl",
-      role: "Project Manager",
-      totalCourses: 6,
-      completedCourses: 4,
-      inProgressCourses: 2,
-      certificates: 3,
-      lastActivity: "2024-01-14",
-      averageScore: 88,
-      avatar: "JP",
-    },
-    {
-      id: "3",
-      name: "Ana López",
-      email: "ana.lopez@techcorp.cl",
-      role: "UX Designer",
-      totalCourses: 10,
-      completedCourses: 8,
-      inProgressCourses: 2,
-      certificates: 7,
-      lastActivity: "2024-01-15",
-      averageScore: 95,
-      avatar: "AL",
-    },
-    {
-      id: "4",
-      name: "Carlos Rodríguez",
-      email: "carlos.rodriguez@techcorp.cl",
-      role: "QA Engineer",
-      totalCourses: 5,
-      completedCourses: 2,
-      inProgressCourses: 3,
-      certificates: 1,
-      lastActivity: "2024-01-13",
-      averageScore: 78,
-      avatar: "CR",
-    },
-  ];
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [stats, setStats] = useState<CompanyStats>({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    totalCoursesCompleted: 0,
+    totalCertificates: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/company/employees?limit=100");
+
+      if (!response.ok) {
+        throw new Error("Error al obtener empleados");
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setEmployees(result.data.employees);
+        setStats(result.data.stats);
+      } else {
+        throw new Error(result.error || "Error al obtener empleados");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al cargar los datos de empleados");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredEmployees = employees.filter((employee) =>
+    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getProgressPercentage = (completed: number, total: number) => {
+    if (total === 0) return 0;
     return (completed / total) * 100;
   };
 
@@ -91,6 +104,29 @@ const CompanyProgress = () => {
       return <Badge className="bg-yellow-100 text-yellow-800">Bueno</Badge>;
     return <Badge className="bg-red-100 text-red-800">Necesita mejorar</Badge>;
   };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Nunca";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Hoy";
+    if (diffDays === 1) return "Hace 1 día";
+    if (diffDays < 7) return `Hace ${diffDays} días`;
+    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+
+    return date.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -115,8 +151,10 @@ const CompanyProgress = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">Empleados activos</p>
+            <div className="text-2xl font-bold">{stats.totalEmployees}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.activeEmployees} activos
+            </p>
           </CardContent>
         </Card>
 
@@ -128,22 +166,26 @@ const CompanyProgress = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <div className="text-2xl font-bold">{stats.totalCoursesCompleted}</div>
+            <p className="text-xs text-muted-foreground">Total acumulado</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Promedio de Puntuación
+              Promedio por Empleado
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87.5%</div>
+            <div className="text-2xl font-bold">
+              {stats.totalEmployees > 0
+                ? (stats.totalCoursesCompleted / stats.totalEmployees).toFixed(1)
+                : "0"}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +2.3% vs mes anterior
+              Cursos por empleado
             </p>
           </CardContent>
         </Card>
@@ -156,8 +198,8 @@ const CompanyProgress = () => {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <div className="text-2xl font-bold">{stats.totalCertificates}</div>
+            <p className="text-xs text-muted-foreground">Total acumulado</p>
           </CardContent>
         </Card>
       </div>
@@ -169,7 +211,12 @@ const CompanyProgress = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Buscar empleados..." className="pl-10" />
+                <Input
+                  placeholder="Buscar empleados..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
             <div className="flex gap-2">
@@ -189,200 +236,113 @@ const CompanyProgress = () => {
       {/* Lista de empleados con progreso */}
       <Card>
         <CardHeader>
-          <CardTitle>Progreso Individual</CardTitle>
+          <CardTitle>Progreso Individual ({filteredEmployees.length} empleados)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {employees.map((employee) => (
-              <div
-                key={employee.id}
-                className="border rounded-lg p-6 space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
-                      {employee.avatar}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{employee.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.role}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div
-                      className={`text-2xl font-bold ${getScoreColor(
-                        employee.averageScore
-                      )}`}
-                    >
-                      {employee.averageScore}%
-                    </div>
-                    {getScoreBadge(employee.averageScore)}
-                  </div>
-                </div>
+          {filteredEmployees.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No se encontraron empleados
+              </h3>
+              <p className="text-muted-foreground">
+                {searchTerm ? "Intenta con otro término de búsqueda" : "No hay empleados registrados"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredEmployees.map((employee) => {
+                // Estimamos un promedio de cursos totales basado en los completados
+                const estimatedTotalCourses = Math.max(employee.coursesCompleted, 1);
+                const progressPercentage = employee.coursesCompleted > 0 ? 100 : 0;
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {employee.totalCourses}
+                return (
+                  <div
+                    key={employee.id}
+                    className="border rounded-lg p-6 space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold">
+                          {employee.avatar}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">{employee.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {employee.role}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {employee.email}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge
+                          className={
+                            employee.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }
+                        >
+                          {employee.status === "active" ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Total Cursos
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {employee.completedCourses}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Completados</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {employee.inProgressCourses}
-                    </div>
-                    <p className="text-sm text-muted-foreground">En Progreso</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {employee.certificates}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Certificados
-                    </p>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progreso General</span>
-                    <span>
-                      {Math.round(
-                        getProgressPercentage(
-                          employee.completedCourses,
-                          employee.totalCourses
-                        )
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <Progress
-                    value={getProgressPercentage(
-                      employee.completedCourses,
-                      employee.totalCourses
-                    )}
-                    className="h-3"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {employee.coursesCompleted}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Cursos Completados</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {employee.certificates}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Certificados
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {employee.phone || "N/A"}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Teléfono</p>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      Última actividad:{" "}
-                      {new Date(employee.lastActivity).toLocaleDateString()}
-                    </span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progreso General</span>
+                        <span>
+                          {employee.coursesCompleted > 0 ? "100" : "0"}%
+                        </span>
+                      </div>
+                      <Progress
+                        value={progressPercentage}
+                        className="h-3"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Última actividad: {formatDate(employee.lastLoginAt)}
+                        </span>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Ver Detalles
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Ver Detalles
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Gráficos y análisis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Progreso por Departamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Desarrollo</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={85} className="w-24 h-2" />
-                  <span className="text-sm font-medium">85%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Gestión</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={72} className="w-24 h-2" />
-                  <span className="text-sm font-medium">72%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Diseño</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={91} className="w-24 h-2" />
-                  <span className="text-sm font-medium">91%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">QA</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={68} className="w-24 h-2" />
-                  <span className="text-sm font-medium">68%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    María González completó &quot;Seguridad Informática&quot;
-                  </p>
-                  <p className="text-xs text-muted-foreground">Hace 2 horas</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    Juan Pérez inició &quot;Gestión de Proyectos&quot;
-                  </p>
-                  <p className="text-xs text-muted-foreground">Hace 4 horas</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    Ana López obtuvo certificado en &quot;Liderazgo&quot;
-                  </p>
-                  <p className="text-xs text-muted-foreground">Hace 1 día</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    Carlos Rodríguez completó 50% de &quot;Análisis de
-                    Datos&quot;
-                  </p>
-                  <p className="text-xs text-muted-foreground">Hace 2 días</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
