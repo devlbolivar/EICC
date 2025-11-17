@@ -46,6 +46,15 @@ interface CompaniesResponse {
   };
 }
 
+interface CompanyFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  industry?: string;
+  plan?: string;
+  isActive?: boolean;
+}
+
 interface UseAdminCompaniesReturn {
   companies: Company[];
   loading: boolean;
@@ -56,11 +65,7 @@ interface UseAdminCompaniesReturn {
     total: number;
     totalPages: number;
   };
-  fetchCompanies: (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  }) => Promise<void>;
+  fetchCompanies: (params?: CompanyFilters) => Promise<void>;
   createCompany: (companyData: CreateCompanyData) => Promise<Company>;
   updateCompany: (companyId: string, companyData: UpdateCompanyData) => Promise<void>;
   deleteCompany: (companyId: string) => Promise<void>;
@@ -88,11 +93,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
 
   const clearError = () => setError(null);
 
-  const fetchCompanies = async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  }) => {
+  const fetchCompanies = async (params?: CompanyFilters) => {
     const token = getToken();
     if (!token && !session) return;
 
@@ -104,10 +105,16 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
       const page = params?.page || pagination.page;
       const limit = params?.limit || pagination.limit;
       const search = params?.search ?? "";
+      const industry = params?.industry ?? "";
+      const plan = params?.plan ?? "";
+      const isActive = params?.isActive;
 
       searchParams.append("page", page.toString());
       searchParams.append("limit", limit.toString());
       if (search) searchParams.append("search", search);
+      if (industry) searchParams.append("industry", industry);
+      if (plan) searchParams.append("plan", plan);
+      if (isActive !== undefined) searchParams.append("isActive", isActive.toString());
 
       const headers: Record<string, string> = {};
       if (token) {
