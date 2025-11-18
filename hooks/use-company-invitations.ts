@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { safeLocalStorage } from "@/lib/storage";
 
 export interface PendingInvitation {
   id: string;
@@ -53,10 +54,7 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
   const [creating, setCreating] = useState(false);
 
   const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("accessToken");
-    }
-    return null;
+    return safeLocalStorage.getItem("accessToken");
   };
 
   const fetchInvitations = useCallback(async () => {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { safeLocalStorage } from "@/lib/storage";
 
 export interface CompanyProfile {
   id: string;
@@ -50,10 +51,7 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
   const [isEditing, setIsEditing] = useState(false);
 
   const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("accessToken");
-    }
-    return null;
+    return safeLocalStorage.getItem("accessToken");
   };
 
   const fetchProfile = async () => {

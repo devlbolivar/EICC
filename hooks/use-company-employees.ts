@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
+import { safeLocalStorage } from "@/lib/storage";
 
 export interface CompanyEmployee {
   id: string;
@@ -69,10 +70,7 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
   });
 
   const getToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("accessToken");
-    }
-    return null;
+    return safeLocalStorage.getItem("accessToken");
   };
 
   const buildQueryString = (filters: EmployeesFilters): string => {
