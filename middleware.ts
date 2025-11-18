@@ -10,6 +10,81 @@ import {
   UI_TEXT,
 } from "@/lib/constants";
 
+// ===== HEADERS DE SEGURIDAD =====
+/**
+ * Agrega headers de seguridad estándar a todas las respuestas HTTP.
+ *
+ * MEJORES PRÁCTICAS DE HEADERS:
+ *
+ * ✅ HEADERS SEGUROS PARA EXPONER:
+ * - X-Frame-Options: Previene clickjacking
+ * - X-Content-Type-Options: Previene MIME sniffing
+ * - X-XSS-Protection: Protección XSS (legacy)
+ * - Referrer-Policy: Controla información del referrer
+ * - Content-Security-Policy: Política de seguridad de contenido
+ * - Permissions-Policy: Controla APIs del navegador
+ * - Strict-Transport-Security: Fuerza HTTPS (solo producción)
+ *
+ * ❌ HEADERS QUE NUNCA DEBEN EXPONERSE EN RESPUESTAS:
+ * - x-user-id: Expone IDs internos de usuario
+ * - x-user-email: Expone información PII
+ * - x-user-role: Revela estructura de permisos
+ * - x-company-id: Expone IDs internos de empresa
+ * - x-user-permissions: Revela sistema de autorización
+ * - x-powered-by: Facilita fingerprinting
+ *
+ * NOTA: Los headers x-user-id, x-company-id y x-user-permissions se usan
+ * solo en REQUEST headers para comunicación interna entre middleware y
+ * route handlers. No se exponen en las RESPUESTAS HTTP.
+ *
+ * Para pasar datos de sesión al cliente, usar cookies httpOnly en su lugar.
+ */
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  // Prevenir clickjacking
+  response.headers.set("X-Frame-Options", "DENY");
+
+  // Prevenir MIME type sniffing
+  response.headers.set("X-Content-Type-Options", "nosniff");
+
+  // Protección XSS (legacy, pero aún útil)
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+
+  // Control de referrer
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  // Política de permisos (deshabilitar APIs sensibles)
+  response.headers.set(
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+  );
+
+  // Content Security Policy
+  response.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://api.stripe.com https://js.stripe.com",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; ")
+  );
+
+  // Strict Transport Security (solo en producción)
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains"
+    );
+  }
+
+  return response;
+}
+
 // ===== RUTAS PÚBLICAS =====
 const publicRoutes = [
   "/",
@@ -154,7 +229,9 @@ export async function middleware(request: NextRequest) {
             const roleName = getRoleNameFromPermissions(payload.permissions);
             if (roleName) {
               const redirectRoute = getRedirectRouteByRole(roleName);
-              return NextResponse.redirect(new URL(redirectRoute, request.url));
+              return addSecurityHeaders(
+                NextResponse.redirect(new URL(redirectRoute, request.url))
+              );
             }
           }
         } catch (error) {
@@ -163,14 +240,14 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return NextResponse.next();
+    return addSecurityHeaders(NextResponse.next());
   }
 
   // ===== MANEJAR RUTAS DE API =====
   if (pathname.startsWith("/api/")) {
     // Rutas de API públicas
     if (isPublicApiRoute(pathname)) {
-      return NextResponse.next();
+      return addSecurityHeaders(NextResponse.next());
     }
 
     // Rutas de API protegidas
@@ -178,24 +255,29 @@ export async function middleware(request: NextRequest) {
       const token = extractToken(request) || extractTokenFromCookies(request);
 
       if (!token) {
-        return NextResponse.json(
+        const errorResponse = NextResponse.json(
           { error: UI_TEXT.MIDDLEWARE.TOKEN_REQUIRED },
           { status: 401 }
         );
+        return addSecurityHeaders(errorResponse);
       }
 
       const payload = await verifyAccessTokenEdge(token);
       if (!payload) {
-        return NextResponse.json(
+        const errorResponse = NextResponse.json(
           { error: UI_TEXT.MIDDLEWARE.TOKEN_INVALID },
           { status: 401 }
         );
+        return addSecurityHeaders(errorResponse);
       }
 
-      // Agregar información del usuario a los headers para uso en las rutas
+      // Agregar información mínima del usuario a los request headers para uso interno
+      // NOTA: Estos son headers de REQUEST, no de RESPONSE, por lo que no se exponen al cliente
+      // Solo se usan para comunicación interna entre middleware y route handlers
       const requestHeaders = new Headers(request.headers);
+
+      // Solo incluir datos esenciales para la autorización interna
       requestHeaders.set("x-user-id", payload.userId);
-      requestHeaders.set("x-user-email", payload.email);
       requestHeaders.set(
         "x-user-permissions",
         JSON.stringify(payload.permissions)
@@ -204,19 +286,21 @@ export async function middleware(request: NextRequest) {
       if (payload.companyId) {
         requestHeaders.set("x-company-id", payload.companyId);
       }
-      if (payload.roleId) {
-        requestHeaders.set("x-role-id", payload.roleId);
-      }
 
-      return NextResponse.next({
+      // ❌ REMOVIDO: x-user-email - No es necesario para autorización
+      // ❌ REMOVIDO: x-role-id - Los permisos ya contienen esta información
+
+      const response = NextResponse.next({
         request: {
           headers: requestHeaders,
         },
       });
+
+      return addSecurityHeaders(response);
     }
 
     // Otras rutas de API
-    return NextResponse.next();
+    return addSecurityHeaders(NextResponse.next());
   }
 
   // ===== MANEJAR RUTAS DE PÁGINAS PROTEGIDAS =====
@@ -227,7 +311,7 @@ export async function middleware(request: NextRequest) {
       // Redirigir a login si no hay token
       const loginUrl = new URL("/sign-in", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     const payload = await verifyAccessTokenEdge(token);
@@ -236,7 +320,7 @@ export async function middleware(request: NextRequest) {
       // Token inválido, redirigir a login
       const loginUrl = new URL("/sign-in", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     // ===== VALIDAR QUE EL USUARIO ESTÉ ACTIVO =====
@@ -250,7 +334,7 @@ export async function middleware(request: NextRequest) {
       );
       const loginUrl = new URL("/sign-in", request.url);
       loginUrl.searchParams.set("error", UI_TEXT.MIDDLEWARE.ACCOUNT_DISABLED);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     // ===== VALIDAR ACCESO A LA RUTA ESPECÍFICA =====
@@ -268,7 +352,9 @@ export async function middleware(request: NextRequest) {
       );
       const roleName = getRoleNameFromPermissions(payload.permissions);
       const redirectRoute = getRedirectRouteByRole(roleName || "student");
-      return NextResponse.redirect(new URL(redirectRoute, request.url));
+      return addSecurityHeaders(
+        NextResponse.redirect(new URL(redirectRoute, request.url))
+      );
     }
 
     // ===== VERIFICAR ACCESO A RUTAS ESPECÍFICAS DE ROL =====
@@ -277,7 +363,7 @@ export async function middleware(request: NextRequest) {
     if (roleName && isRoleSpecificRoute(pathname, roleName)) {
       // El usuario tiene acceso a esta ruta específica de su rol
       await logUserAccess(payload.userId, pathname, true);
-      return NextResponse.next();
+      return addSecurityHeaders(NextResponse.next());
     }
 
     // ===== REDIRECCIÓN BASADA EN ROL - SOLO SI NO ESTÁ EN SU RUTA CORRECTA =====
@@ -299,17 +385,19 @@ export async function middleware(request: NextRequest) {
           false,
           UI_TEXT.MIDDLEWARE.ROLE_REDIRECT
         );
-        return NextResponse.redirect(new URL(userRedirectRoute, request.url));
+        return addSecurityHeaders(
+          NextResponse.redirect(new URL(userRedirectRoute, request.url))
+        );
       }
     }
 
     // Token válido y acceso permitido, continuar
     await logUserAccess(payload.userId, pathname, true);
-    return NextResponse.next();
+    return addSecurityHeaders(NextResponse.next());
   }
 
   // ===== RUTAS NO ESPECIFICADAS =====
-  return NextResponse.next();
+  return addSecurityHeaders(NextResponse.next());
 }
 
 // ===== FUNCIÓN PARA OBTENER EL NOMBRE DEL ROL DESDE LOS PERMISOS =====
