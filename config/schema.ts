@@ -158,7 +158,7 @@ export const coursesTable = pgTable("courses", {
 
 // ===== INSCRIPCIONES A CURSOS (unificado) =====
 export const enrollCourseTable = pgTable(
-  "enrollCourse",
+  "enroll_course",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     courseId: uuid("course_id")

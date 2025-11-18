@@ -54,7 +54,7 @@ export async function GET() {
         COUNT(ec."user_id") as total_enrollments,
         COUNT(CASE WHEN ec."completedAt" IS NOT NULL THEN 1 END) as completed_enrollments
       FROM "user_companies" uc
-      LEFT JOIN "enrollCourse" ec ON uc."userId" = ec."user_id"
+      LEFT JOIN "enroll_course" ec ON uc."userId" = ec."user_id"
       WHERE uc."companyId" = ${companyId} AND uc."isActive" = true
     `);
 
@@ -79,7 +79,7 @@ export async function GET() {
           )
           ELSE 0 
         END as average_completion
-      FROM "enrollCourse" ec
+      FROM "enroll_course" ec
       JOIN courses c ON ec."course_id" = c.id
       WHERE c."companyId" = ${companyId}
     `);
@@ -92,7 +92,7 @@ export async function GET() {
         c."bannerImage",
         COUNT(ec."user_id") as enrollment_count
       FROM courses c
-      LEFT JOIN "enrollCourse" ec ON c.id = ec."course_id"
+      LEFT JOIN "enroll_course" ec ON c.id = ec."course_id"
       WHERE c."companyId" = ${companyId} AND c."isActive" = true
       GROUP BY c.id, c.name, c."bannerImage"
       ORDER BY enrollment_count DESC
@@ -106,7 +106,7 @@ export async function GET() {
         u.name as user_name,
         c.name as course_name,
         ec."enrolledAt" as activity_date
-      FROM "enrollCourse" ec
+      FROM "enroll_course" ec
       JOIN users u ON ec."user_id" = u.id
       JOIN courses c ON ec."course_id" = c.id
       WHERE c."companyId" = ${companyId}
@@ -119,7 +119,7 @@ export async function GET() {
         u.name as user_name,
         c.name as course_name,
         ec."completedAt" as activity_date
-      FROM "enrollCourse" ec
+      FROM "enroll_course" ec
       JOIN users u ON ec."user_id" = u.id
       JOIN courses c ON ec."course_id" = c.id
       WHERE c."companyId" = ${companyId}
