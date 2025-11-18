@@ -11,6 +11,7 @@ import {
   CompanyEmployeesResponse,
   transformToCompanyEmployee,
 } from "@/app/types";
+import { createPaginationInfo } from "@/lib/pagination";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -238,12 +239,7 @@ export async function GET(request: NextRequest) {
       data: {
         employees: formattedEmployees,
         stats: companyStats,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
+        pagination: createPaginationInfo(page, limit, total),
       },
     };
 

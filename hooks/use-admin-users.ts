@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { PaginationInfo } from "@/app/types";
 
 interface User {
   id: string;
@@ -95,12 +96,7 @@ interface UpdateUserData {
 
 interface UsersResponse {
   users: User[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
 
 interface UseAdminUsersReturn {
@@ -108,12 +104,7 @@ interface UseAdminUsersReturn {
   users: User[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 
   // Filtros
   filters: {
@@ -170,11 +161,13 @@ export function useAdminUsers(): UseAdminUsersReturn {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
   });
   const [filters, setFiltersState] = useState({
     search: "",

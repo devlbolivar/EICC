@@ -684,12 +684,14 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
-// ===== TIPOS PARA PAGINACIÓN =====
+// ===== PAGINACIÓN =====
 export interface PaginationInfo {
   page: number;
   limit: number;
   total: number;
   totalPages: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
 }
 
 export interface PaginatedResponse<T> {

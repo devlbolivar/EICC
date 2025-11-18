@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { PaginationInfo } from "@/app/types";
 
 interface Company {
   id: string;
@@ -38,12 +39,7 @@ interface UpdateCompanyData {
 
 interface CompaniesResponse {
   companies: Company[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
 
 interface CompanyFilters {
@@ -59,12 +55,7 @@ interface UseAdminCompaniesReturn {
   companies: Company[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
   fetchCompanies: (params?: CompanyFilters) => Promise<void>;
   createCompany: (companyData: CreateCompanyData) => Promise<Company>;
   updateCompany: (companyId: string, companyData: UpdateCompanyData) => Promise<void>;
@@ -84,11 +75,13 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
   });
 
   const clearError = () => setError(null);
