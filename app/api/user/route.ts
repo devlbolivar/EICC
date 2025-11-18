@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { requireAuth, handleApiError, successResponse } from "@/lib/api-helpers";
+import { requireCsrf } from "@/lib/csrf";
 import { eq } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -175,6 +176,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await requireCsrf(request);
+    if (csrfError) return csrfError;
+
     // ✅ CORREGIDO: Verificar autenticación antes de permitir crear usuarios
     await requireAuth(request);
 
@@ -229,6 +234,10 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await requireCsrf(request);
+    if (csrfError) return csrfError;
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||
