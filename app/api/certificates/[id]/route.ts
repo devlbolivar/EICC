@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
+import { certificatesTable, usersTable, coursesTable, companiesTable } from "@/config/schema";
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -30,22 +31,22 @@ export async function GET(
 
     // Obtener certificado con información relacionada
     const result = await db.execute(sql`
-      SELECT 
+      SELECT
         cert.*,
-        c.name as course_name,
-        c.description as course_description,
-        c.category as course_category,
-        c.level as course_level,
-        c."estimatedDuration" as course_duration,
-        c."bannerImage" as course_banner,
-        u.name as user_name,
-        u.email as user_email,
-        comp.name as company_name
-      FROM certificates cert
-      LEFT JOIN courses c ON cert."course_id" = c.id
-      LEFT JOIN users u ON cert."user_id" = u.id
-      LEFT JOIN companies comp ON cert."company_id" = comp.id
-      WHERE cert."certificateId" = ${certificateId} AND cert."isActive" = true
+        c.${sql.identifier(coursesTable.name.name)} as course_name,
+        c.${sql.identifier(coursesTable.description.name)} as course_description,
+        c.${sql.identifier(coursesTable.category.name)} as course_category,
+        c.${sql.identifier(coursesTable.level.name)} as course_level,
+        c.${sql.identifier(coursesTable.estimatedDuration.name)} as course_duration,
+        c.${sql.identifier(coursesTable.bannerImage.name)} as course_banner,
+        u.${sql.identifier(usersTable.name.name)} as user_name,
+        u.${sql.identifier(usersTable.email.name)} as user_email,
+        comp.${sql.identifier(companiesTable.name.name)} as company_name
+      FROM ${sql.identifier(certificatesTable._.name)} cert
+      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      LEFT JOIN ${sql.identifier(usersTable._.name)} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      LEFT JOIN ${sql.identifier(companiesTable._.name)} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
+      WHERE cert.${sql.identifier(certificatesTable.certificateId.name)} = ${certificateId} AND cert.${sql.identifier(certificatesTable.isActive.name)} = true
     `);
 
     if (result.rows.length === 0) {
@@ -116,7 +117,7 @@ export async function PUT(
 
     // Verificar que el certificado existe
     const existingCert = await db.execute(sql`
-      SELECT * FROM certificates WHERE id = ${certificateId}
+      SELECT * FROM ${sql.identifier(certificatesTable._.name)} WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
     `);
 
     if (existingCert.rows.length === 0) {
@@ -128,18 +129,18 @@ export async function PUT(
 
     // Actualizar certificado
     const updateQuery = sql`
-      UPDATE certificates 
-      SET 
-        "updatedAt" = ${new Date().toISOString()},
-        title = ${body.title || existingCert.rows[0].title},
-        description = ${body.description || existingCert.rows[0].description},
-        grade = ${
+      UPDATE ${sql.identifier(certificatesTable._.name)}
+      SET
+        ${sql.identifier(certificatesTable.updatedAt.name)} = ${new Date().toISOString()},
+        ${sql.identifier(certificatesTable.title.name)} = ${body.title || existingCert.rows[0].title},
+        ${sql.identifier(certificatesTable.description.name)} = ${body.description || existingCert.rows[0].description},
+        ${sql.identifier(certificatesTable.grade.name)} = ${
           body.grade !== undefined ? body.grade : existingCert.rows[0].grade
         },
-        "certificateUrl" = ${
+        ${sql.identifier(certificatesTable.certificateUrl.name)} = ${
           body.certificateUrl || existingCert.rows[0].certificateUrl
         }
-      WHERE id = ${certificateId}
+      WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
       RETURNING *
     `;
 
@@ -193,10 +194,10 @@ export async function DELETE(
 
     // Soft delete - marcar como inactivo
     const result = await db.execute(sql`
-      UPDATE certificates 
-      SET "isActive" = false, "updatedAt" = ${new Date().toISOString()}
-      WHERE id = ${certificateId}
-      RETURNING id
+      UPDATE ${sql.identifier(certificatesTable._.name)}
+      SET ${sql.identifier(certificatesTable.isActive.name)} = false, ${sql.identifier(certificatesTable.updatedAt.name)} = ${new Date().toISOString()}
+      WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
+      RETURNING ${sql.identifier(certificatesTable.id.name)}
     `);
 
     if (result.rows.length === 0) {

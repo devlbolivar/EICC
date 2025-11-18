@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import { certificatesTable } from "@/config/schema";
+import { certificatesTable, usersTable, coursesTable, companiesTable } from "@/config/schema";
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -35,59 +35,59 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     // Construir consulta base
-    let whereConditions = sql`cert."isActive" = true`;
+    let whereConditions = sql`cert.${sql.identifier(certificatesTable.isActive.name)} = true`;
 
     // Si es estudiante, solo puede ver sus propios certificados
     if (
       payload.permissions.includes("courses:read") &&
       !payload.permissions.includes("courses:manage")
     ) {
-      whereConditions = sql`${whereConditions} AND cert."user_id" = ${payload.userId}`;
+      whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.userId.name)} = ${payload.userId}`;
     } else if (payload.companyId) {
       // Si es empresa, solo puede ver certificados de su empresa
-      whereConditions = sql`${whereConditions} AND cert."company_id" = ${payload.companyId}`;
+      whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.companyId.name)} = ${payload.companyId}`;
     }
 
     // Filtros adicionales
     if (userId) {
-      whereConditions = sql`${whereConditions} AND cert."user_id" = ${userId}`;
+      whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.userId.name)} = ${userId}`;
     }
     if (courseId) {
-      whereConditions = sql`${whereConditions} AND cert."course_id" = ${courseId}`;
+      whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.courseId.name)} = ${courseId}`;
     }
     if (search) {
       whereConditions = sql`${whereConditions} AND (
-        LOWER(u.name) LIKE LOWER(${"%" + search + "%"}) OR
-        LOWER(u.email) LIKE LOWER(${"%" + search + "%"}) OR
-        LOWER(c.name) LIKE LOWER(${"%" + search + "%"}) OR
-        LOWER(cert."certificateId") LIKE LOWER(${"%" + search + "%"})
+        LOWER(u.${sql.identifier(usersTable.name.name)}) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(u.${sql.identifier(usersTable.email.name)}) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(c.${sql.identifier(coursesTable.name.name)}) LIKE LOWER(${"%" + search + "%"}) OR
+        LOWER(cert.${sql.identifier(certificatesTable.certificateId.name)}) LIKE LOWER(${"%" + search + "%"})
       )`;
     }
     if (status && status !== "all") {
       if (status === "active") {
-        whereConditions = sql`${whereConditions} AND cert."isActive" = true`;
+        whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.isActive.name)} = true`;
       } else if (status === "expired") {
-        whereConditions = sql`${whereConditions} AND cert."isActive" = false`;
+        whereConditions = sql`${whereConditions} AND cert.${sql.identifier(certificatesTable.isActive.name)} = false`;
       }
     }
 
     const query = sql`
-      SELECT 
+      SELECT
         cert.*,
-        c.name as course_name,
-        c.description as course_description,
-        c.category as course_category,
-        c.level as course_level,
-        c."estimatedDuration" as course_duration,
-        u.name as user_name,
-        u.email as user_email,
-        comp.name as company_name
-      FROM certificates cert
-      LEFT JOIN courses c ON cert."course_id" = c.id
-      LEFT JOIN users u ON cert."user_id" = u.id
-      LEFT JOIN companies comp ON cert."company_id" = comp.id
+        c.${sql.identifier(coursesTable.name.name)} as course_name,
+        c.${sql.identifier(coursesTable.description.name)} as course_description,
+        c.${sql.identifier(coursesTable.category.name)} as course_category,
+        c.${sql.identifier(coursesTable.level.name)} as course_level,
+        c.${sql.identifier(coursesTable.estimatedDuration.name)} as course_duration,
+        u.${sql.identifier(usersTable.name.name)} as user_name,
+        u.${sql.identifier(usersTable.email.name)} as user_email,
+        comp.${sql.identifier(companiesTable.name.name)} as company_name
+      FROM ${sql.identifier(certificatesTable._.name)} cert
+      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      LEFT JOIN ${sql.identifier(usersTable._.name)} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      LEFT JOIN ${sql.identifier(companiesTable._.name)} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
       WHERE ${whereConditions}
-      ORDER BY cert."issuedDate" DESC
+      ORDER BY cert.${sql.identifier(certificatesTable.issuedDate.name)} DESC
       LIMIT ${limit} OFFSET ${(page - 1) * limit}
     `;
 
@@ -96,8 +96,8 @@ export async function GET(request: NextRequest) {
     // Obtener total de registros para paginación
     const countQuery = sql`
       SELECT COUNT(*) as total
-      FROM certificates cert
-      LEFT JOIN courses c ON cert."course_id" = c.id
+      FROM ${sql.identifier(certificatesTable._.name)} cert
+      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
       WHERE ${whereConditions}
     `;
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el curso existe
     const courseResult = await db.execute(
-      sql`SELECT id FROM courses WHERE id = ${body.courseId} AND "isActive" = true`
+      sql`SELECT ${sql.identifier(coursesTable.id.name)} FROM ${sql.identifier(coursesTable._.name)} WHERE ${sql.identifier(coursesTable.id.name)} = ${body.courseId} AND ${sql.identifier(coursesTable.isActive.name)} = true`
     );
 
     if (courseResult.rows.length === 0) {
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el usuario existe
     const userResult = await db.execute(
-      sql`SELECT id FROM users WHERE id = ${body.userId} AND "isActive" = true`
+      sql`SELECT ${sql.identifier(usersTable.id.name)} FROM ${sql.identifier(usersTable._.name)} WHERE ${sql.identifier(usersTable.id.name)} = ${body.userId} AND ${sql.identifier(usersTable.isActive.name)} = true`
     );
 
     if (userResult.rows.length === 0) {
