@@ -6,6 +6,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { emailService } from "@/lib/email-service";
 import { randomBytes } from "crypto";
+import { strictRateLimit, apiRateLimit } from "@/lib/rate-limit";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -13,6 +14,12 @@ const db = drizzle(pg, { schema });
 // ===== OBTENER ROLES DISPONIBLES =====
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 60 requests por minuto para consultas
+    const rateLimitResponse = await apiRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||
@@ -118,6 +125,12 @@ export async function GET(request: NextRequest) {
 // ===== CREAR INVITACIÓN =====
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 invitaciones por minuto
+    const rateLimitResponse = await strictRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||
@@ -325,6 +338,12 @@ export async function POST(request: NextRequest) {
 // ===== CANCELAR INVITACIÓN =====
 export async function DELETE(request: NextRequest) {
   try {
+    // Rate limiting: 10 operaciones por minuto
+    const rateLimitResponse = await strictRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||

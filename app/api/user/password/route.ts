@@ -5,12 +5,19 @@ import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { strictRateLimit } from "@/lib/rate-limit";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
 
 export async function PUT(request: NextRequest) {
   try {
+    // Rate limiting: 10 operaciones por minuto (sensible)
+    const rateLimitResponse = await strictRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||

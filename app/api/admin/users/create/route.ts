@@ -6,12 +6,19 @@ import { verifyAdminAuth } from "@/lib/admin-auth";
 import { validateEmail } from "@/lib/validation";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { strictRateLimit } from "@/lib/rate-limit";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 10 operaciones por minuto
+    const rateLimitResponse = await strictRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
     const authResult = await verifyAdminAuth(request);
     if (!authResult.authorized) {

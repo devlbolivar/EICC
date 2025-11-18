@@ -3,9 +3,16 @@ import { db } from "@/config/db";
 import { usersTable } from "@/config/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { hashPassword, validatePassword } from "@/lib/auth";
+import { authRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 intentos por 15 minutos
+    const rateLimitResponse = await authRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const { token, password } = await request.json();
 
     // Validaciones básicas
