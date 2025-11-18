@@ -185,6 +185,101 @@ export interface InvitationToken extends BaseEntity {
   invitedByUser?: User;
 }
 
+// ===== EMPLEADOS DE EMPRESA =====
+/**
+ * Resultado del SELECT de la base de datos para empleados
+ */
+export interface DatabaseEmployee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  avatar: string | null;
+  isActive: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  joinedAt: Date | null;
+  acceptedAt: Date | null;
+  roleName: string;
+  roleDescription: string | null;
+  coursesCompleted: number;
+  certificatesCount: number;
+}
+
+/**
+ * Estado del empleado en la empresa
+ */
+export type EmployeeStatus = "active" | "inactive";
+
+/**
+ * Empleado formateado para respuesta de API
+ */
+export interface CompanyEmployee {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: EmployeeStatus;
+  joinedAt: string;
+  coursesCompleted: number;
+  certificates: number;
+  avatar: string;
+  lastLoginAt: Date | null;
+}
+
+/**
+ * Estadísticas de empleados de la empresa
+ */
+export interface CompanyEmployeeStats {
+  totalEmployees: number;
+  activeEmployees: number;
+  totalCoursesCompleted: number;
+  totalCertificates: number;
+}
+
+/**
+ * Respuesta completa del endpoint de empleados
+ */
+export interface CompanyEmployeesResponse {
+  success: boolean;
+  data: {
+    employees: CompanyEmployee[];
+    stats: CompanyEmployeeStats;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+/**
+ * Transforma un empleado de la base de datos al formato de respuesta
+ */
+export function transformToCompanyEmployee(employee: DatabaseEmployee): CompanyEmployee {
+  return {
+    id: employee.id,
+    name: employee.name,
+    email: employee.email,
+    phone: employee.phone || "",
+    role: employee.roleName,
+    status: employee.isActive ? "active" : "inactive",
+    joinedAt: employee.joinedAt?.toISOString().split("T")[0] || "",
+    coursesCompleted: employee.coursesCompleted,
+    certificates: employee.certificatesCount,
+    avatar:
+      employee.avatar ||
+      employee.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase(),
+    lastLoginAt: employee.lastLoginAt,
+  };
+}
+
 export interface InvitationCreateData {
   email: string;
   roleId: string;
