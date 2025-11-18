@@ -9,7 +9,7 @@ const stripeKey = process.env.STRIPE_SECRET_KEY || (isBuildPhase ? 'sk_test_buil
 
 // Inicializar Stripe con la clave secreta
 export const stripe = new Stripe(stripeKey, {
-  apiVersion: "2024-10-28.acacia",
+  apiVersion: "2025-09-30.clover",
   typescript: true,
 });
 

@@ -8,7 +8,7 @@ import { generateCertificateId } from "@/lib/certificate-service";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
@@ -17,7 +17,7 @@ export async function POST(
       return authResult.response;
     }
 
-    const certificateId = params.id;
+    const { id: certificateId } = await params;
 
     // ===== VERIFICAR QUE EL CERTIFICADO EXISTE =====
     const existingCertificate = await db

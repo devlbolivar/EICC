@@ -22,7 +22,7 @@ import {
   Building,
 } from "lucide-react";
 // Removed direct import - will use API instead
-import { Certificate } from "@/app/types";
+import { CertificateResponse } from "@/app/types";
 import { toast } from "sonner";
 
 export default function CertificateViewPage() {
@@ -30,7 +30,7 @@ export default function CertificateViewPage() {
   const router = useRouter();
   const certificateId = params.id as string;
 
-  const [certificate, setCertificate] = useState<Certificate | null>(null);
+  const [certificate, setCertificate] = useState<CertificateResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

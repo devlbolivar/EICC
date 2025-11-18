@@ -98,7 +98,7 @@ const CompanyBilling = () => {
   }, [employeesError]);
 
   // Calcular límites de uso
-  const employeeUsage = checkUsageLimit("employees", employees?.length || 0);
+  const employeeUsage = checkUsageLimit("employees", 0);
 
   // Manejo de error crítico de companyProfile
   if (companyError) {

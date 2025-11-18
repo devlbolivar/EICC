@@ -5,7 +5,7 @@ import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { validateUUID } from "@/lib/validation";
 import { requireAdmin, handleApiError, errorResponse, successResponse } from "@/lib/api-helpers";
-import { eq, and, not } from "drizzle-orm";
+import { eq, and, not, sql } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -126,8 +126,8 @@ export async function GET(
           invitedBy: row.userCompanyInvitedBy
             ? {
                 id: row.userCompanyInvitedBy,
-                name: row.inviterName || "Usuario desconocido",
-                email: row.inviterEmail || "email@desconocido.com",
+                name: (row.inviterName as string) || "Usuario desconocido",
+                email: (row.inviterEmail as string) || "email@desconocido.com",
               }
             : null,
         });

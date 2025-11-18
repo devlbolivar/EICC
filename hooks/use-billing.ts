@@ -197,10 +197,11 @@ export function useBilling(companyId?: string) {
         }
 
         toast.dismiss();
-        const result = await stripe.redirectToCheckout({ sessionId });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (stripe as any).redirectToCheckout({ sessionId });
 
-        if (result.error) {
-          throw new Error(result.error.message);
+        if (error) {
+          throw new Error(error.message);
         }
       } catch (error) {
         console.error("Error creating checkout session:", error);

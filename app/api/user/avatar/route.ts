@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 }
 
 // ===== DELETE - Eliminar avatar =====
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     // Verificar autenticación
     const cookieStore = await cookies();
