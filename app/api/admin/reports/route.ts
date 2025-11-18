@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
               2
             ) as completion_rate
           FROM courses c
-          LEFT JOIN "enrollCourse" ec ON c.id = ec."course_id"
+          LEFT JOIN "enroll_course" ec ON c.id = ec."course_id"
           GROUP BY c.id, c.name, c.category
           HAVING COUNT(DISTINCT ec.id) > 0
           ORDER BY completion_rate DESC
