@@ -113,6 +113,11 @@ export async function PUT(
     }
 
     const { id: courseId } = await params;
+
+    // ✅ VALIDAR UUID
+    const uuidError = validateUUIDParam(courseId, "Course ID");
+    if (uuidError) return uuidError;
+
     const body = await request.json();
 
     // Verificar que el curso existe y pertenece al usuario/empresa
@@ -220,6 +225,10 @@ export async function DELETE(
     }
 
     const { id: courseId } = await params;
+
+    // ✅ VALIDAR UUID
+    const uuidError = validateUUIDParam(courseId, "Course ID");
+    if (uuidError) return uuidError;
 
     // Verificar que el curso existe
     const existingCourse = await db.execute(sql`

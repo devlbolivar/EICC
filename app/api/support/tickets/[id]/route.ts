@@ -7,6 +7,7 @@ import { z } from "zod";
 import { apiRateLimit } from "@/lib/rate-limit";
 import { hasAnyPermission } from "@/lib/permissions";
 import type { Permission } from "@/app/types";
+import { validateUUID } from "@/lib/validation";
 
 // Zod schema for PATCH validation
 const updateTicketSchema = z.object({
@@ -35,6 +36,15 @@ export async function GET(
 
   try {
     const { id: ticketId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(ticketId, 'ID de ticket');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Check if user is admin
     const permissions = payload.permissions as Permission[];
@@ -141,6 +151,16 @@ export async function PATCH(
 
   try {
     const { id: ticketId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(ticketId, 'ID de ticket');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
 
     // Validate with Zod

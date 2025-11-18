@@ -4,6 +4,7 @@ import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
 import { ERROR_MESSAGES } from "@/lib/constants";
+import { validateUUID } from "@/lib/validation";
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +18,15 @@ export async function POST(
     }
 
     const { id: certificateId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(certificateId, 'ID de certificado');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // ===== OBTENER DATOS DEL BODY (opcional: razón de revocación) =====
     const body = await request.json().catch(() => ({}));

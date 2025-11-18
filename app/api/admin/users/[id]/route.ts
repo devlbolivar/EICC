@@ -167,6 +167,15 @@ export async function PUT(
   try {
     const { id } = await params;
 
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(id, 'ID de usuario');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
     await requireAdmin(request);
 
@@ -236,6 +245,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(id, 'ID de usuario');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
     const { payload } = await requireAdmin(request);
