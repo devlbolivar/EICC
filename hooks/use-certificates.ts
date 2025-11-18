@@ -4,6 +4,7 @@ import {
   CertificateCreateData,
   CertificateUpdateData,
   PaginatedResponse,
+  PaginationInfo,
 } from "@/app/types";
 import { API_ROUTES } from "@/lib/constants";
 
@@ -19,12 +20,7 @@ interface UseCertificatesReturn {
   certificates: Certificate[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null;
+  pagination: PaginationInfo | null;
   fetchCertificates: (options?: UseCertificatesOptions) => Promise<void>;
   createCertificate: (
     data: CertificateCreateData
@@ -44,12 +40,7 @@ export function useCertificates(
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
   const fetchCertificates = useCallback(
     async (fetchOptions: UseCertificatesOptions = {}) => {
@@ -94,7 +85,7 @@ export function useCertificates(
           throw new Error(errorData.error || "Error al obtener certificados");
         }
 
-        const data: { success: boolean; data: Certificate[]; pagination: any } =
+        const data: { success: boolean; data: Certificate[]; pagination: PaginationInfo } =
           await response.json();
 
         if (data.success) {

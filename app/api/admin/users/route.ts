@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq, like, and, desc, asc, sql } from "drizzle-orm";
+import { createPaginationInfo } from "@/lib/pagination";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -175,12 +176,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       users: formattedUsers,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: createPaginationInfo(page, limit, total),
     });
   } catch (error) {
     console.error("Error al obtener usuarios:", error);

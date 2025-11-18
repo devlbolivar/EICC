@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { PaginationInfo } from "@/app/types";
 
 export interface CompanyEmployee {
   id: string;
@@ -36,12 +37,7 @@ export interface EmployeesFilters {
 export interface EmployeesResponse {
   employees: CompanyEmployee[];
   stats: CompanyStats;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
 
 interface UseCompanyEmployeesReturn {
@@ -53,12 +49,7 @@ interface UseCompanyEmployeesReturn {
   setFilters: (filters: Partial<EmployeesFilters>) => void;
   refreshEmployees: () => Promise<void>;
   clearError: () => void;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null;
+  pagination: PaginationInfo | null;
 }
 
 export function useCompanyEmployees(): UseCompanyEmployeesReturn {
@@ -67,12 +58,7 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
   const [stats, setStats] = useState<CompanyStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [filters, setFiltersState] = useState<EmployeesFilters>({
     search: "",
     status: "",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { API_ROUTES } from "@/lib/constants";
+import { PaginationInfo } from "@/app/types";
 
 export interface CompanyCertificate {
   id: string;
@@ -52,12 +53,7 @@ interface UseCompanyCertificatesReturn {
   stats: CompanyCertificateStats | null;
   loading: boolean;
   error: string | null;
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null;
+  pagination: PaginationInfo | null;
   fetchCertificates: (options?: UseCompanyCertificatesOptions) => Promise<void>;
   fetchStats: () => Promise<void>;
   refetch: () => Promise<void>;
@@ -70,12 +66,7 @@ export function useCompanyCertificates(
   const [stats, setStats] = useState<CompanyCertificateStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<{
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  } | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
   // Use ref to store the latest options to avoid dependency issues
   const optionsRef = useRef(options);
@@ -146,7 +137,7 @@ export function useCompanyCertificates(
         const data: {
           success: boolean;
           data: CompanyCertificate[];
-          pagination: any;
+          pagination: PaginationInfo;
         } = await response.json();
 
         if (data.success) {

@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { CertificateCreateData } from "@/app/types";
+import { createPaginationInfo } from "@/lib/pagination";
 
 // ===== GET - Listar certificados =====
 export async function GET(request: NextRequest) {
@@ -107,12 +108,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: createPaginationInfo(page, limit, total),
     });
   } catch (error) {
     console.error("Error fetching certificates:", error);

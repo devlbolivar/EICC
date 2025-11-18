@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { Module, Lesson } from "@/app/types";
+import { createPaginationInfo } from "@/lib/pagination";
 
 // ===== GET - Listar cursos =====
 export async function GET(request: NextRequest) {
@@ -73,12 +74,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         courses: result.rows || [],
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
+        pagination: createPaginationInfo(page, limit, total),
       },
     };
 
