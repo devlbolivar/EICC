@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/database";
 import { enrollCourseTable, certificatesTable } from "@/config/schema";
 import { coursesTable } from "@/config/schema";
@@ -8,14 +8,29 @@ import {
   EnrolledCourseResponse,
   transformToEnrolledCourses,
 } from "@/app/types";
+import { verifyStudentAuth } from "@/lib/admin-auth";
+import { apiRateLimit } from "@/lib/rate-limit";
 
-export async function GET(req: Request) {
-  // Get user ID from headers set by middleware
-  const userId = req.headers.get("x-user-id");
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(req: NextRequest) {
+  try {
+    // Rate limiting: 60 requests por minuto
+    const rateLimitResponse = await apiRateLimit(req);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+  } catch {
+    // Continuar si hay error en rate limit
   }
+
+  // ✅ SEGURO: Verificar autenticación desde JWT en cookies
+  const authResult = await verifyStudentAuth(req);
+
+  if (!authResult.authorized) {
+    return authResult.response;
+  }
+
+  // Obtener userId del token verificado (no manipulable por el cliente)
+  const userId = authResult.payload.userId;
 
   try {
     // Consulta con nombres originales de la base de datos

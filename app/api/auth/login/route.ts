@@ -4,6 +4,7 @@ import { comparePassword, generateTokenPair, validateEmail } from "@/lib/auth";
 import { validateAndSanitizeEmail } from "@/lib/utils";
 import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";
+import { authRateLimit } from "@/lib/rate-limit";
 
 // ===== PERMISOS VÁLIDOS =====
 const VALID_PERMISSIONS: readonly Permission[] = [
@@ -90,6 +91,12 @@ function validatePermissions(data: unknown): Permission[] {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 intentos por 15 minutos
+    const rateLimitResponse = await authRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

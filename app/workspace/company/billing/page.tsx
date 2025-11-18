@@ -15,18 +15,35 @@ import {
   AlertCircle,
   Loader2,
   Calendar,
+  AlertTriangle,
 } from "lucide-react";
-import { useCompany } from "@/hooks/use-company";
+import { useCompanyProfile } from "@/hooks/use-company-profile";
+import { useCompanyEmployees } from "@/hooks/use-company-employees";
 import { useBilling } from "@/hooks/use-billing";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 
 const CompanyBilling = () => {
-  const { company } = useCompany();
-  const companyId = company?.id;
-
+  // Obtener datos de la empresa
   const {
-    loading,
+    companyProfile,
+    loading: companyLoading,
+    error: companyError,
+  } = useCompanyProfile();
+
+  // Obtener empleados de la empresa
+  const {
+    employees,
+    loading: employeesLoading,
+    error: employeesError,
+  } = useCompanyEmployees();
+
+  // El companyId solo está disponible cuando companyProfile existe
+  const companyId = companyProfile?.id;
+
+  // Obtener datos de facturación
+  const {
+    loading: billingLoading,
     subscription,
     invoices,
     invoiceStats,
@@ -44,6 +61,9 @@ const CompanyBilling = () => {
     isPastDue,
     checkUsageLimit,
   } = useBilling(companyId);
+
+  // Estado de loading combinado
+  const loading = companyLoading || employeesLoading || billingLoading;
 
   const searchParams = useSearchParams();
   const [showPlanSelector, setShowPlanSelector] = useState(false);
@@ -70,8 +90,61 @@ const CompanyBilling = () => {
     }
   }, [showPlanSelector, plans, fetchPlans]);
 
+  // Log de error de empleados (no bloquea la página)
+  useEffect(() => {
+    if (employeesError) {
+      console.error("Error loading employees:", employeesError);
+    }
+  }, [employeesError]);
+
   // Calcular límites de uso
   const employeeUsage = checkUsageLimit("employees", 0);
+
+  // Manejo de error crítico de companyProfile
+  if (companyError) {
+    return (
+      <div className="p-6">
+        <Card className="border-red-300 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+              <div>
+                <h3 className="font-semibold text-red-900">
+                  Error al cargar datos de la empresa
+                </h3>
+                <p className="text-sm text-red-700">
+                  {companyError || "No se pudo obtener la información de la empresa. Por favor, intente nuevamente."}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Validación de datos críticos después del loading
+  if (!companyLoading && !companyProfile) {
+    return (
+      <div className="p-6">
+        <Card className="border-yellow-300 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-6 h-6 text-yellow-600" />
+              <div>
+                <h3 className="font-semibold text-yellow-900">
+                  No se encontró información de la empresa
+                </h3>
+                <p className="text-sm text-yellow-700">
+                  No hay datos de empresa asociados a su cuenta.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -119,10 +192,14 @@ const CompanyBilling = () => {
     await createCheckoutSession(stripePriceId);
   };
 
-  if (loading && !subscription) {
+  // Loading state mientras cargan los datos iniciales
+  if ((companyLoading || billingLoading) && !subscription) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Cargando información de facturación...</p>
+        </div>
       </div>
     );
   }

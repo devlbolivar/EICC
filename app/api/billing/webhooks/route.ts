@@ -18,26 +18,45 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
 
+  // Validación de signature
   if (!signature) {
+    console.error("Webhook error: Missing Stripe signature header", {
+      timestamp: new Date().toISOString(),
+      userAgent: req.headers.get("user-agent"),
+    });
     return NextResponse.json(
-      { error: "Missing stripe-signature header" },
+      { error: "Missing signature" },
       { status: 400 }
+    );
+  }
+
+  // ✅ CORRECCIÓN CRÍTICA: Validar que existe el secret
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error("CRITICAL: STRIPE_WEBHOOK_SECRET not configured", {
+      timestamp: new Date().toISOString(),
+    });
+    return NextResponse.json(
+      { error: "Server configuration error" },
+      { status: 500 }
     );
   }
 
   let event: Stripe.Event;
 
   try {
-    // Verificar la firma del webhook
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET || ""
-    );
+    // Verificar la firma del webhook con el secret validado
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
-    console.error("⚠️  Webhook signature verification failed.", err);
+    const error = err as Error;
+    console.error("Webhook signature verification failed:", {
+      error: error.message,
+      signature: signature.substring(0, 20) + "...", // Log parcial por seguridad
+      timestamp: new Date().toISOString(),
+      userAgent: req.headers.get("user-agent"),
+    });
     return NextResponse.json(
-      { error: "Webhook signature verification failed" },
+      { error: "Invalid signature" },
       { status: 400 }
     );
   }

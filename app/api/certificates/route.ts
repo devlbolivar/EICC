@@ -6,10 +6,17 @@ import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { CertificateCreateData } from "@/app/types";
 import { createPaginationInfo } from "@/lib/pagination";
+import { apiRateLimit } from "@/lib/rate-limit";
 
 // ===== GET - Listar certificados =====
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 60 requests por minuto
+    const rateLimitResponse = await apiRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Verificar autenticación
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken");
@@ -122,6 +129,12 @@ export async function GET(request: NextRequest) {
 // ===== POST - Crear certificado =====
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 60 requests por minuto
+    const rateLimitResponse = await apiRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Verificar autenticación
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken");
