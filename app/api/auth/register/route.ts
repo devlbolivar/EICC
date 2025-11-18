@@ -8,7 +8,10 @@ import {
   validateEmail,
   validatePassword,
   sanitizeName,
+  generateEmailVerificationToken,
+  TOKEN_EXPIRY,
 } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/email-service";
 import {
   validateAndSanitizeEmail,
   sanitizeString,
@@ -85,6 +88,10 @@ export async function POST(request: NextRequest) {
     // ===== HASH DE CONTRASEÑA =====
     const passwordHash = await hashPassword(password);
 
+    // ===== GENERAR TOKEN DE VERIFICACIÓN =====
+    const verificationToken = generateEmailVerificationToken();
+    const verificationExpires = new Date(Date.now() + TOKEN_EXPIRY.EMAIL_VERIFICATION);
+
     // ===== CREAR USUARIO =====
     const [newUser] = await db
       .insert(schema.usersTable)
@@ -92,7 +99,9 @@ export async function POST(request: NextRequest) {
         email: sanitizedEmail,
         name: sanitizedName,
         passwordHash,
-        emailVerified: true, // Para MVP, asumimos email verificado
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
         isActive: true,
       })
       .returning();
@@ -190,6 +199,9 @@ export async function POST(request: NextRequest) {
       acceptedAt: new Date(),
     });
 
+    // ===== ENVIAR EMAIL DE VERIFICACIÓN =====
+    await sendVerificationEmail(newUser.email, newUser.name, verificationToken);
+
     // ===== GENERAR TOKENS =====
     const tokenPayload = {
       userId: newUser.id,
@@ -206,7 +218,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: "Usuario registrado exitosamente",
+        message: "Usuario registrado exitosamente. Por favor verifica tu email.",
         data: {
           user: {
             id: newUser.id,
@@ -214,6 +226,7 @@ export async function POST(request: NextRequest) {
             name: newUser.name,
           },
           company: companyId ? { id: companyId } : null,
+          requiresVerification: true,
         },
       },
       { status: 201 }

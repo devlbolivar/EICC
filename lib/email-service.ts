@@ -16,6 +16,12 @@ interface InvitationEmailData {
   customMessage?: string;
 }
 
+interface VerificationEmailData {
+  recipientEmail: string;
+  userName: string;
+  verificationUrl: string;
+}
+
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
 
@@ -39,6 +45,108 @@ class EmailService {
     if (emailConfig.auth.user && emailConfig.auth.pass) {
       this.transporter = nodemailer.createTransport(emailConfig);
     }
+  }
+
+  async sendVerificationEmail(data: VerificationEmailData): Promise<boolean> {
+    if (!this.transporter) {
+      console.warn("Email service not configured. Skipping verification email.");
+      console.log("📧 Verification email (dev mode):", {
+        to: data.recipientEmail,
+        url: data.verificationUrl,
+      });
+      return false;
+    }
+
+    try {
+      const { recipientEmail, userName, verificationUrl } = data;
+
+      const subject = "Verifica tu dirección de email";
+      const html = this.generateVerificationHTML(userName, verificationUrl);
+      const text = this.generateVerificationText(userName, verificationUrl);
+
+      const mailOptions: EmailOptions = {
+        to: recipientEmail,
+        subject,
+        html,
+        text,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      return true;
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      return false;
+    }
+  }
+
+  private generateVerificationHTML(userName: string, verificationUrl: string): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verifica tu Email</title>
+        <style>
+          body { font-family: ${EMAIL_STYLES.FONT_FAMILY}; line-height: ${EMAIL_STYLES.LINE_HEIGHT}; color: ${EMAIL_COLORS.TEXT_DEFAULT}; }
+          .container { max-width: ${EMAIL_STYLES.MAX_WIDTH}; margin: 0 auto; padding: ${EMAIL_STYLES.PADDING_LARGE}; }
+          .header { background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: ${EMAIL_STYLES.PADDING_LARGE}; text-align: center; border-radius: ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE} 0 0; }
+          .content { background: ${EMAIL_COLORS.BACKGROUND}; padding: ${EMAIL_STYLES.PADDING_XL}; border-radius: 0 0 ${EMAIL_STYLES.BORDER_RADIUS_LARGE} ${EMAIL_STYLES.BORDER_RADIUS_LARGE}; }
+          .button { display: inline-block; background: ${EMAIL_COLORS.PRIMARY}; color: ${EMAIL_COLORS.PRIMARY_TEXT}; padding: 12px 24px; text-decoration: none; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
+          .footer { text-align: center; margin-top: ${EMAIL_STYLES.PADDING_XL}; color: ${EMAIL_COLORS.TEXT_MUTED}; font-size: ${EMAIL_STYLES.FONT_SIZE_SMALL}; }
+          .warning { background: ${EMAIL_COLORS.WARNING_BG}; border: 1px solid ${EMAIL_COLORS.WARNING_BORDER}; padding: ${EMAIL_STYLES.PADDING_MEDIUM}; border-radius: ${EMAIL_STYLES.BORDER_RADIUS}; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Verifica tu Email</h1>
+          </div>
+          <div class="content">
+            <p>Hola ${userName},</p>
+            <p>Gracias por registrarte en nuestra plataforma. Para completar tu registro, por favor verifica tu dirección de email haciendo clic en el siguiente botón:</p>
+
+            <div style="text-align: center;">
+              <a href="${verificationUrl}" class="button">Verificar Email</a>
+            </div>
+
+            <div class="warning">
+              <strong>⚠️ Importante:</strong> Este enlace expirará en 24 horas.
+            </div>
+
+            <p>Si el botón no funciona, puedes copiar y pegar este enlace en tu navegador:</p>
+            <p style="word-break: break-all; background: ${EMAIL_COLORS.CODE_BG}; padding: ${EMAIL_STYLES.PADDING_SMALL}; border-radius: 4px; font-family: monospace;">
+              ${verificationUrl}
+            </p>
+
+            <p><strong>¿No creaste esta cuenta?</strong></p>
+            <p>Si no realizaste este registro, puedes ignorar este mensaje de forma segura.</p>
+          </div>
+          <div class="footer">
+            <p>Este es un mensaje automático, por favor no respondas a este email.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateVerificationText(userName: string, verificationUrl: string): string {
+    return `
+Verifica tu Email
+
+Hola ${userName},
+
+Gracias por registrarte en nuestra plataforma. Para completar tu registro, por favor verifica tu dirección de email visitando este enlace:
+${verificationUrl}
+
+IMPORTANTE: Este enlace expirará en 24 horas.
+
+¿No creaste esta cuenta?
+Si no realizaste este registro, puedes ignorar este mensaje de forma segura.
+
+Este es un mensaje automático, por favor no respondas a este email.
+    `.trim();
   }
 
   async sendInvitationEmail(data: InvitationEmailData): Promise<boolean> {
@@ -310,11 +418,24 @@ Este es un mensaje automático, por favor no respondas a este email.
 // Export singleton instance
 export const emailService = new EmailService();
 
-// Export convenience function
+// Export convenience functions
 export async function sendPasswordResetEmail(
   email: string,
   resetToken: string,
   userName: string
 ): Promise<boolean> {
   return emailService.sendPasswordResetEmail(email, resetToken, userName);
+}
+
+export async function sendVerificationEmail(
+  email: string,
+  userName: string,
+  token: string
+): Promise<boolean> {
+  const verificationUrl = `${APP_CONFIG.BASE_URL}/verify-email?token=${token}`;
+  return emailService.sendVerificationEmail({
+    recipientEmail: email,
+    userName,
+    verificationUrl,
+  });
 }
