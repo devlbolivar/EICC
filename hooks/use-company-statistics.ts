@@ -1,5 +1,28 @@
 import { useState, useCallback } from "react";
 
+/**
+ * Actividad reciente de un usuario en la empresa.
+ * user_name es SIEMPRE presente porque viene de un INNER JOIN con users.
+ */
+interface RecentActivity {
+  type: string;
+  /** Nombre del usuario - SIEMPRE presente (JOIN con users) */
+  user_name: string;
+  /** Nombre del curso - SIEMPRE presente (JOIN con courses) */
+  course_name: string;
+  activity_date: string;
+}
+
+/**
+ * Curso popular con conteo de inscripciones.
+ */
+interface PopularCourseStats {
+  id: string;
+  name: string;
+  bannerImage: string;
+  enrollment_count: number;
+}
+
 interface CompanyStatistics {
   courses: {
     total: number;
@@ -20,18 +43,8 @@ interface CompanyStatistics {
   completion: {
     average: number;
   };
-  popularCourses: Array<{
-    id: string;
-    name: string;
-    bannerImage: string;
-    enrollment_count: number;
-  }>;
-  recentActivity: Array<{
-    type: string;
-    user_name: string;
-    course_name: string;
-    activity_date: string;
-  }>;
+  popularCourses: PopularCourseStats[];
+  recentActivity: RecentActivity[];
 }
 
 interface ApiResponse<T> {

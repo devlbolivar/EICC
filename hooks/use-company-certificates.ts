@@ -1,32 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { API_ROUTES } from "@/lib/constants";
-import { PaginationInfo } from "@/app/types";
+import { CertificateResponse, PaginationInfo } from "@/app/types";
 
-export interface CompanyCertificate {
-  id: string;
-  certificateId: string;
-  courseId: string;
-  userId: string;
-  companyId: string;
-  title: string;
-  description?: string;
-  grade: number;
+/**
+ * Certificado de empresa con fechas como string (serializado desde API).
+ * Extiende CertificateResponse para consistencia de tipos.
+ *
+ * Los campos de usuario (user_name, user_email) son SIEMPRE presentes
+ * porque la FK userId es NOT NULL en la tabla certificates.
+ */
+export interface CompanyCertificate extends Omit<CertificateResponse, 'createdAt' | 'updatedAt' | 'issuedDate' | 'completedDate'> {
   issuedDate: string;
   completedDate: string;
-  duration?: string;
-  certificateUrl?: string;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  // Joined data
-  course_name: string;
-  course_description?: string;
-  course_category: string;
-  course_level: string;
-  course_duration?: string;
-  user_name: string;
-  user_email: string;
-  company_name?: string;
 }
 
 export interface CompanyCertificateStats {
