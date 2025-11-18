@@ -42,5 +42,16 @@ export const useCompany = () => {
     return false;
   }, [session]);
 
-  return { isCompany };
+  // Obtener información de la empresa desde la sesión
+  const company = useMemo(() => {
+    if (!session?.currentCompany) {
+      return null;
+    }
+    return {
+      id: session.currentCompany.id,
+      name: session.currentCompany.name || "",
+    };
+  }, [session]);
+
+  return { isCompany, company };
 };

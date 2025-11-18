@@ -222,7 +222,7 @@ const StudentCatalog = () => {
       } catch (error) {
         console.error("Error fetching categories:", error);
         // Usar categorías por defecto en caso de error
-        setCategories(CONSTANTS.FILTERS.CATEGORIES);
+        setCategories([...CONSTANTS.FILTERS.CATEGORIES]);
       } finally {
         setLoadingCategories(false);
       }

@@ -29,6 +29,7 @@ export const PERMISSION_HIERARCHY: Record<Permission, Permission[]> = {
   "courses:enroll": ["courses:read"],
   "courses:edit": ["courses:read", "courses:write"],
   "courses:view": ["courses:read"],
+  "courses:manage": ["courses:read", "courses:write", "courses:create", "courses:delete", "courses:publish"],
 
   // Permisos de contenido
   "content:read": [],

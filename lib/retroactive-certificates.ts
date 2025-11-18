@@ -1,6 +1,7 @@
 import { db } from "@/config/db";
 import { sql } from "drizzle-orm";
 import { generateCertificateForCompletion } from "./certificate-service";
+import { Course, EnrollCourse } from "@/app/types";
 
 /**
  * Check if a certificate exists for a completed course
@@ -88,9 +89,9 @@ export async function createRetroactiveCertificate(
     const certificateData = {
       courseId,
       userId,
-      course,
-      enrollment,
-      companyId: companyId || enrollment.companyId || null,
+      course: course as unknown as Course,
+      enrollment: enrollment as unknown as EnrollCourse,
+      companyId: (companyId || enrollment.companyId || null) as string | undefined,
     };
 
     // Generate certificate

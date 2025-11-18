@@ -13,7 +13,7 @@ export const APP_CONFIG = {
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@eicc.com',
 
   // Stripe
-  STRIPE_API_VERSION: (process.env.STRIPE_API_VERSION || '2024-10-28.acacia') as const,
+  STRIPE_API_VERSION: process.env.STRIPE_API_VERSION || '2025-09-30.clover',
 } as const;
 
 /**

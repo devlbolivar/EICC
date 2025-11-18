@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from "@/lib/constants";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
@@ -16,7 +16,7 @@ export async function POST(
       return authResult.response;
     }
 
-    const certificateId = params.id;
+    const { id: certificateId } = await params;
 
     // ===== OBTENER DATOS DEL BODY (opcional: razón de revocación) =====
     const body = await request.json().catch(() => ({}));

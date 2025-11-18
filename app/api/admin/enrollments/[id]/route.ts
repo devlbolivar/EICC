@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from "@/lib/constants";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
@@ -16,7 +16,7 @@ export async function PUT(
       return authResult.response;
     }
 
-    const enrollmentId = params.id;
+    const { id: enrollmentId } = await params;
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
@@ -87,7 +87,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
@@ -96,7 +96,7 @@ export async function DELETE(
       return authResult.response;
     }
 
-    const enrollmentId = params.id;
+    const { id: enrollmentId } = await params;
 
     // ===== VERIFICAR QUE EL ENROLLMENT EXISTE =====
     const existingEnrollment = await db

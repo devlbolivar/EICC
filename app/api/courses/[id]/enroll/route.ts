@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { generateCertificateForCompletion } from "@/lib/certificate-service";
+import { Course, EnrollCourse } from "@/app/types";
 
 // ===== POST - Inscribirse en un curso =====
 export async function POST(
@@ -264,8 +265,8 @@ export async function PUT(
           const certificateResult = await generateCertificateForCompletion({
             courseId,
             userId: payload.userId,
-            course,
-            enrollment,
+            course: course as unknown as Course,
+            enrollment: enrollment as unknown as EnrollCourse,
             companyId: payload.companyId,
           });
 

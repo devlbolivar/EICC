@@ -1,10 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    // ESLint check enabled during builds
+    ignoreDuringBuilds: false,
+    // Directories to lint during build
+    dirs: ['app', 'components', 'lib', 'hooks', 'config', 'context'],
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // TypeScript check enabled - no production errors
+    ignoreBuildErrors: false,
   },
   // Allow more time for static generation
   staticPageGenerationTimeout: 120,

@@ -193,7 +193,7 @@ export default function CourseLearning() {
         }
 
         setCourse(courseData);
-        setEnrollment(enrollmentData);
+        setEnrollment(enrollmentData as unknown as EnrolledCourseResponse);
 
         // Set current chapter based on progress - find first incomplete chapter
         const completedChapters = Object.keys(

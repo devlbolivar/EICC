@@ -31,13 +31,13 @@ export async function GET(request: NextRequest) {
 
     // ===== BÚSQUEDA AVANZADA - Buscar en múltiples campos =====
     if (search) {
-      // Buscar en nombre, RUT, email, o teléfono
+      // Buscar en nombre, RUT, website, o industria
       filters.push(
         sql`(
           LOWER(${schema.companiesTable.name}) LIKE LOWER(${`%${search}%`}) OR
           LOWER(${schema.companiesTable.rut}) LIKE LOWER(${`%${search}%`}) OR
-          LOWER(${schema.companiesTable.email}) LIKE LOWER(${`%${search}%`}) OR
-          ${schema.companiesTable.phone} LIKE ${`%${search}%`}
+          LOWER(COALESCE(${schema.companiesTable.website}, '')) LIKE LOWER(${`%${search}%`}) OR
+          LOWER(COALESCE(${schema.companiesTable.industry}, '')) LIKE LOWER(${`%${search}%`})
         )`
       );
     }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // ===== FILTRO POR PLAN =====
     if (plan) {
-      filters.push(sql`${schema.companiesTable.plan} = ${plan}`);
+      filters.push(sql`${schema.companiesTable.subscriptionPlan} = ${plan}`);
     }
 
     // ===== FILTRO POR ESTADO ACTIVO =====

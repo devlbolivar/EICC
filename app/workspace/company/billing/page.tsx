@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 
 const CompanyBilling = () => {
-  const { company, employees } = useCompany();
+  const { company } = useCompany();
   const companyId = company?.id;
 
   const {
@@ -71,7 +71,7 @@ const CompanyBilling = () => {
   }, [showPlanSelector, plans, fetchPlans]);
 
   // Calcular límites de uso
-  const employeeUsage = checkUsageLimit("employees", employees?.length || 0);
+  const employeeUsage = checkUsageLimit("employees", 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

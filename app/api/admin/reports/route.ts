@@ -41,15 +41,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let reportData: { rows: Record<string, unknown>[] };
+    let reportData: Record<string, unknown>[];
     let headers: string[] = [];
     let filename = `reporte-${reportType}-${Date.now()}`;
 
     // ===== GENERAR REPORTES SEGÚN EL TIPO =====
     switch (reportType) {
       // ===== REPORTES DE USUARIOS =====
-      case "users-monthly":
-        reportData = await db.execute(sql`
+      case "users-monthly": {
+        const result = await db.execute(sql`
           SELECT
             DATE_TRUNC('month', "createdAt") as month,
             COUNT(*) as count,
@@ -59,13 +59,15 @@ export async function GET(request: NextRequest) {
           GROUP BY DATE_TRUNC('month', "createdAt")
           ORDER BY month DESC
         `);
+        reportData = result.rows as Record<string, unknown>[];
         headers = ["month", "count", "admins", "users"];
         filename = `usuarios-por-mes-${Date.now()}`;
         break;
+      }
 
-      case "users-activity":
+      case "users-activity": {
         // Simulando actividad - en producción se debería tener una tabla de logs
-        reportData = await db
+        const activityData = await db
           .select({
             id: schema.usersTable.id,
             name: schema.usersTable.name,
@@ -84,13 +86,14 @@ export async function GET(request: NextRequest) {
             eq(schema.usersTable.id, schema.certificatesTable.userId)
           )
           .groupBy(schema.usersTable.id, schema.usersTable.name, schema.usersTable.email);
-        reportData = { rows: reportData };
+        reportData = activityData as Record<string, unknown>[];
         headers = ["id", "name", "email", "enrollments", "completedCourses", "certificates"];
         filename = `actividad-usuarios-${Date.now()}`;
         break;
+      }
 
-      case "users-by-role":
-        reportData = await db.execute(sql`
+      case "users-by-role": {
+        const roleResult = await db.execute(sql`
           SELECT
             role,
             COUNT(*) as count,
@@ -99,13 +102,15 @@ export async function GET(request: NextRequest) {
           GROUP BY role
           ORDER BY count DESC
         `);
+        reportData = roleResult.rows as Record<string, unknown>[];
         headers = ["role", "count", "percentage"];
         filename = `usuarios-por-rol-${Date.now()}`;
         break;
+      }
 
       // ===== REPORTES DE CURSOS =====
-      case "courses-popular":
-        reportData = await db
+      case "courses-popular": {
+        const popularData = await db
           .select({
             id: schema.coursesTable.id,
             name: schema.coursesTable.name,
@@ -125,13 +130,14 @@ export async function GET(request: NextRequest) {
           )
           .groupBy(schema.coursesTable.id, schema.coursesTable.name, schema.coursesTable.category)
           .orderBy(sql`COUNT(DISTINCT ${schema.enrollCourseTable.id}) DESC`);
-        reportData = { rows: reportData };
+        reportData = popularData as Record<string, unknown>[];
         headers = ["id", "name", "category", "enrollments", "completions", "certificates"];
         filename = `cursos-populares-${Date.now()}`;
         break;
+      }
 
-      case "courses-completion":
-        reportData = await db.execute(sql`
+      case "courses-completion": {
+        const completionResult = await db.execute(sql`
           SELECT
             c.id,
             c.name,
@@ -149,13 +155,15 @@ export async function GET(request: NextRequest) {
           HAVING COUNT(DISTINCT ec.id) > 0
           ORDER BY completion_rate DESC
         `);
+        reportData = completionResult.rows as Record<string, unknown>[];
         headers = ["id", "name", "category", "total_enrollments", "completed", "completion_rate"];
         filename = `tasa-finalizacion-${Date.now()}`;
         break;
+      }
 
-      case "courses-ratings":
+      case "courses-ratings": {
         // Simulando ratings - en producción habría una tabla de ratings
-        reportData = await db
+        const ratingsData = await db
           .select({
             id: schema.coursesTable.id,
             name: schema.coursesTable.name,
@@ -171,130 +179,131 @@ export async function GET(request: NextRequest) {
           .groupBy(schema.coursesTable.id, schema.coursesTable.name, schema.coursesTable.category)
           .having(sql`COUNT(${schema.certificatesTable.id}) > 0`)
           .orderBy(sql`AVG(${schema.certificatesTable.grade}) DESC`);
-        reportData = { rows: reportData };
+        reportData = ratingsData as Record<string, unknown>[];
         headers = ["id", "name", "category", "avgGrade", "totalCertificates"];
         filename = `evaluaciones-cursos-${Date.now()}`;
         break;
+      }
 
       // ===== REPORTES DE EMPRESAS =====
-      case "companies-by-plan":
-        reportData = await db.execute(sql`
+      case "companies-by-plan": {
+        const planResult = await db.execute(sql`
           SELECT
-            s.plan,
+            s."planName" as plan,
             COUNT(DISTINCT s.company_id) as companies,
             SUM(CASE WHEN s.status = 'active' THEN 1 ELSE 0 END) as active,
             SUM(CASE WHEN s.status = 'inactive' THEN 1 ELSE 0 END) as inactive
           FROM subscriptions s
-          GROUP BY s.plan
+          GROUP BY s."planName"
           ORDER BY companies DESC
         `);
+        reportData = planResult.rows as Record<string, unknown>[];
         headers = ["plan", "companies", "active", "inactive"];
         filename = `empresas-por-plan-${Date.now()}`;
         break;
+      }
 
-      case "companies-renewals":
-        reportData = await db.execute(sql`
+      case "companies-renewals": {
+        const renewalResult = await db.execute(sql`
           SELECT
             comp.id,
             comp.name,
-            s.plan,
-            s."startDate",
-            s."endDate",
+            s."planName" as plan,
+            s."currentPeriodStart" as "startDate",
+            s."currentPeriodEnd" as "endDate",
             CASE
-              WHEN s."endDate" < NOW() THEN 'Expirada'
-              WHEN s."endDate" < NOW() + INTERVAL '30 days' THEN 'Por vencer'
+              WHEN s."currentPeriodEnd" < NOW() THEN 'Expirada'
+              WHEN s."currentPeriodEnd" < NOW() + INTERVAL '30 days' THEN 'Por vencer'
               ELSE 'Activa'
             END as status
           FROM companies comp
           LEFT JOIN subscriptions s ON comp.id = s.company_id
           WHERE s.status = 'active'
-          ORDER BY s."endDate" ASC
+          ORDER BY s."currentPeriodEnd" ASC
         `);
+        reportData = renewalResult.rows as Record<string, unknown>[];
         headers = ["id", "name", "plan", "startDate", "endDate", "status"];
         filename = `renovaciones-${Date.now()}`;
         break;
+      }
 
-      case "companies-activity":
-        reportData = await db
-          .select({
-            id: schema.companiesTable.id,
-            name: schema.companiesTable.name,
-            totalUsers: sql<number>`COUNT(DISTINCT ${schema.usersTable.id})`,
-            totalEnrollments: sql<number>`COUNT(DISTINCT ${schema.enrollCourseTable.id})`,
-            completedCourses: sql<number>`COUNT(DISTINCT CASE WHEN ${schema.enrollCourseTable.isCompleted} = true THEN ${schema.enrollCourseTable.id} END)`,
-            certificates: sql<number>`COUNT(DISTINCT ${schema.certificatesTable.id})`,
-          })
-          .from(schema.companiesTable)
-          .leftJoin(
-            schema.usersTable,
-            eq(schema.companiesTable.id, schema.usersTable.companyId)
-          )
-          .leftJoin(
-            schema.enrollCourseTable,
-            eq(schema.companiesTable.id, schema.enrollCourseTable.companyId)
-          )
-          .leftJoin(
-            schema.certificatesTable,
-            eq(schema.companiesTable.id, schema.certificatesTable.companyId)
-          )
-          .groupBy(schema.companiesTable.id, schema.companiesTable.name)
-          .orderBy(sql`COUNT(DISTINCT ${schema.enrollCourseTable.id}) DESC`);
-        reportData = { rows: reportData };
+      case "companies-activity": {
+        const companyActivityResult = await db.execute(sql`
+          SELECT
+            c.id,
+            c.name,
+            COUNT(DISTINCT uc.user_id) as "totalUsers",
+            COUNT(DISTINCT ec.id) as "totalEnrollments",
+            COUNT(DISTINCT CASE WHEN ec."isCompleted" = true THEN ec.id END) as "completedCourses",
+            COUNT(DISTINCT cert.id) as certificates
+          FROM companies c
+          LEFT JOIN user_companies uc ON c.id = uc."companyId"
+          LEFT JOIN enroll_course ec ON c.id = ec.company_id
+          LEFT JOIN certificates cert ON c.id = cert.company_id
+          GROUP BY c.id, c.name
+          ORDER BY COUNT(DISTINCT ec.id) DESC
+        `);
+        reportData = companyActivityResult.rows as Record<string, unknown>[];
         headers = ["id", "name", "totalUsers", "totalEnrollments", "completedCourses", "certificates"];
         filename = `actividad-empresas-${Date.now()}`;
         break;
+      }
 
       // ===== REPORTES FINANCIEROS =====
-      case "financial-monthly":
-        reportData = await db.execute(sql`
+      case "financial-monthly": {
+        const monthlyResult = await db.execute(sql`
           SELECT
-            DATE_TRUNC('month', s."startDate") as month,
+            DATE_TRUNC('month', s."currentPeriodStart") as month,
             COUNT(*) as subscriptions,
             SUM(CASE
-              WHEN s.plan = 'enterprise' THEN 500
-              WHEN s.plan = 'corporate' THEN 300
-              WHEN s.plan = 'startup' THEN 100
+              WHEN s."planName" = 'enterprise' THEN 500
+              WHEN s."planName" = 'corporate' THEN 300
+              WHEN s."planName" = 'startup' THEN 100
               ELSE 0
             END) as revenue
           FROM subscriptions s
           WHERE s.status = 'active'
-          GROUP BY DATE_TRUNC('month', s."startDate")
+          GROUP BY DATE_TRUNC('month', s."currentPeriodStart")
           ORDER BY month DESC
         `);
+        reportData = monthlyResult.rows as Record<string, unknown>[];
         headers = ["month", "subscriptions", "revenue"];
         filename = `ingresos-mensuales-${Date.now()}`;
         break;
+      }
 
-      case "financial-plans":
-        reportData = await db.execute(sql`
+      case "financial-plans": {
+        const plansResult = await db.execute(sql`
           SELECT
-            plan,
+            "planName" as plan,
             COUNT(*) as count,
             SUM(CASE
-              WHEN plan = 'enterprise' THEN 500
-              WHEN plan = 'corporate' THEN 300
-              WHEN plan = 'startup' THEN 100
+              WHEN "planName" = 'enterprise' THEN 500
+              WHEN "planName" = 'corporate' THEN 300
+              WHEN "planName" = 'startup' THEN 100
               ELSE 0
             END) as total_revenue,
             ROUND(AVG(CASE
-              WHEN plan = 'enterprise' THEN 500
-              WHEN plan = 'corporate' THEN 300
-              WHEN plan = 'startup' THEN 100
+              WHEN "planName" = 'enterprise' THEN 500
+              WHEN "planName" = 'corporate' THEN 300
+              WHEN "planName" = 'startup' THEN 100
               ELSE 0
             END), 2) as avg_revenue
           FROM subscriptions
           WHERE status = 'active'
-          GROUP BY plan
+          GROUP BY "planName"
           ORDER BY total_revenue DESC
         `);
+        reportData = plansResult.rows as Record<string, unknown>[];
         headers = ["plan", "count", "total_revenue", "avg_revenue"];
         filename = `planes-vendidos-${Date.now()}`;
         break;
+      }
 
-      case "financial-churn":
-        reportData = await db.execute(sql`
+      case "financial-churn": {
+        const churnResult = await db.execute(sql`
           SELECT
-            DATE_TRUNC('month', s."endDate") as month,
+            DATE_TRUNC('month', s."currentPeriodEnd") as month,
             COUNT(*) as total_subscriptions,
             SUM(CASE WHEN s.status = 'inactive' THEN 1 ELSE 0 END) as cancelled,
             ROUND(
@@ -303,12 +312,14 @@ export async function GET(request: NextRequest) {
               2
             ) as churn_rate
           FROM subscriptions s
-          GROUP BY DATE_TRUNC('month', s."endDate")
+          GROUP BY DATE_TRUNC('month', s."currentPeriodEnd")
           ORDER BY month DESC
         `);
+        reportData = churnResult.rows as Record<string, unknown>[];
         headers = ["month", "total_subscriptions", "cancelled", "churn_rate"];
         filename = `churn-rate-${Date.now()}`;
         break;
+      }
 
       default:
         return NextResponse.json(
@@ -319,7 +330,7 @@ export async function GET(request: NextRequest) {
 
     // ===== DEVOLVER EN EL FORMATO SOLICITADO =====
     if (format === "csv") {
-      const csv = convertToCSV(reportData.rows, headers);
+      const csv = convertToCSV(reportData, headers);
       return new NextResponse(csv, {
         headers: {
           "Content-Type": "text/csv",
@@ -329,7 +340,7 @@ export async function GET(request: NextRequest) {
     } else {
       return NextResponse.json({
         success: true,
-        data: reportData.rows,
+        data: reportData,
         filename: `${filename}.json`,
       });
     }

@@ -3,7 +3,7 @@ import { db } from "@/config/db";
 import { sql } from "drizzle-orm";
 
 // ===== GET - Obtener categorías únicas de cursos =====
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Obtener categorías únicas de cursos activos y publicados
     const result = await db.execute(sql`
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     // Extraer solo los valores de categoría
     const categories = result.rows
-      .map((row: any) => row.category)
+      .map((row: Record<string, unknown>) => row.category as string)
       .filter((category: string) => category && category.trim() !== "");
 
     return NextResponse.json({
