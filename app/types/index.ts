@@ -1,8 +1,109 @@
+/**
+ * @fileoverview Tipos centralizados del sistema EICC.
+ *
+ * ## Guía de Tipos de Usuario
+ *
+ * ### Cuándo usar cada tipo:
+ *
+ * | Tipo | Cuándo usar | Ejemplo |
+ * |------|-------------|---------|
+ * | `UserBasicInfo` | Campos base garantizados (id, email, name) | Props de componentes |
+ * | `UserJoinedData` | JOINs donde hay FK NOT NULL (user_id, user_name, user_email) | Certificados, Inscripciones |
+ * | `UserDerivedOptional` | LEFT JOINs opcionales | Relaciones donde puede no haber usuario |
+ * | `UserPublicInfo` | Info pública sin datos sensibles | Perfiles públicos |
+ *
+ * ### Reglas para campos opcionales:
+ *
+ * 1. **SIEMPRE presentes** cuando hay FK NOT NULL:
+ *    - `userId` en certificates → `user_name`, `user_email` NO son opcionales
+ *    - `courseId` en enrollments → `course_name` NO es opcional
+ *
+ * 2. **OPCIONALES** cuando la FK puede ser NULL:
+ *    - `companyId` en certificates → `company_name` ES opcional
+ *
+ * @example
+ * // Correcto: user_name siempre presente en certificados
+ * const cert: CertificateResponse = await getCertificate(id);
+ * console.log(cert.user_name); // string, no necesita check de null
+ *
+ * // Incorrecto: no marcar user_name como opcional
+ * interface BadCert { user_name?: string } // NO hacer esto para certificados
+ */
+
 // ===== TIPOS BASE =====
 export interface BaseEntity {
   id: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ===== TIPOS DE USUARIO ESTANDARIZADOS =====
+
+/**
+ * Campos básicos de usuario que SIEMPRE están presentes.
+ * Estos campos son NOT NULL en la base de datos.
+ * Usar cuando el usuario es requerido (FK con cascade, etc.)
+ */
+export interface UserBasicInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
+/**
+ * Campos de perfil que pueden ser null/undefined.
+ * Extender UserBasicInfo y agregar campos opcionales del perfil.
+ */
+export interface UserOptionalFields {
+  phone?: string | null;
+  avatar?: string | null;
+  lastLoginAt?: Date | null;
+  location?: string | null;
+  bio?: string | null;
+  age?: number | null;
+}
+
+/**
+ * Usuario completo con campos básicos y opcionales.
+ */
+export interface UserProfile extends UserBasicInfo, UserOptionalFields {}
+
+/**
+ * Datos de usuario derivados de JOINs cuando el usuario está GARANTIZADO.
+ * Usar cuando hay FK NOT NULL que garantiza la existencia del usuario.
+ *
+ * @example
+ * // Certificados siempre tienen un usuario (FK NOT NULL)
+ * interface CertificateWithUser extends Certificate, UserJoinedData {}
+ */
+export interface UserJoinedData {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+}
+
+/**
+ * Datos de usuario derivados de LEFT JOINs donde el usuario es OPCIONAL.
+ * Usar solo cuando realmente puede no haber usuario asociado.
+ *
+ * @example
+ * // Relaciones opcionales donde el usuario podría no existir
+ * interface RecordWithOptionalUser extends BaseRecord, UserDerivedOptional {}
+ */
+export interface UserDerivedOptional {
+  user_id?: string;
+  user_name?: string;
+  user_email?: string;
+}
+
+/**
+ * Información pública de usuario (para compartir externamente).
+ * Excluye datos sensibles como email completo.
+ */
+export interface UserPublicInfo {
+  id: string;
+  name: string;
+  avatar?: string | null;
 }
 
 // ===== AUTENTICACIÓN Y TOKENS =====
@@ -23,18 +124,25 @@ export interface TokenPair {
 }
 
 // ===== USUARIOS Y AUTENTICACIÓN =====
-export interface User extends BaseEntity {
-  email: string;
-  name: string;
+
+/**
+ * Usuario completo del sistema.
+ * Extiende UserBasicInfo para garantizar campos base.
+ */
+export interface User extends BaseEntity, UserBasicInfo {
   passwordHash?: string;
   emailVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
-  avatar?: string;
+  avatar?: string | null;
   isActive: boolean;
-  lastLoginAt?: Date;
+  lastLoginAt?: Date | null;
+  phone?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  age?: number | null;
 }
 
 export interface UserRegistrationData {
@@ -397,12 +505,12 @@ export interface EnrollCourse extends BaseEntity {
 }
 
 // ===== CERTIFICADOS =====
+
 /**
- * Interface para certificados de cursos completados.
- * Incluye campos base del schema y campos derivados de JOINs con otras tablas.
+ * Certificado base sin campos derivados de JOINs.
+ * Representa la entidad como está en la base de datos.
  */
-export interface Certificate extends BaseEntity {
-  // ===== Campos base del schema certificates =====
+export interface CertificateBase extends BaseEntity {
   certificateId: string;
   courseId: string;
   userId: string;
@@ -418,34 +526,68 @@ export interface Certificate extends BaseEntity {
   /** URL del certificado PDF generado */
   certificateUrl?: string;
   isActive: boolean;
+}
 
-  // ===== Relaciones (objetos completos) =====
+/**
+ * Campos derivados del curso en JOINs.
+ * Estos campos siempre están presentes cuando se hace JOIN con courses
+ * ya que courseId es FK NOT NULL.
+ */
+export interface CourseJoinedData {
+  course_name: string;
+  course_description?: string;
+  course_category: string;
+  course_level: string;
+  course_duration?: string;
+  course_banner?: string;
+}
+
+/**
+ * Campos derivados de la empresa en JOINs.
+ * Opcionales porque companyId puede ser NULL.
+ */
+export interface CompanyJoinedData {
+  company_name?: string;
+}
+
+/**
+ * Certificado con relaciones opcionales (para Drizzle ORM).
+ */
+export interface Certificate extends CertificateBase {
+  // Relaciones ORM
   course?: Course;
   user?: User;
   company?: Company;
+}
 
-  // ===== Campos derivados de User (JOIN con users) =====
-  /** Nombre del usuario - SELECT u.name as user_name FROM users u */
-  user_name?: string;
-  /** Email del usuario - SELECT u.email as user_email FROM users u */
-  user_email?: string;
+/**
+ * Respuesta de API de certificado con datos de usuario GARANTIZADOS.
+ * Usar para endpoints que hacen JOIN con usuarios (userId es FK NOT NULL).
+ *
+ * @example
+ * // GET /api/certificates siempre devuelve user_name y user_email
+ * const certs: CertificateResponse[] = await fetchCertificates();
+ */
+export interface CertificateResponse extends CertificateBase, UserJoinedData, CourseJoinedData, CompanyJoinedData {}
 
-  // ===== Campos derivados de Course (JOIN con courses) =====
-  /** Nombre del curso - SELECT c.name as course_name FROM courses c */
-  course_name?: string;
-  /** Descripción del curso - SELECT c.description as course_description FROM courses c */
+/**
+ * @deprecated Usar CertificateResponse para respuestas de API
+ * Certificado con campos adicionales (mantener para compatibilidad).
+ */
+export interface CertificateWithJoins extends CertificateBase {
+  // Campos de usuario - SIEMPRE presentes (FK NOT NULL)
+  user_name: string;
+  user_email: string;
+
+  // Campos de curso - SIEMPRE presentes (FK NOT NULL)
+  course_name: string;
   course_description?: string;
-  /** Categoría del curso - SELECT c.category as course_category FROM courses c */
-  course_category?: string;
-  /** Nivel del curso - SELECT c.level as course_level FROM courses c */
-  course_level?: string;
-  /** Duración estimada del curso - SELECT c."estimatedDuration" as course_duration FROM courses c */
+  course_category: string;
+  course_level: string;
   course_duration?: string;
-  /** Imagen banner del curso - SELECT c."bannerImage" as course_banner FROM courses c */
   course_banner?: string;
 
-  // ===== Campos derivados de Company (JOIN con companies) =====
-  /** Nombre de la empresa - SELECT comp.name as company_name FROM companies comp */
+  // Campos de empresa - OPCIONALES (companyId puede ser NULL)
   company_name?: string;
 }
 
