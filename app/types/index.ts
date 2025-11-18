@@ -449,14 +449,30 @@ export interface ApiResponse<T = unknown> {
   message?: string;
 }
 
+// ===== TIPOS PARA PAGINACIÓN =====
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
+}
+
+// ===== TIPOS PARA PROGRESO DE CURSOS =====
+export interface ProgressUpdateData {
+  completedChapters?: Record<string, boolean>;
+  progress?: number;
+  isCompleted?: boolean;
+}
+
+export interface ProgressUpdateResult {
+  success: boolean;
+  certificateGenerated?: boolean;
+  enrollment?: EnrollCourse;
 }
 
 // ===== FORMULARIOS Y VALIDACIÓN =====

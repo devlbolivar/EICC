@@ -5,6 +5,10 @@ import {
   ApiResponse,
   PaginatedResponse,
   EnrolledCourseResponse,
+  EnrollCourse,
+  PaginationInfo,
+  ProgressUpdateData,
+  ProgressUpdateResult,
 } from "@/app/types";
 
 interface UseCoursesReturn {
@@ -36,15 +40,11 @@ interface UseCoursesReturn {
   // Inscripciones
   enrollInCourse: (courseId: string) => Promise<boolean>;
   unenrollFromCourse: (courseId: string) => Promise<boolean>;
-  getEnrollment: (courseId: string) => Promise<any | null>;
+  getEnrollment: (courseId: string) => Promise<EnrollCourse | null>;
   updateProgress: (
     courseId: string,
-    data: {
-      completedChapters?: any;
-      progress?: number;
-      isCompleted?: boolean;
-    }
-  ) => Promise<{ success: boolean; certificateGenerated?: boolean }>;
+    data: ProgressUpdateData
+  ) => Promise<ProgressUpdateResult>;
 
   // Utilidades
   clearError: () => void;
@@ -60,9 +60,10 @@ export function useCourses(): UseCoursesReturn {
   const [error, setError] = useState<string | null>(null);
 
   // Función para manejar errores
-  const handleError = useCallback((err: any) => {
+  const handleError = useCallback((err: unknown) => {
     console.error("Error en useCourses:", err);
-    const errorMessage = err?.message || "Error interno del servidor";
+    const errorMessage =
+      err instanceof Error ? err.message : "Error interno del servidor";
     setError(errorMessage);
     return null;
   }, []);
@@ -120,7 +121,7 @@ export function useCourses(): UseCoursesReturn {
         }`;
         const result = await makeRequest<{
           courses: Course[];
-          pagination: any;
+          pagination: PaginationInfo;
         }>(url);
 
         if (result) {
@@ -316,12 +317,12 @@ export function useCourses(): UseCoursesReturn {
 
   // Obtener inscripción
   const getEnrollment = useCallback(
-    async (courseId: string): Promise<any | null> => {
+    async (courseId: string): Promise<EnrollCourse | null> => {
       setLoading(true);
       setError(null);
 
       try {
-        const result = await makeRequest<{ enrollment: any }>(
+        const result = await makeRequest<{ enrollment: EnrollCourse }>(
           `/api/courses/${courseId}/enroll`
         );
         return result?.enrollment || null;
@@ -339,24 +340,24 @@ export function useCourses(): UseCoursesReturn {
   const updateProgress = useCallback(
     async (
       courseId: string,
-      data: {
-        completedChapters?: any;
-        progress?: number;
-        isCompleted?: boolean;
-      }
-    ): Promise<{ success: boolean; certificateGenerated?: boolean }> => {
+      data: ProgressUpdateData
+    ): Promise<ProgressUpdateResult> => {
       setLoading(true);
       setError(null);
 
       try {
-        const result = await makeRequest(`/api/courses/${courseId}/enroll`, {
+        const result = await makeRequest<{
+          enrollment: EnrollCourse;
+          certificateGenerated?: boolean;
+        }>(`/api/courses/${courseId}/enroll`, {
           method: "PUT",
           body: JSON.stringify(data),
         });
 
         return {
           success: result !== null,
-          certificateGenerated: (result as any)?.certificateGenerated || false,
+          certificateGenerated: result?.certificateGenerated ?? false,
+          enrollment: result?.enrollment,
         };
       } catch (err) {
         handleError(err);
