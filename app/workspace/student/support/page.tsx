@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,16 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
@@ -30,15 +22,21 @@ import {
   MessageCircle,
   BookOpen,
   Phone,
-  Send,
+  Plus,
+  Clock,
+  Loader2,
+  MessageSquare,
+  AlertTriangle,
 } from "lucide-react";
+import { useSupport } from "@/hooks/use-support";
+import { CreateTicketDialog } from "@/components/support/create-ticket-dialog";
+import { TicketDetailDialog } from "@/components/support/ticket-detail-dialog";
+import { TicketStatus, TicketPriority } from "@/app/types";
 
 const StudentSupport = () => {
-  const [contactForm, setContactForm] = React.useState({
-    subject: "",
-    message: "",
-    priority: "",
-  });
+  const { tickets, loading, error, createTicket } = useSupport();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
 
   const faqs = [
     {
@@ -69,7 +67,7 @@ const StudentSupport = () => {
     {
       question: "¿Hay soporte técnico disponible?",
       answer:
-        "Sí, nuestro equipo de soporte está disponible 24/7. Puedes contactarnos a través de este formulario, por email o por teléfono.",
+        "Sí, nuestro equipo de soporte está disponible. Puedes crear un ticket de soporte usando el botón 'Nuevo Ticket' y te responderemos lo antes posible.",
     },
   ];
 
@@ -94,19 +92,64 @@ const StudentSupport = () => {
     },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Aquí se enviaría el formulario
-    console.log("Formulario enviado:", contactForm);
+  const getStatusColor = (status: TicketStatus) => {
+    switch (status) {
+      case "open":
+        return "bg-blue-500";
+      case "in_progress":
+        return "bg-yellow-500";
+      case "resolved":
+        return "bg-green-500";
+      case "closed":
+        return "bg-gray-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getStatusLabel = (status: TicketStatus) => {
+    switch (status) {
+      case "open":
+        return "Abierto";
+      case "in_progress":
+        return "En Progreso";
+      case "resolved":
+        return "Resuelto";
+      case "closed":
+        return "Cerrado";
+      default:
+        return status;
+    }
+  };
+
+  const getPriorityLabel = (priority: TicketPriority) => {
+    switch (priority) {
+      case "low":
+        return "Baja";
+      case "normal":
+        return "Normal";
+      case "high":
+        return "Alta";
+      case "urgent":
+        return "Urgente";
+      default:
+        return priority;
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Soporte</h1>
-        <p className="text-muted-foreground">
-          Encuentra ayuda y respuestas a tus preguntas
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Soporte</h1>
+          <p className="text-muted-foreground">
+            Encuentra ayuda y respuestas a tus preguntas
+          </p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nuevo Ticket
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -161,6 +204,72 @@ const StudentSupport = () => {
 
         {/* Contenido principal */}
         <div className="md:col-span-2 space-y-6">
+          {/* Mis Tickets */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Mis Tickets de Soporte</CardTitle>
+              <CardDescription>
+                Consulta el estado de tus solicitudes de soporte
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center py-8 text-red-500">
+                  <AlertTriangle className="mr-2 h-5 w-5" />
+                  {error}
+                </div>
+              ) : tickets.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="font-medium mb-2">No tienes tickets</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Crea tu primer ticket para obtener ayuda de nuestro equipo
+                  </p>
+                  <Button onClick={() => setCreateDialogOpen(true)}>
+                    Crear Ticket
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => setSelectedTicket(ticket.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{ticket.subject}</h4>
+                            <Badge className={getStatusColor(ticket.status)}>
+                              {getStatusLabel(ticket.status)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                            {ticket.description}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(ticket.createdAt).toLocaleDateString(
+                                "es-CL"
+                              )}
+                            </span>
+                            <span>Prioridad: {getPriorityLabel(ticket.priority)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Preguntas Frecuentes */}
           <Card>
             <CardHeader>
@@ -182,78 +291,23 @@ const StudentSupport = () => {
               </Accordion>
             </CardContent>
           </Card>
-
-          {/* Formulario de contacto */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Contactar Soporte</CardTitle>
-              <CardDescription>
-                Envíanos un mensaje y te responderemos lo antes posible
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Asunto</Label>
-                    <Input
-                      id="subject"
-                      placeholder="¿En qué podemos ayudarte?"
-                      value={contactForm.subject}
-                      onChange={(e) =>
-                        setContactForm({
-                          ...contactForm,
-                          subject: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">Prioridad</Label>
-                    <Select
-                      value={contactForm.priority}
-                      onValueChange={(value) =>
-                        setContactForm({ ...contactForm, priority: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona la prioridad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Baja</SelectItem>
-                        <SelectItem value="medium">Media</SelectItem>
-                        <SelectItem value="high">Alta</SelectItem>
-                        <SelectItem value="urgent">Urgente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="message">Mensaje</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Describe tu problema o pregunta en detalle..."
-                    rows={5}
-                    value={contactForm.message}
-                    onChange={(e) =>
-                      setContactForm({
-                        ...contactForm,
-                        message: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar Mensaje
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <CreateTicketDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmit={createTicket}
+      />
+
+      {selectedTicket && (
+        <TicketDetailDialog
+          ticketId={selectedTicket}
+          open={!!selectedTicket}
+          onOpenChange={(open) => !open && setSelectedTicket(null)}
+        />
+      )}
     </div>
   );
 };

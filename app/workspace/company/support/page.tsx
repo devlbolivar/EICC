@@ -1,11 +1,16 @@
 "use client";
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   HelpCircle,
   MessageCircle,
@@ -14,142 +19,146 @@ import {
   Clock,
   FileText,
   Search,
-  Send,
   BookOpen,
   Users,
   Settings,
+  Plus,
+  Loader2,
+  AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
+import { useSupport } from "@/hooks/use-support";
+import { CreateTicketDialog } from "@/components/support/create-ticket-dialog";
+import { TicketDetailDialog } from "@/components/support/ticket-detail-dialog";
+import { TicketStatus, TicketPriority } from "@/app/types";
 
 const CompanySupport = () => {
-  const [selectedCategory, setSelectedCategory] = React.useState("general");
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const { tickets, loading, error, createTicket } = useSupport();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Datos de ejemplo - en una implementación real vendrían de la API
   const supportCategories = [
     {
-      id: "general",
-      title: "General",
+      id: "all",
+      title: "Todos",
       icon: HelpCircle,
-      description: "Preguntas generales sobre la plataforma",
-      articles: 15,
+      description: "Todas las preguntas",
     },
     {
       id: "billing",
       title: "Facturación",
       icon: FileText,
-      description: "Problemas con pagos y facturas",
-      articles: 8,
+      description: "Pagos y facturas",
     },
     {
       id: "courses",
       title: "Cursos",
       icon: BookOpen,
-      description: "Acceso y contenido de cursos",
-      articles: 12,
+      description: "Contenido y acceso",
     },
     {
       id: "employees",
       title: "Empleados",
       icon: Users,
-      description: "Gestión de empleados y permisos",
-      articles: 10,
+      description: "Gestión y permisos",
     },
     {
       id: "technical",
       title: "Técnico",
       icon: Settings,
-      description: "Problemas técnicos y configuración",
-      articles: 6,
+      description: "Problemas técnicos",
     },
   ];
 
   const faqItems = [
     {
-      id: "1",
       question: "¿Cómo puedo agregar más empleados a mi empresa?",
       answer:
         "Puedes agregar empleados desde la sección 'Empleados' en tu dashboard. Haz clic en 'Invitar Empleado' y envía la invitación por email.",
       category: "employees",
-      tags: ["empleados", "invitaciones"],
     },
     {
-      id: "2",
       question: "¿Cuántos cursos están disponibles en mi plan?",
       answer:
-        "Tu plan Premium incluye acceso a todos los cursos disponibles en la plataforma. No hay límite en el número de cursos que puedes asignar a tus empleados.",
+        "Tu plan incluye acceso a todos los cursos disponibles en la plataforma. No hay límite en el número de cursos que puedes asignar a tus empleados.",
       category: "courses",
-      tags: ["cursos", "plan"],
     },
     {
-      id: "3",
       question: "¿Cómo puedo cambiar mi método de pago?",
       answer:
         "Ve a la sección 'Facturación' y haz clic en 'Métodos de Pago'. Desde ahí puedes agregar, editar o eliminar métodos de pago.",
       category: "billing",
-      tags: ["pagos", "facturación"],
     },
     {
-      id: "4",
       question: "¿Los certificados tienen fecha de vencimiento?",
       answer:
-        "Sí, los certificados tienen una validez de 1 año desde la fecha de emisión. Recibirás notificaciones cuando estén próximos a vencer.",
+        "Los certificados generados por la plataforma no tienen fecha de vencimiento. Recibirás notificaciones de renovación según las políticas de tu empresa.",
       category: "courses",
-      tags: ["certificados", "validez"],
     },
-  ];
-
-  const tickets = [
     {
-      id: "TICKET-001",
-      subject: "Problema con acceso a cursos",
-      status: "open",
-      priority: "medium",
-      createdAt: "2024-01-15",
-      lastUpdate: "2024-01-15",
+      question: "¿Cómo puedo ver el progreso de mis empleados?",
+      answer:
+        "Ve a la sección 'Progreso' en tu dashboard para ver estadísticas detalladas del progreso de cada empleado en sus cursos asignados.",
+      category: "employees",
+    },
+    {
+      question: "¿Qué hacer si un empleado no puede acceder a un curso?",
+      answer:
+        "Verifica que el empleado esté inscrito en el curso y que su cuenta esté activa. Si el problema persiste, crea un ticket de soporte técnico.",
       category: "technical",
     },
-    {
-      id: "TICKET-002",
-      subject: "Consulta sobre facturación",
-      status: "resolved",
-      priority: "low",
-      createdAt: "2024-01-10",
-      lastUpdate: "2024-01-12",
-      category: "billing",
-    },
   ];
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: TicketStatus) => {
     switch (status) {
       case "open":
-        return <Badge className="bg-yellow-100 text-yellow-800">Abierto</Badge>;
+        return "bg-blue-500";
       case "in_progress":
-        return <Badge className="bg-blue-100 text-blue-800">En Progreso</Badge>;
+        return "bg-yellow-500";
       case "resolved":
-        return <Badge className="bg-green-100 text-green-800">Resuelto</Badge>;
+        return "bg-green-500";
       case "closed":
-        return <Badge className="bg-gray-100 text-gray-800">Cerrado</Badge>;
+        return "bg-gray-500";
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return "bg-gray-500";
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return <Badge className="bg-red-100 text-red-800">Alta</Badge>;
-      case "medium":
-        return <Badge className="bg-yellow-100 text-yellow-800">Media</Badge>;
-      case "low":
-        return <Badge className="bg-green-100 text-green-800">Baja</Badge>;
+  const getStatusLabel = (status: TicketStatus) => {
+    switch (status) {
+      case "open":
+        return "Abierto";
+      case "in_progress":
+        return "En Progreso";
+      case "resolved":
+        return "Resuelto";
+      case "closed":
+        return "Cerrado";
       default:
-        return <Badge variant="secondary">{priority}</Badge>;
+        return status;
+    }
+  };
+
+  const getPriorityLabel = (priority: TicketPriority) => {
+    switch (priority) {
+      case "low":
+        return "Baja";
+      case "normal":
+        return "Normal";
+      case "high":
+        return "Alta";
+      case "urgent":
+        return "Urgente";
+      default:
+        return priority;
     }
   };
 
   const filteredFaq = faqItems.filter(
     (item) =>
-      item.category === selectedCategory &&
+      (selectedCategory === "all" || item.category === selectedCategory) &&
       (searchQuery === "" ||
         item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.answer.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -157,9 +166,18 @@ const CompanySupport = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <HelpCircle className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold">Soporte</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <HelpCircle className="w-8 h-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">Soporte</h1>
+            <p className="text-muted-foreground">Centro de ayuda empresarial</p>
+          </div>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nuevo Ticket
+        </Button>
       </div>
 
       {/* Información de contacto */}
@@ -207,50 +225,86 @@ const CompanySupport = () => {
         </Card>
       </div>
 
-      {/* Categorías de soporte */}
+      {/* Tickets de soporte */}
       <Card>
         <CardHeader>
-          <CardTitle>Categorías de Soporte</CardTitle>
+          <CardTitle>Mis Tickets de Soporte</CardTitle>
+          <CardDescription>
+            Consulta el estado de tus solicitudes de soporte
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {supportCategories.map((category) => (
-              <div
-                key={category.id}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                  selectedCategory === category.id
-                    ? "border-primary bg-primary/5"
-                    : "hover:bg-gray-50"
-                }`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <category.icon className="w-6 h-6 text-primary" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{category.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {category.description}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {category.articles} artículos
-                    </p>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8 text-red-500">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              {error}
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="text-center py-8">
+              <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="font-medium mb-2">No tienes tickets</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Crea tu primer ticket para obtener ayuda de nuestro equipo
+              </p>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                Crear Ticket
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => setSelectedTicket(ticket.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{ticket.subject}</h4>
+                          <Badge className={getStatusColor(ticket.status)}>
+                            {getStatusLabel(ticket.status)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(ticket.createdAt).toLocaleDateString("es-CL")} -
+                          Prioridad: {getPriorityLabel(ticket.priority)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Ver Detalles
+                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* FAQ */}
+      {/* Preguntas Frecuentes */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Preguntas Frecuentes</CardTitle>
+            <div>
+              <CardTitle>Preguntas Frecuentes</CardTitle>
+              <CardDescription>
+                Encuentra respuestas rápidas a las preguntas más comunes
+              </CardDescription>
+            </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Buscar en FAQ..."
+                placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -259,139 +313,44 @@ const CompanySupport = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredFaq.map((item) => (
-              <div key={item.id} className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-2">{item.question}</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {item.answer}
-                </p>
-                <div className="flex gap-2">
-                  {item.tags.map((tag, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {filteredFaq.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No se encontraron resultados</p>
-                <p className="text-sm">
-                  Intenta con otros términos de búsqueda
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tickets de soporte */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Mis Tickets de Soporte</CardTitle>
-            <Button>Nuevo Ticket</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {tickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+          {/* Filtros de categoría */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {supportCategories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category.id)}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{ticket.subject}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Ticket #{ticket.id} •{" "}
-                      {new Date(ticket.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  {getStatusBadge(ticket.status)}
-                  {getPriorityBadge(ticket.priority)}
-                  <Button variant="outline" size="sm">
-                    Ver Detalles
-                  </Button>
-                </div>
-              </div>
+                <category.icon className="h-4 w-4 mr-1" />
+                {category.title}
+              </Button>
             ))}
-
-            {tickets.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No tienes tickets de soporte</p>
-                <p className="text-sm">
-                  Crea un nuevo ticket si necesitas ayuda
-                </p>
-              </div>
-            )}
           </div>
+
+          {/* FAQ Accordion */}
+          {filteredFaq.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No se encontraron resultados</p>
+              <p className="text-sm">Intenta con otros términos de búsqueda</p>
+            </div>
+          ) : (
+            <Accordion type="single" collapsible className="w-full">
+              {filteredFaq.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-left">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent>{faq.answer}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </CardContent>
       </Card>
 
-      {/* Formulario de contacto */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Contactar Soporte</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Asunto</label>
-                <Input placeholder="Describe brevemente tu consulta" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Categoría</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option value="">Selecciona una categoría</option>
-                  <option value="general">General</option>
-                  <option value="billing">Facturación</option>
-                  <option value="courses">Cursos</option>
-                  <option value="employees">Empleados</option>
-                  <option value="technical">Técnico</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Prioridad</label>
-                <select className="w-full p-2 border rounded-md">
-                  <option value="low">Baja</option>
-                  <option value="medium">Media</option>
-                  <option value="high">Alta</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Mensaje</label>
-              <Textarea
-                placeholder="Describe detalladamente tu problema o consulta..."
-                rows={8}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <Button className="flex items-center gap-2">
-              <Send className="w-4 h-4" />
-              Enviar Ticket
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Información adicional */}
+      {/* Recursos útiles */}
       <Card>
         <CardHeader>
           <CardTitle>Recursos Útiles</CardTitle>
@@ -404,7 +363,7 @@ const CompanySupport = () => {
               </div>
               <h3 className="font-semibold mb-2">Documentación</h3>
               <p className="text-sm text-muted-foreground">
-                Guías completas y tutoriales paso a paso
+                Guías completas y tutoriales
               </p>
               <Button variant="outline" size="sm" className="mt-2">
                 Ver Documentación
@@ -417,7 +376,7 @@ const CompanySupport = () => {
               </div>
               <h3 className="font-semibold mb-2">Chat en Vivo</h3>
               <p className="text-sm text-muted-foreground">
-                Respuestas inmediatas de nuestro equipo
+                Respuestas inmediatas
               </p>
               <Button variant="outline" size="sm" className="mt-2">
                 Iniciar Chat
@@ -428,9 +387,9 @@ const CompanySupport = () => {
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Clock className="w-6 h-6 text-purple-600" />
               </div>
-              <h3 className="font-semibold mb-2">Tiempo de Respuesta</h3>
+              <h3 className="font-semibold mb-2">Horarios</h3>
               <p className="text-sm text-muted-foreground">
-                Chat: Inmediato • Email: 24h • Teléfono: 9:00-18:00
+                Chat: 24/7 • Tel: 9-18h
               </p>
               <Button variant="outline" size="sm" className="mt-2">
                 Ver Horarios
@@ -439,6 +398,21 @@ const CompanySupport = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <CreateTicketDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmit={createTicket}
+      />
+
+      {selectedTicket && (
+        <TicketDetailDialog
+          ticketId={selectedTicket}
+          open={!!selectedTicket}
+          onOpenChange={(open) => !open && setSelectedTicket(null)}
+        />
+      )}
     </div>
   );
 };

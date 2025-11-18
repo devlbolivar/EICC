@@ -30,6 +30,12 @@ export const API_ROUTES = {
 
   // Certificates
   CERTIFICATES: "/api/certificates",
+  // Support
+  SUPPORT: {
+    TICKETS: "/api/support/tickets",
+    MESSAGES: "/api/support/messages",
+    ADMIN_TICKETS: "/api/support/admin/tickets",
+  },
 } as const;
 
 // ===== RUTAS DE PÁGINAS =====
