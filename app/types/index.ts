@@ -302,34 +302,55 @@ export interface EnrollCourse extends BaseEntity {
 }
 
 // ===== CERTIFICADOS =====
+/**
+ * Interface para certificados de cursos completados.
+ * Incluye campos base del schema y campos derivados de JOINs con otras tablas.
+ */
 export interface Certificate extends BaseEntity {
+  // ===== Campos base del schema certificates =====
   certificateId: string;
   courseId: string;
   userId: string;
   companyId?: string;
   title: string;
   description?: string;
-  grade: number; // Calificación obtenida (0-100)
+  /** Calificación obtenida (0-100) */
+  grade: number;
   issuedDate: Date;
   completedDate: Date;
-  duration?: string; // Duración del curso
-  certificateUrl?: string; // URL del certificado PDF
+  /** Duración del curso */
+  duration?: string;
+  /** URL del certificado PDF generado */
+  certificateUrl?: string;
   isActive: boolean;
 
-  // Relaciones
+  // ===== Relaciones (objetos completos) =====
   course?: Course;
   user?: User;
   company?: Company;
 
-  // Campos adicionales de la API
-  course_name?: string;
-  course_description?: string;
-  course_category?: string;
-  course_level?: string;
-  course_duration?: string;
-  course_banner?: string;
+  // ===== Campos derivados de User (JOIN con users) =====
+  /** Nombre del usuario - SELECT u.name as user_name FROM users u */
   user_name?: string;
+  /** Email del usuario - SELECT u.email as user_email FROM users u */
   user_email?: string;
+
+  // ===== Campos derivados de Course (JOIN con courses) =====
+  /** Nombre del curso - SELECT c.name as course_name FROM courses c */
+  course_name?: string;
+  /** Descripción del curso - SELECT c.description as course_description FROM courses c */
+  course_description?: string;
+  /** Categoría del curso - SELECT c.category as course_category FROM courses c */
+  course_category?: string;
+  /** Nivel del curso - SELECT c.level as course_level FROM courses c */
+  course_level?: string;
+  /** Duración estimada del curso - SELECT c."estimatedDuration" as course_duration FROM courses c */
+  course_duration?: string;
+  /** Imagen banner del curso - SELECT c."bannerImage" as course_banner FROM courses c */
+  course_banner?: string;
+
+  // ===== Campos derivados de Company (JOIN con companies) =====
+  /** Nombre de la empresa - SELECT comp.name as company_name FROM companies comp */
   company_name?: string;
 }
 
