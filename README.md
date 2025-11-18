@@ -38,6 +38,34 @@ DATABASE_URL="postgresql://user:password@host:port/database"
 - PostgreSQL 14+
 - npm o yarn
 
+## 📦 Versiones de Drizzle
+
+Este proyecto utiliza Drizzle ORM para la gestión de base de datos. Es importante mantener las versiones compatibles:
+
+| Paquete | Versión | Propósito |
+|---------|---------|-----------|
+| `drizzle-orm` | ^0.43.1 | ORM principal |
+| `drizzle-kit` | ^0.31.7 | CLI para migraciones |
+
+**IMPORTANTE**: `drizzle-orm` y `drizzle-kit` tienen versionado **independiente**. La compatibilidad correcta es:
+- drizzle-orm 0.43.x-0.44.x con drizzle-kit 0.31.x
+
+Para verificar la compatibilidad:
+```bash
+npm list drizzle-orm drizzle-kit
+```
+
+Para actualizar ambos paquetes:
+```bash
+# Verificar últimas versiones compatibles
+npm view drizzle-orm version
+npm view drizzle-kit version
+
+# Actualizar
+npm install drizzle-orm@latest
+npm install --save-dev drizzle-kit@latest
+```
+
 ## 🚀 Instalación
 
 1. **Clonar el repositorio**
