@@ -6,6 +6,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { strictRateLimit } from "@/lib/rate-limit";
+import { requireCsrf } from "@/lib/csrf";
 import { z } from "zod";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -29,6 +30,10 @@ const changePasswordSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await requireCsrf(request);
+    if (csrfError) return csrfError;
+
     // ===== RATE LIMITING =====
     // Strict rate limiting: 5 attempts per minute for password changes
     const rateLimitResponse = await strictRateLimit(request);

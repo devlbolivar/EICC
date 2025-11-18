@@ -3,6 +3,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
+import { requireCsrf } from "@/lib/csrf";
 import { eq, and } from "drizzle-orm";
 
 const pg = neon(process.env.DATABASE_URL!);
@@ -186,6 +187,10 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // ===== CSRF PROTECTION =====
+    const csrfError = await requireCsrf(request);
+    if (csrfError) return csrfError;
+
     // ===== VERIFICAR AUTENTICACIÓN =====
     const token =
       request.headers.get("authorization")?.replace("Bearer ", "") ||

@@ -18,4 +18,9 @@ export const SECURITY_CONFIG = {
   // Nombres de cookies
   COOKIE_ACCESS_TOKEN: 'accessToken',
   COOKIE_REFRESH_TOKEN: 'refreshToken',
+  COOKIE_CSRF_TOKEN: 'csrf_token',
+
+  // CSRF Protection
+  CSRF_TOKEN_EXPIRY_MS: 15 * 60 * 1000, // 15 minutos
+  CSRF_HEADER_NAME: 'x-csrf-token',
 } as const;

@@ -5,6 +5,7 @@ import { verifyAuth, verifyAdminAuth } from "@/lib/admin-auth";
 import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 import { strictRateLimit, apiRateLimit } from "@/lib/rate-limit";
+import { requireCsrf } from "@/lib/csrf";
 import { sanitizeHtml } from "@/lib/validation";
 import { hasAnyPermission } from "@/lib/permissions";
 import type { Permission } from "@/app/types";
@@ -125,6 +126,10 @@ export async function GET(req: NextRequest) {
 
 // POST - Create new ticket
 export async function POST(req: NextRequest) {
+  // ===== CSRF PROTECTION =====
+  const csrfError = await requireCsrf(req);
+  if (csrfError) return csrfError;
+
   // Strict rate limiting for POST requests (10 per minute)
   const rateLimitResponse = await strictRateLimit(req);
   if (rateLimitResponse) {

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
+
+// CSRF token management
+const CSRF_ENDPOINT = "/api/csrf";
+const CSRF_HEADER_NAME = "x-csrf-token";
 
 // Password validation schema
 const passwordSchema = z.object({
@@ -37,6 +41,26 @@ export function useChangePassword() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState(false);
+  const csrfTokenRef = useRef<string | null>(null);
+
+  // Fetch CSRF token on mount
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch(CSRF_ENDPOINT, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          csrfTokenRef.current = data.data?.token || null;
+        }
+      } catch (err) {
+        console.error("Failed to fetch CSRF token:", err);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
 
   const changePassword = async (data: PasswordFormData): Promise<ChangePasswordResult> => {
     setLoading(true);
@@ -56,17 +80,73 @@ export function useChangePassword() {
         throw new Error(errorMessage);
       }
 
-      // API call
+      // Refresh CSRF token if not available
+      if (!csrfTokenRef.current) {
+        const tokenResponse = await fetch(CSRF_ENDPOINT, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          csrfTokenRef.current = tokenData.data?.token || null;
+        }
+      }
+
+      // API call with CSRF token
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (csrfTokenRef.current) {
+        headers[CSRF_HEADER_NAME] = csrfTokenRef.current;
+      }
+
       const response = await fetch("/api/user/change-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         credentials: "include",
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
+
+      // Handle CSRF token expiration
+      if (response.status === 403 && result.error?.includes("CSRF")) {
+        // Refresh token and retry
+        const tokenResponse = await fetch(CSRF_ENDPOINT, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          csrfTokenRef.current = tokenData.data?.token || null;
+
+          if (csrfTokenRef.current) {
+            headers[CSRF_HEADER_NAME] = csrfTokenRef.current;
+            const retryResponse = await fetch("/api/user/change-password", {
+              method: "POST",
+              headers,
+              credentials: "include",
+              body: JSON.stringify(data),
+            });
+            const retryResult = await retryResponse.json();
+
+            if (!retryResponse.ok) {
+              if (retryResult.details) {
+                setFieldErrors(retryResult.details);
+              }
+              throw new Error(retryResult.error || "Failed to change password");
+            }
+
+            setSuccess(true);
+            return {
+              success: true,
+              message: retryResult.message || "Password changed successfully",
+            };
+          }
+        }
+        throw new Error("CSRF token expired. Please try again.");
+      }
 
       if (!response.ok) {
         // Handle field-specific errors from backend
