@@ -15,12 +15,19 @@ import {
   validateSafeString,
 } from "@/lib/utils";
 import { SYSTEM_ROLES, Permission } from "@/app/types";
+import { authRateLimit } from "@/lib/rate-limit";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 intentos por 15 minutos
+    const rateLimitResponse = await authRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body = await request.json();
     const { email, name, password, confirmPassword, companyData } = body;
 

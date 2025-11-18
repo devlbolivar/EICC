@@ -9,8 +9,19 @@ import {
   transformToEnrolledCourses,
 } from "@/app/types";
 import { verifyStudentAuth } from "@/lib/admin-auth";
+import { apiRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
+  try {
+    // Rate limiting: 60 requests por minuto
+    const rateLimitResponse = await apiRateLimit(req);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+  } catch {
+    // Continuar si hay error en rate limit
+  }
+
   // ✅ SEGURO: Verificar autenticación desde JWT en cookies
   const authResult = await verifyStudentAuth(req);
 
