@@ -384,22 +384,141 @@ export interface CourseWithProgress extends Course {
   image: string;
 }
 
-// ===== RESPUESTA DE CURSOS INSCRITOS (API) =====
-export interface EnrolledCourseResponse {
+// ===== TIPO INTERMEDIO PARA CONSULTA DE BASE DE DATOS =====
+/**
+ * Representa el resultado directo de la consulta a la base de datos
+ * antes de la transformación de nombres de campos.
+ *
+ * Este tipo documenta los nombres originales de las columnas en la BD:
+ * - coursesTable.name → Se transforma a 'title'
+ * - coursesTable.numberOfChapters → Se transforma a 'totalChapters'
+ * - coursesTable.estimatedDuration → Se transforma a 'estimatedTime'
+ * - enrollCourseTable.updatedAt → Se transforma a 'lastAccessed'
+ * - coursesTable.bannerImage → Se transforma a 'image'
+ */
+export interface DatabaseEnrolledCourse {
+  /** ID único del curso */
   id: string;
-  title: string;
+  /** Nombre del curso en la BD (se transforma a 'title') */
+  name: string;
+  /** Descripción del curso */
   description: string;
+  /** Porcentaje de progreso del estudiante (0-100) */
   progress: number;
-  totalChapters: number;
-  completedChapters: number;
+  /** Número total de capítulos del curso (se transforma a 'totalChapters') */
+  numberOfChapters: number;
+  /** Mapa de capítulos completados: { chapterId: true/false } */
+  completedChapters: Record<string, boolean>;
+  /** Indica si el curso fue completado al 100% */
   isCompleted: boolean;
-  completedAt?: string;
-  estimatedTime: string;
-  lastAccessed: string;
-  image: string;
+  /** Fecha de finalización del curso (si aplica) */
+  completedAt: Date | null;
+  /** Duración estimada del curso (se transforma a 'estimatedTime') */
+  estimatedDuration: string | null;
+  /** Última vez que el estudiante accedió al curso (se transforma a 'lastAccessed') */
+  updatedAt: Date;
+  /** URL de la imagen del banner del curso (se transforma a 'image') */
+  bannerImage: string | null;
+  /** Categoría del curso */
   category: string;
+  /** Nivel de dificultad del curso */
   level: string;
-  certificateId?: string | null; // ID del certificado si el curso está completado
+  /** ID del certificado si el curso fue completado */
+  certificateId: string | null;
+}
+
+// ===== RESPUESTA DE CURSOS INSCRITOS (API) =====
+/**
+ * Representa la respuesta transformada del endpoint de cursos inscritos.
+ * Los campos han sido renombrados desde sus nombres originales en la BD
+ * para mayor claridad en el frontend.
+ */
+export interface EnrolledCourseResponse {
+  /** ID único del curso */
+  id: string;
+  /** Título del curso (originalmente 'name' en coursesTable) */
+  title: string;
+  /** Descripción del curso */
+  description: string;
+  /** Porcentaje de progreso del estudiante (0-100) */
+  progress: number;
+  /** Número total de capítulos (originalmente 'numberOfChapters' en coursesTable) */
+  totalChapters: number;
+  /** Mapa de capítulos completados: { chapterId: true/false } */
+  completedChapters: Record<string, boolean>;
+  /** Indica si el curso fue completado al 100% */
+  isCompleted: boolean;
+  /** Fecha de finalización del curso (ISO string) */
+  completedAt?: string | null;
+  /** Duración estimada (originalmente 'estimatedDuration' en coursesTable) */
+  estimatedTime: string | null;
+  /** Último acceso al curso (originalmente 'updatedAt' en enrollCourseTable) */
+  lastAccessed: string;
+  /** URL de imagen del banner (originalmente 'bannerImage' en coursesTable) */
+  image: string | null;
+  /** Categoría del curso */
+  category: string;
+  /** Nivel de dificultad del curso */
+  level: string;
+  /** ID del certificado si el curso está completado */
+  certificateId?: string | null;
+}
+
+// ===== FUNCIÓN DE TRANSFORMACIÓN =====
+/**
+ * Transforma un registro de curso inscrito desde el formato de base de datos
+ * al formato de respuesta de la API.
+ *
+ * Transformaciones de campos:
+ * - name → title
+ * - numberOfChapters → totalChapters
+ * - estimatedDuration → estimatedTime
+ * - updatedAt → lastAccessed (convertido a ISO string)
+ * - bannerImage → image
+ * - completedAt → convertido a ISO string
+ *
+ * @param dbCourse - Registro del curso en formato de base de datos
+ * @returns Curso transformado en formato de respuesta API
+ *
+ * @example
+ * ```typescript
+ * const dbCourse = await db.select(...).from(enrollCourseTable);
+ * const response = transformToEnrolledCourse(dbCourse);
+ * return NextResponse.json({ data: response });
+ * ```
+ */
+export function transformToEnrolledCourse(
+  dbCourse: DatabaseEnrolledCourse
+): EnrolledCourseResponse {
+  return {
+    id: dbCourse.id,
+    title: dbCourse.name,
+    description: dbCourse.description,
+    progress: dbCourse.progress,
+    totalChapters: dbCourse.numberOfChapters,
+    completedChapters: dbCourse.completedChapters,
+    isCompleted: dbCourse.isCompleted,
+    completedAt: dbCourse.completedAt?.toISOString() ?? null,
+    estimatedTime: dbCourse.estimatedDuration,
+    lastAccessed: dbCourse.updatedAt.toISOString(),
+    image: dbCourse.bannerImage,
+    category: dbCourse.category,
+    level: dbCourse.level,
+    certificateId: dbCourse.certificateId,
+  };
+}
+
+/**
+ * Transforma un array de registros de cursos inscritos desde el formato
+ * de base de datos al formato de respuesta de la API.
+ *
+ * @param dbCourses - Array de registros de cursos en formato de base de datos
+ * @returns Array de cursos transformados en formato de respuesta API
+ */
+export function transformToEnrolledCourses(
+  dbCourses: DatabaseEnrolledCourse[]
+): EnrolledCourseResponse[] {
+  return dbCourses.map(transformToEnrolledCourse);
 }
 
 // ===== AUTENTICACIÓN Y SESIÓN =====
