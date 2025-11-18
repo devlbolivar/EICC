@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { CompanyEmployee } from "@/hooks/use-company-employees";
+import { safeLocalStorage } from "@/lib/storage";
 
 const CompanyEmployees = () => {
   const {
@@ -139,7 +140,7 @@ const CompanyEmployees = () => {
 
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("accessToken");
+      const token = safeLocalStorage.getItem("accessToken");
 
       const response = await fetch(`/api/company/employees/${selectedEmployee.id}`, {
         method: "PATCH",
@@ -171,7 +172,7 @@ const CompanyEmployees = () => {
 
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("accessToken");
+      const token = safeLocalStorage.getItem("accessToken");
 
       const response = await fetch(`/api/company/employees/${selectedEmployee.id}`, {
         method: "PATCH",

@@ -46,6 +46,7 @@ import { Loader } from "@/components/ui/loader";
 import { useCourses } from "@/hooks/use-courses";
 import { useCertificateCheck } from "@/hooks/use-certificate-check";
 import { Course, EnrolledCourseResponse, Lesson } from "@/app/types";
+import { safeLocalStorage } from "@/lib/storage";
 
 // Constants
 const CONSTANTS = {
@@ -207,8 +208,8 @@ export default function CourseLearning() {
           )
         );
 
-        // Load bookmarked chapters from localStorage
-        const savedBookmarks = localStorage.getItem(
+        // Load bookmarked chapters from localStorage (SSR-safe)
+        const savedBookmarks = safeLocalStorage.getItem(
           CONSTANTS.STORAGE_KEYS.BOOKMARKS(courseId)
         );
         if (savedBookmarks) {
@@ -339,7 +340,7 @@ export default function CourseLearning() {
         toast.success(CONSTANTS.MESSAGES.BOOKMARK_ADDED);
       }
       setBookmarkedChapters(newBookmarks);
-      localStorage.setItem(
+      safeLocalStorage.setItem(
         CONSTANTS.STORAGE_KEYS.BOOKMARKS(courseId),
         JSON.stringify([...newBookmarks])
       );

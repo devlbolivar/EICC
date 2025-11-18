@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
+import { safeLocalStorage } from "@/lib/storage";
 
 interface User {
   id: string;
@@ -150,8 +151,8 @@ export function useAdminUsers(): UseAdminUsersReturn {
 
   // Obtener token del localStorage o usar cookies
   const getToken = (): string | null => {
-    // Intentar obtener del localStorage primero
-    const token = localStorage.getItem("accessToken");
+    // Intentar obtener del localStorage primero (SSR-safe)
+    const token = safeLocalStorage.getItem("accessToken");
     if (token) return token;
 
     // Si no hay token en localStorage, las cookies se enviarán automáticamente

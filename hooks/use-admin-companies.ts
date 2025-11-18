@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
+import { safeLocalStorage } from "@/lib/storage";
 
 interface Company {
   id: string;
@@ -67,7 +68,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   const { session } = useAuth();
 
   const getToken = (): string | null => {
-    const token = localStorage.getItem("accessToken");
+    const token = safeLocalStorage.getItem("accessToken");
     if (token) return token;
     return null;
   };
