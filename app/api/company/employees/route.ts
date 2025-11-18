@@ -4,6 +4,13 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { eq, and, like, desc, asc, sql } from "drizzle-orm";
+import {
+  DatabaseEmployee,
+  CompanyEmployee,
+  CompanyEmployeeStats,
+  CompanyEmployeesResponse,
+  transformToCompanyEmployee,
+} from "@/app/types";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -126,7 +133,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ===== OBTENER EMPLEADOS CON DATOS RELACIONADOS =====
-    const employees = await db
+    const employees: DatabaseEmployee[] = await db
       .select({
         // Datos del usuario
         id: schema.usersTable.id,
@@ -145,14 +152,14 @@ export async function GET(request: NextRequest) {
         roleDescription: schema.rolesTable.description,
         // Contadores de cursos y certificados
         coursesCompleted: sql<number>`COALESCE((
-          SELECT COUNT(*) 
-          FROM ${schema.enrollCourseTable} 
-          WHERE ${schema.enrollCourseTable.userId} = ${schema.usersTable.id} 
+          SELECT COUNT(*)
+          FROM ${schema.enrollCourseTable}
+          WHERE ${schema.enrollCourseTable.userId} = ${schema.usersTable.id}
           AND ${schema.enrollCourseTable.isCompleted} = true
         ), 0)`,
         certificatesCount: sql<number>`COALESCE((
-          SELECT COUNT(*) 
-          FROM ${schema.certificatesTable} 
+          SELECT COUNT(*)
+          FROM ${schema.certificatesTable}
           WHERE ${schema.certificatesTable.userId} = ${schema.usersTable.id}
         ), 0)`,
       })
@@ -216,7 +223,7 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    const companyStats = stats[0] || {
+    const companyStats: CompanyEmployeeStats = stats[0] || {
       totalEmployees: 0,
       activeEmployees: 0,
       totalCoursesCompleted: 0,
@@ -224,27 +231,9 @@ export async function GET(request: NextRequest) {
     };
 
     // ===== FORMATEAR RESPUESTA =====
-    const formattedEmployees = employees.map((employee) => ({
-      id: employee.id,
-      name: employee.name,
-      email: employee.email,
-      phone: employee.phone || "",
-      role: employee.roleName,
-      status: employee.isActive ? "active" : "inactive",
-      joinedAt: employee.joinedAt?.toISOString().split("T")[0] || "",
-      coursesCompleted: employee.coursesCompleted,
-      certificates: employee.certificatesCount,
-      avatar:
-        employee.avatar ||
-        employee.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase(),
-      lastLoginAt: employee.lastLoginAt,
-    }));
+    const formattedEmployees: CompanyEmployee[] = employees.map(transformToCompanyEmployee);
 
-    return NextResponse.json({
+    const response: CompanyEmployeesResponse = {
       success: true,
       data: {
         employees: formattedEmployees,
@@ -256,7 +245,9 @@ export async function GET(request: NextRequest) {
           totalPages: Math.ceil(total / limit),
         },
       },
-    });
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error al obtener empleados:", error);
     return NextResponse.json(
