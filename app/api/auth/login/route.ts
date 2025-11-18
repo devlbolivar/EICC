@@ -5,6 +5,89 @@ import { validateAndSanitizeEmail } from "@/lib/utils";
 import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";
 
+// ===== PERMISOS VÁLIDOS =====
+const VALID_PERMISSIONS: readonly Permission[] = [
+  // Permisos globales
+  "platform:read",
+  "platform:write",
+  "platform:admin",
+  // Permisos de empresa
+  "company:read",
+  "company:write",
+  "company:admin",
+  "company:billing",
+  // Permisos de usuarios
+  "users:read",
+  "users:write",
+  "users:invite",
+  "users:remove",
+  "users:manage",
+  // Permisos de cursos
+  "courses:read",
+  "courses:write",
+  "courses:create",
+  "courses:delete",
+  "courses:publish",
+  "courses:enroll",
+  "courses:edit",
+  "courses:view",
+  "courses:manage",
+  // Permisos de contenido
+  "content:read",
+  "content:write",
+  "content:create",
+  "content:delete",
+] as const;
+
+/**
+ * Valida que un valor sea un permiso válido
+ */
+function isValidPermission(value: unknown): value is Permission {
+  return (
+    typeof value === "string" &&
+    (VALID_PERMISSIONS as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * Valida y extrae permisos de datos desconocidos de la base de datos.
+ * Filtra permisos inválidos y retorna solo los válidos.
+ *
+ * @param data - Datos desconocidos (típicamente de JSONB)
+ * @returns Array de permisos válidos
+ * @throws Error si los datos no son un array
+ */
+function validatePermissions(data: unknown): Permission[] {
+  if (data === null || data === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(data)) {
+    console.warn("validatePermissions: Expected array but received:", typeof data);
+    return [];
+  }
+
+  const validPermissions: Permission[] = [];
+  const invalidPermissions: unknown[] = [];
+
+  for (const item of data) {
+    if (isValidPermission(item)) {
+      validPermissions.push(item);
+    } else {
+      invalidPermissions.push(item);
+    }
+  }
+
+  if (invalidPermissions.length > 0) {
+    console.warn(
+      "validatePermissions: Found invalid permissions:",
+      invalidPermissions
+    );
+  }
+
+  return validPermissions;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -144,6 +227,11 @@ export async function POST(request: NextRequest) {
       sql`UPDATE users SET "lastLoginAt" = NOW() WHERE id = ${user.id}`
     );
 
+    // ===== VALIDAR PERMISOS DEL ROL PRINCIPAL =====
+    const primaryPermissions = validatePermissions(
+      primaryUserCompany.role_permissions
+    );
+
     // ===== GENERAR TOKENS =====
     const tokenPayload = {
       userId: String(user.id),
@@ -153,8 +241,7 @@ export async function POST(request: NextRequest) {
         ? String(primaryUserCompany.company_id)
         : undefined,
       roleId: String(primaryUserCompany.role_id),
-      permissions:
-        primaryUserCompany.role_permissions as unknown as Permission[],
+      permissions: primaryPermissions,
     };
 
     const tokens = generateTokenPair(tokenPayload);
@@ -177,9 +264,9 @@ export async function POST(request: NextRequest) {
       currentRole: {
         id: primaryUserCompany.role_id,
         name: primaryUserCompany.role_name,
-        permissions: primaryUserCompany.role_permissions,
+        permissions: primaryPermissions,
       },
-      permissions: primaryUserCompany.role_permissions as Permission[],
+      permissions: primaryPermissions,
       userCompanies: userCompanies.map((uc) => ({
         id: uc.id,
         company: uc.company_id
@@ -192,7 +279,7 @@ export async function POST(request: NextRequest) {
         role: {
           id: uc.role_id,
           name: uc.role_name,
-          permissions: uc.role_permissions,
+          permissions: validatePermissions(uc.role_permissions),
         },
         isActive: uc.isActive,
         joinedAt: uc.joined_at,
