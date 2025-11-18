@@ -4,6 +4,7 @@ import { certificatesTable, usersTable, coursesTable, companiesTable } from "@/c
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { validateUUID } from "@/lib/validation";
 
 // ===== GET - Obtener certificado específico =====
 export async function GET(
@@ -28,6 +29,15 @@ export async function GET(
     }
 
     const { id: certificateId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(certificateId, 'ID de certificado');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Obtener certificado con información relacionada
     const result = await db.execute(sql`
@@ -113,6 +123,16 @@ export async function PUT(
     }
 
     const { id: certificateId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(certificateId, 'ID de certificado');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
 
     // Verificar que el certificado existe
@@ -191,6 +211,15 @@ export async function DELETE(
     }
 
     const { id: certificateId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(certificateId, 'ID de certificado');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Soft delete - marcar como inactivo
     const result = await db.execute(sql`

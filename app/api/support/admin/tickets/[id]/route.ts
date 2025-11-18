@@ -3,6 +3,7 @@ import { db } from "@/config/db";
 import { supportTicketsTable, supportMessagesTable, usersTable, companiesTable } from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
+import { validateUUID } from "@/lib/validation";
 
 // GET - Get specific ticket with messages (admin)
 export async function GET(
@@ -16,6 +17,15 @@ export async function GET(
 
   try {
     const { id: ticketId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(ticketId, 'ID de ticket');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Get ticket with user and company info
     const [ticket] = await db

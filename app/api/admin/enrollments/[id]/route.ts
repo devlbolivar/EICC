@@ -4,6 +4,7 @@ import * as schema from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
 import { ERROR_MESSAGES } from "@/lib/constants";
+import { validateUUID } from "@/lib/validation";
 
 export async function PUT(
   request: NextRequest,
@@ -17,6 +18,15 @@ export async function PUT(
     }
 
     const { id: enrollmentId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(enrollmentId, 'ID de enrollment');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
@@ -97,6 +107,15 @@ export async function DELETE(
     }
 
     const { id: enrollmentId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(enrollmentId, 'ID de enrollment');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // ===== VERIFICAR QUE EL ENROLLMENT EXISTE =====
     const existingEnrollment = await db

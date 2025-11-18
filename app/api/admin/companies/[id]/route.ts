@@ -84,6 +84,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params;
 
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(id, 'ID de empresa');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     // ✅ CRÍTICO: Validar dependencias antes de eliminar
 
     // 1. Verificar usuarios activos asociados

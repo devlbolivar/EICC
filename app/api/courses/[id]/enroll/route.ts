@@ -5,6 +5,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { generateCertificateForCompletion } from "@/lib/certificate-service";
 import { Course, EnrollCourse } from "@/app/types";
+import { validateUUID } from "@/lib/validation";
 
 // ===== POST - Inscribirse en un curso =====
 export async function POST(
@@ -29,6 +30,15 @@ export async function POST(
     }
 
     const { id: courseId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(courseId, 'ID de curso');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Verificar que el curso existe y está activo
     const courseResult = await db.execute(sql`
@@ -135,9 +145,18 @@ export async function GET(
 
     const { id: courseId } = await params;
 
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(courseId, 'ID de curso');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     // Obtener inscripción del usuario
     const enrollmentResult = await db.execute(sql`
-      SELECT 
+      SELECT
         ec.*,
         c.name as course_name,
         c.description as course_description,
@@ -194,12 +213,22 @@ export async function PUT(
     }
 
     const { id: courseId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(courseId, 'ID de curso');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { completedChapters, progress, isCompleted } = body;
 
     // Verificar que el usuario está inscrito
     const existingEnrollment = await db.execute(sql`
-      SELECT * FROM "enroll_course" 
+      SELECT * FROM "enroll_course"
       WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
@@ -341,6 +370,15 @@ export async function DELETE(
     }
 
     const { id: courseId } = await params;
+
+    // ===== VALIDAR UUID =====
+    const idValidation = validateUUID(courseId, 'ID de curso');
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.errors?.[0] || 'ID inválido' },
+        { status: 400 }
+      );
+    }
 
     // Verificar que el usuario está inscrito
     const existingEnrollment = await db.execute(sql`
