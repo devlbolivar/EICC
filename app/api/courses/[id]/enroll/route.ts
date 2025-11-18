@@ -53,7 +53,7 @@ export async function POST(
 
     // Verificar si el usuario ya está inscrito
     const existingEnrollment = await db.execute(sql`
-      SELECT * FROM "enrollCourse" 
+      SELECT * FROM "enroll_course" 
       WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
@@ -82,7 +82,7 @@ export async function POST(
     });
 
     const enrollment = await db.execute(sql`
-      INSERT INTO "enrollCourse" (
+      INSERT INTO "enroll_course" (
         "course_id", "user_id", "company_id", "progress", "isCompleted", 
         "completedChapters", "cid", "userEmail"
       ) VALUES (
@@ -141,7 +141,7 @@ export async function GET(
         c.name as course_name,
         c.description as course_description,
         c.modules as course_modules
-      FROM "enrollCourse" ec
+      FROM "enroll_course" ec
       LEFT JOIN courses c ON ec."course_id" = c.id
       WHERE ec."course_id" = ${courseId} AND ec."user_id" = ${payload.userId}
     `);
@@ -198,7 +198,7 @@ export async function PUT(
 
     // Verificar que el usuario está inscrito
     const existingEnrollment = await db.execute(sql`
-      SELECT * FROM "enrollCourse" 
+      SELECT * FROM "enroll_course" 
       WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
@@ -210,7 +210,7 @@ export async function PUT(
     }
 
     // Actualizar progreso - use individual field updates
-    let updateQuery = sql`UPDATE "enrollCourse" SET "updatedAt" = ${new Date().toISOString()}`;
+    let updateQuery = sql`UPDATE "enroll_course" SET "updatedAt" = ${new Date().toISOString()}`;
 
     if (completedChapters !== undefined) {
       updateQuery = sql`${updateQuery}, "completedChapters" = ${JSON.stringify(
@@ -343,7 +343,7 @@ export async function DELETE(
 
     // Verificar que el usuario está inscrito
     const existingEnrollment = await db.execute(sql`
-      SELECT * FROM "enrollCourse"
+      SELECT * FROM "enroll_course"
       WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 
@@ -369,7 +369,7 @@ export async function DELETE(
 
     // Eliminar inscripción (soft delete o hard delete)
     await db.execute(sql`
-      DELETE FROM "enrollCourse"
+      DELETE FROM "enroll_course"
       WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
     `);
 

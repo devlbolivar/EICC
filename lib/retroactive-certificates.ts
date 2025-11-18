@@ -72,7 +72,7 @@ export async function createRetroactiveCertificate(
 
     // Get enrollment details
     const enrollmentResult = await db.execute(sql`
-      SELECT * FROM "enrollCourse" 
+      SELECT * FROM "enroll_course" 
       WHERE "course_id" = ${courseId} 
       AND "user_id" = ${userId} 
       AND "isCompleted" = true
@@ -130,7 +130,7 @@ export async function ensureCertificatesForUser(
     // Get all completed courses for the user
     const completedCourses = await db.execute(sql`
       SELECT ec."course_id", c.*, ec."completedAt", ec."progress"
-      FROM "enrollCourse" ec
+      FROM "enroll_course" ec
       JOIN courses c ON ec."course_id" = c.id
       WHERE ec."user_id" = ${userId} 
       AND ec."isCompleted" = true

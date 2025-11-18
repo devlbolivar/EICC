@@ -3,6 +3,11 @@ import { db } from "@/lib/database";
 import { enrollCourseTable, certificatesTable } from "@/config/schema";
 import { coursesTable } from "@/config/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  DatabaseEnrolledCourse,
+  EnrolledCourseResponse,
+  transformToEnrolledCourses,
+} from "@/app/types";
 
 export async function GET(req: Request) {
   // Get user ID from headers set by middleware
@@ -13,19 +18,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const enrolledCourses = await db
+    // Consulta con nombres originales de la base de datos
+    const dbCourses = await db
       .select({
         id: coursesTable.id,
-        title: coursesTable.name,
+        name: coursesTable.name,
         description: coursesTable.description,
         progress: enrollCourseTable.progress,
-        totalChapters: coursesTable.numberOfChapters,
+        numberOfChapters: coursesTable.numberOfChapters,
         completedChapters: enrollCourseTable.completedChapters,
         isCompleted: enrollCourseTable.isCompleted,
         completedAt: enrollCourseTable.completedAt,
-        estimatedTime: coursesTable.estimatedDuration,
-        lastAccessed: enrollCourseTable.updatedAt,
-        image: coursesTable.bannerImage,
+        estimatedDuration: coursesTable.estimatedDuration,
+        updatedAt: enrollCourseTable.updatedAt,
+        bannerImage: coursesTable.bannerImage,
         category: coursesTable.category,
         level: coursesTable.level,
         certificateId: certificatesTable.certificateId,
@@ -41,6 +47,11 @@ export async function GET(req: Request) {
         )
       )
       .where(eq(enrollCourseTable.userId, userId));
+
+    // Transformar a formato de respuesta API
+    const enrolledCourses: EnrolledCourseResponse[] = transformToEnrolledCourses(
+      dbCourses as DatabaseEnrolledCourse[]
+    );
 
     return NextResponse.json({
       success: true,
