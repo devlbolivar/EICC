@@ -39,7 +39,7 @@ export function CreateTicketDialog({
     subject: "",
     description: "",
     category: "" as TicketCategory | "",
-    priority: "normal" as TicketPriority,
+    priority: "medium" as TicketPriority,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -50,8 +50,16 @@ export function CreateTicketDialog({
       newErrors.subject = "El asunto debe tener al menos 5 caracteres";
     }
 
-    if (!formData.description || formData.description.length < 20) {
-      newErrors.description = "La descripción debe tener al menos 20 caracteres";
+    if (formData.subject && formData.subject.length > 200) {
+      newErrors.subject = "El asunto debe tener máximo 200 caracteres";
+    }
+
+    if (!formData.description || formData.description.length < 10) {
+      newErrors.description = "La descripción debe tener al menos 10 caracteres";
+    }
+
+    if (formData.description && formData.description.length > 5000) {
+      newErrors.description = "La descripción debe tener máximo 5000 caracteres";
     }
 
     if (!formData.category) {
@@ -84,7 +92,7 @@ export function CreateTicketDialog({
         subject: "",
         description: "",
         category: "",
-        priority: "normal",
+        priority: "medium",
       });
       setErrors({});
       onOpenChange(false);
@@ -98,13 +106,13 @@ export function CreateTicketDialog({
   const categoryLabels: Record<TicketCategory, string> = {
     technical: "Problema Técnico",
     billing: "Facturación",
-    account: "Cuenta",
-    other: "Otro",
+    general: "General",
+    feature_request: "Solicitud de Función",
   };
 
   const priorityLabels: Record<TicketPriority, string> = {
     low: "Baja",
-    normal: "Normal",
+    medium: "Media",
     high: "Alta",
     urgent: "Urgente",
   };
