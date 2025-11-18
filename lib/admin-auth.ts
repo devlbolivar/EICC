@@ -140,3 +140,67 @@ export async function verifyPermission(
     payload: authResult.payload,
   };
 }
+
+/**
+ * Verifica que el usuario esté autenticado Y tenga permisos de estudiante
+ * Los estudiantes deben tener el permiso "courses:enroll"
+ */
+export async function verifyStudentAuth(request: NextRequest) {
+  const authResult = await verifyAuth(request);
+
+  if (!authResult.authorized) {
+    return authResult;
+  }
+
+  const permissions = authResult.payload.permissions as Permission[];
+
+  // Verificar que tiene permiso de estudiante (courses:enroll es único para estudiantes)
+  if (!hasPermission(permissions, "courses:enroll")) {
+    return {
+      authorized: false as const,
+      response: NextResponse.json(
+        {
+          error: "Acceso denegado. Se requiere rol de estudiante",
+          requiredPermission: "courses:enroll"
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    authorized: true as const,
+    payload: authResult.payload,
+  };
+}
+
+/**
+ * Verifica que el usuario esté autenticado Y tenga permisos de empresa
+ */
+export async function verifyCompanyAuth(request: NextRequest) {
+  const authResult = await verifyAuth(request);
+
+  if (!authResult.authorized) {
+    return authResult;
+  }
+
+  const permissions = authResult.payload.permissions as Permission[];
+
+  if (!hasPermission(permissions, "company:admin")) {
+    return {
+      authorized: false as const,
+      response: NextResponse.json(
+        {
+          error: "Acceso denegado. Se requiere rol de empresa",
+          requiredPermission: "company:admin"
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    authorized: true as const,
+    payload: authResult.payload,
+  };
+}
