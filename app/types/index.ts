@@ -975,3 +975,70 @@ export interface CompanyOption {
   name: string;
   rut: string;
 }
+
+// ===== TIPOS DE SOPORTE =====
+export type TicketCategory = "technical" | "billing" | "account" | "other";
+export type TicketPriority = "low" | "normal" | "high" | "urgent";
+export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  companyId?: string;
+  subject: string;
+  description: string;
+  category: TicketCategory;
+  priority: TicketPriority;
+  status: TicketStatus;
+  attachments: string[];
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  assignedTo?: string;
+
+  // Campos relacionados (del JOIN)
+  user_name?: string;
+  user_email?: string;
+  company_name?: string;
+  assigned_to_name?: string;
+  messagesCount?: number;
+  lastMessageAt?: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  ticketId: string;
+  userId: string;
+  message: string;
+  isStaffReply: boolean;
+  attachments: string[];
+  createdAt: string;
+
+  // Campos relacionados
+  user_name?: string;
+  user_avatar?: string;
+}
+
+export interface CreateTicketRequest {
+  subject: string;
+  description: string;
+  category: TicketCategory;
+  priority?: TicketPriority;
+  attachments?: string[];
+}
+
+export interface CreateMessageRequest {
+  ticketId: string;
+  message: string;
+  attachments?: string[];
+}
+
+export interface TicketWithMessages {
+  ticket: SupportTicket;
+  messages: SupportMessage[];
+}
+
+export interface SupportTicketsResponse {
+  success: boolean;
+  tickets: SupportTicket[];
+}
