@@ -3,9 +3,30 @@ import { db } from "@/config/db";
 import { supportMessagesTable, supportTicketsTable } from "@/config/schema";
 import { verifyAuth } from "@/lib/admin-auth";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+import { apiRateLimit } from "@/lib/rate-limit";
+import { sanitizeHtml } from "@/lib/validation";
+import { hasAnyPermission } from "@/lib/permissions";
+import type { Permission } from "@/app/types";
+
+// Zod schema for message validation
+const createMessageSchema = z.object({
+  ticketId: z.string().uuid("ID de ticket inválido"),
+  message: z
+    .string()
+    .min(10, "El mensaje debe tener al menos 10 caracteres")
+    .max(5000, "El mensaje debe tener máximo 5000 caracteres"),
+  attachments: z.array(z.string()).optional().default([]),
+});
 
 // POST - Add message to ticket
 export async function POST(req: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = await apiRateLimit(req);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const authResult = await verifyAuth(req);
   if (!authResult.authorized) {
     return authResult.response;
@@ -15,31 +36,42 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { ticketId, message, attachments } = body;
 
-    if (!ticketId || !message) {
+    // Validate with Zod
+    const validation = createMessageSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "ID del ticket y mensaje son requeridos" },
+        {
+          error: "Error de validación",
+          details: validation.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
 
-    if (message.length < 1) {
-      return NextResponse.json(
-        { error: "El mensaje no puede estar vacío" },
-        { status: 400 }
-      );
-    }
+    const { ticketId, message, attachments } = validation.data;
 
-    // Verify ticket exists and belongs to user
+    // Sanitize message to prevent XSS
+    const sanitizedMessage = sanitizeHtml(message);
+
+    // Check if user is admin
+    const permissions = payload.permissions as Permission[];
+    const isAdmin = hasAnyPermission(permissions, [
+      "platform:admin",
+      "users:manage",
+    ]);
+
+    // Verify ticket exists and user has access
     const [ticket] = await db
       .select()
       .from(supportTicketsTable)
       .where(
-        and(
-          eq(supportTicketsTable.id, ticketId),
-          eq(supportTicketsTable.userId, payload.userId)
-        )
+        isAdmin
+          ? eq(supportTicketsTable.id, ticketId)
+          : and(
+              eq(supportTicketsTable.id, ticketId),
+              eq(supportTicketsTable.userId, payload.userId)
+            )
       )
       .limit(1);
 
@@ -56,9 +88,9 @@ export async function POST(req: NextRequest) {
       .values({
         ticketId,
         userId: payload.userId,
-        message,
-        isStaffReply: false,
-        attachments: attachments || [],
+        message: sanitizedMessage,
+        isStaffReply: isAdmin,
+        attachments,
       })
       .returning();
 

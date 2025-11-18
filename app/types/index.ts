@@ -977,8 +977,8 @@ export interface CompanyOption {
 }
 
 // ===== TIPOS DE SOPORTE =====
-export type TicketCategory = "technical" | "billing" | "account" | "other";
-export type TicketPriority = "low" | "normal" | "high" | "urgent";
+export type TicketCategory = "technical" | "billing" | "general" | "feature_request";
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
 export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
 export interface SupportTicket {

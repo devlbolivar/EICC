@@ -1,11 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import { supportTicketsTable, usersTable, companiesTable } from "@/config/schema";
-import { verifyAuth } from "@/lib/admin-auth";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { supportTicketsTable, usersTable } from "@/config/schema";
+import { verifyAuth, verifyAdminAuth } from "@/lib/admin-auth";
+import { eq, desc, and } from "drizzle-orm";
+import { z } from "zod";
+import { strictRateLimit, apiRateLimit } from "@/lib/rate-limit";
+import { sanitizeHtml } from "@/lib/validation";
+import { hasAnyPermission } from "@/lib/permissions";
+import type { Permission } from "@/app/types";
 
-// GET - List tickets for authenticated user
+// Zod schemas for validation
+const createTicketSchema = z.object({
+  subject: z
+    .string()
+    .min(5, "El asunto debe tener al menos 5 caracteres")
+    .max(200, "El asunto debe tener máximo 200 caracteres"),
+  description: z
+    .string()
+    .min(10, "La descripción debe tener al menos 10 caracteres")
+    .max(5000, "La descripción debe tener máximo 5000 caracteres"),
+  category: z.enum(["technical", "billing", "general", "feature_request"], {
+    errorMap: () => ({ message: "Categoría inválida" }),
+  }),
+  priority: z
+    .enum(["low", "medium", "high", "urgent"], {
+      errorMap: () => ({ message: "Prioridad inválida" }),
+    })
+    .optional()
+    .default("medium"),
+  attachments: z.array(z.string()).optional().default([]),
+});
+
+// GET - List tickets for authenticated user (or all tickets for admins)
 export async function GET(req: NextRequest) {
+  // Rate limiting for GET requests
+  const rateLimitResponse = await apiRateLimit(req);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const authResult = await verifyAuth(req);
   if (!authResult.authorized) {
     return authResult.response;
@@ -16,9 +49,24 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const offset = (page - 1) * limit;
+
+    // Check if user is admin
+    const permissions = payload.permissions as Permission[];
+    const isAdmin = hasAnyPermission(permissions, [
+      "platform:admin",
+      "users:manage",
+    ]);
 
     // Build where conditions
-    const whereConditions = [eq(supportTicketsTable.userId, payload.userId)];
+    const whereConditions: ReturnType<typeof eq>[] = [];
+
+    // Regular users can only see their own tickets
+    if (!isAdmin) {
+      whereConditions.push(eq(supportTicketsTable.userId, payload.userId));
+    }
 
     if (status) {
       whereConditions.push(eq(supportTicketsTable.status, status));
@@ -44,8 +92,10 @@ export async function GET(req: NextRequest) {
       })
       .from(supportTicketsTable)
       .leftJoin(usersTable, eq(supportTicketsTable.userId, usersTable.id))
-      .where(and(...whereConditions))
-      .orderBy(desc(supportTicketsTable.createdAt));
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .orderBy(desc(supportTicketsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     // Transform dates to strings
     const formattedTickets = tickets.map(ticket => ({
@@ -57,7 +107,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      tickets: formattedTickets
+      tickets: formattedTickets,
+      pagination: {
+        page,
+        limit,
+        hasMore: tickets.length === limit,
+      },
     });
   } catch (error) {
     console.error("Error fetching tickets:", error);
@@ -70,6 +125,12 @@ export async function GET(req: NextRequest) {
 
 // POST - Create new ticket
 export async function POST(req: NextRequest) {
+  // Strict rate limiting for POST requests (10 per minute)
+  const rateLimitResponse = await strictRateLimit(req);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const authResult = await verifyAuth(req);
   if (!authResult.authorized) {
     return authResult.response;
@@ -79,45 +140,24 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { subject, description, category, priority, attachments } = body;
 
-    // Validations
-    if (!subject || !description || !category) {
+    // Validate with Zod
+    const validation = createTicketSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Asunto, descripción y categoría son requeridos" },
+        {
+          error: "Error de validación",
+          details: validation.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
 
-    if (subject.length < 5 || subject.length > 255) {
-      return NextResponse.json(
-        { error: "El asunto debe tener entre 5 y 255 caracteres" },
-        { status: 400 }
-      );
-    }
+    const { subject, description, category, priority, attachments } = validation.data;
 
-    if (description.length < 20) {
-      return NextResponse.json(
-        { error: "La descripción debe tener al menos 20 caracteres" },
-        { status: 400 }
-      );
-    }
-
-    const validCategories = ["technical", "billing", "account", "other"];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json(
-        { error: "Categoría inválida" },
-        { status: 400 }
-      );
-    }
-
-    const validPriorities = ["low", "normal", "high", "urgent"];
-    if (priority && !validPriorities.includes(priority)) {
-      return NextResponse.json(
-        { error: "Prioridad inválida" },
-        { status: 400 }
-      );
-    }
+    // Sanitize inputs to prevent XSS
+    const sanitizedSubject = sanitizeHtml(subject);
+    const sanitizedDescription = sanitizeHtml(description);
 
     // Create ticket
     const [newTicket] = await db
@@ -125,11 +165,11 @@ export async function POST(req: NextRequest) {
       .values({
         userId: payload.userId,
         companyId: payload.companyId || null,
-        subject,
-        description,
+        subject: sanitizedSubject,
+        description: sanitizedDescription,
         category,
-        priority: priority || "normal",
-        attachments: attachments || [],
+        priority,
+        attachments,
         status: "open",
       })
       .returning();

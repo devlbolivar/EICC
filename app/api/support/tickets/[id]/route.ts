@@ -2,13 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { supportTicketsTable, supportMessagesTable, usersTable } from "@/config/schema";
 import { verifyAuth } from "@/lib/admin-auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
+import { z } from "zod";
+import { apiRateLimit } from "@/lib/rate-limit";
+import { hasAnyPermission } from "@/lib/permissions";
+import type { Permission } from "@/app/types";
+
+// Zod schema for PATCH validation
+const updateTicketSchema = z.object({
+  status: z.enum(["open", "in_progress", "resolved", "closed"], {
+    errorMap: () => ({ message: "Estado inválido" }),
+  }),
+});
 
 // GET - Get specific ticket with messages
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limiting
+  const rateLimitResponse = await apiRateLimit(req);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const authResult = await verifyAuth(req);
   if (!authResult.authorized) {
     return authResult.response;
@@ -19,7 +36,14 @@ export async function GET(
   try {
     const { id: ticketId } = await params;
 
-    // Get ticket
+    // Check if user is admin
+    const permissions = payload.permissions as Permission[];
+    const isAdmin = hasAnyPermission(permissions, [
+      "platform:admin",
+      "users:manage",
+    ]);
+
+    // Get ticket - admins can see any ticket, users only their own
     const [ticket] = await db
       .select({
         id: supportTicketsTable.id,
@@ -41,10 +65,12 @@ export async function GET(
       .from(supportTicketsTable)
       .leftJoin(usersTable, eq(supportTicketsTable.userId, usersTable.id))
       .where(
-        and(
-          eq(supportTicketsTable.id, ticketId),
-          eq(supportTicketsTable.userId, payload.userId)
-        )
+        isAdmin
+          ? eq(supportTicketsTable.id, ticketId)
+          : and(
+              eq(supportTicketsTable.id, ticketId),
+              eq(supportTicketsTable.userId, payload.userId)
+            )
       )
       .limit(1);
 
@@ -100,6 +126,12 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limiting
+  const rateLimitResponse = await apiRateLimit(req);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const authResult = await verifyAuth(req);
   if (!authResult.authorized) {
     return authResult.response;
@@ -110,32 +142,39 @@ export async function PATCH(
   try {
     const { id: ticketId } = await params;
     const body = await req.json();
-    const { status } = body;
 
-    if (!status) {
+    // Validate with Zod
+    const validation = updateTicketSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "El estado es requerido" },
+        {
+          error: "Error de validación",
+          details: validation.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
 
-    const validStatuses = ["open", "in_progress", "resolved", "closed"];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: "Estado inválido" },
-        { status: 400 }
-      );
-    }
+    const { status } = validation.data;
 
-    // Verify ticket belongs to user
+    // Check if user is admin
+    const permissions = payload.permissions as Permission[];
+    const isAdmin = hasAnyPermission(permissions, [
+      "platform:admin",
+      "users:manage",
+    ]);
+
+    // Verify ticket exists and user has permission
     const [ticket] = await db
       .select()
       .from(supportTicketsTable)
       .where(
-        and(
-          eq(supportTicketsTable.id, ticketId),
-          eq(supportTicketsTable.userId, payload.userId)
-        )
+        isAdmin
+          ? eq(supportTicketsTable.id, ticketId)
+          : and(
+              eq(supportTicketsTable.id, ticketId),
+              eq(supportTicketsTable.userId, payload.userId)
+            )
       )
       .limit(1);
 
