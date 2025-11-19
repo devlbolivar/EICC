@@ -51,12 +51,49 @@ import {
   Edit,
   Trash2,
   Eye,
-  User,
+  User as UserIcon,
   Save,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
+
+// Local types matching what the hook returns
+interface RoleOption {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: string[];
+  isSystemRole: boolean;
+}
+
+interface CompanyOption {
+  id: string;
+  name: string;
+  description?: string;
+  industry?: string;
+  size?: string;
+  subscriptionPlan: string;
+}
+
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string | null;
+  isActive: boolean;
+  emailVerified?: boolean;
+  age?: number | null;
+  subscriptionId?: string | null;
+  primaryRole: string;
+  lastLoginAt?: string | Date | null;
+  roles: Array<{ role: string; company: string }>;
+  userCompanies?: Array<{
+    role?: { id: string };
+    company?: { id: string };
+  }>;
+}
 
 export default function AdminUsersPage() {
   const { isAdmin } = useAdmin();
@@ -80,9 +117,9 @@ export default function AdminUsersPage() {
   // Estados para el formulario de creación
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [roles, setRoles] = useState<any[]>([]);
-  const [companies, setCompanies] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -115,7 +152,7 @@ export default function AdminUsersPage() {
     };
 
     loadFormData();
-  }, []);
+  }, [getRoles, getCompanies]);
 
   // Verificar si debe abrir el modal de creación
   useEffect(() => {
@@ -227,7 +264,7 @@ export default function AdminUsersPage() {
   };
 
   // Abrir diálogo de edición
-  const openEditDialog = (user: any) => {
+  const openEditDialog = (user: UserData) => {
     setSelectedUser(user);
     setFormData({
       name: user.name,
@@ -299,7 +336,7 @@ export default function AdminUsersPage() {
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
+                  <UserIcon className="w-5 h-5" />
                   Crear Nuevo Usuario
                 </DialogTitle>
                 <DialogDescription>
@@ -629,10 +666,13 @@ export default function AdminUsersPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                             {user.avatar ? (
-                              <img
+                              <Image
                                 src={user.avatar}
                                 alt={user.name}
+                                width={32}
+                                height={32}
                                 className="w-8 h-8 rounded-full"
+                                unoptimized
                               />
                             ) : (
                               <span className="text-gray-600 text-sm font-medium">
@@ -719,7 +759,7 @@ export default function AdminUsersPage() {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Esta acción no se puede deshacer. Se eliminará
-                                  permanentemente el usuario "{user.name}".
+                                  permanentemente el usuario &quot;{user.name}&quot;.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -781,7 +821,7 @@ export default function AdminUsersPage() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
+              <UserIcon className="w-5 h-5" />
               Editar Usuario
             </DialogTitle>
             <DialogDescription>

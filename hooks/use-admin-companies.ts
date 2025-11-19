@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
 import { safeLocalStorage } from "@/lib/storage";
@@ -87,7 +87,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
 
   const clearError = () => setError(null);
 
-  const fetchCompanies = async (params?: CompanyFilters) => {
+  const fetchCompanies = useCallback(async (params?: CompanyFilters) => {
     const token = getToken();
     if (!token && !session) return;
 
@@ -132,7 +132,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session, pagination.page, pagination.limit]);
 
   const createCompany = async (companyData: CreateCompanyData): Promise<Company> => {
     const token = getToken();
@@ -208,7 +208,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
 
   useEffect(() => {
     fetchCompanies();
-  }, [session]);
+  }, [session, fetchCompanies]);
 
   return {
     companies,

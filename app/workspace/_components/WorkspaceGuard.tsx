@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getMostRestrictiveRole, validateRouteAccess } from "@/lib/permissions";
@@ -28,7 +28,7 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
   );
 
   // Función para obtener la ruta de redirección por rol
-  const getRedirectRouteByRole = (roleName: string): string => {
+  const getRedirectRouteByRole = useCallback((roleName: string): string => {
     switch (roleName) {
       case "admin":
         return PAGE_ROUTES.WORKSPACE.ADMIN;
@@ -41,7 +41,7 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
       default:
         return "/";
     }
-  };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     console.log("🔍 WorkspaceGuard Debug:", {
@@ -118,7 +118,7 @@ export default function WorkspaceGuard({ children }: WorkspaceGuardProps) {
         }
       }
     }
-  }, [session, loading, router, pathname, isProtectedRoute]);
+  }, [session, loading, router, pathname, isProtectedRoute, getRedirectRouteByRole]);
 
   // Si no es una ruta protegida, mostrar el contenido directamente
   if (!isProtectedRoute) {

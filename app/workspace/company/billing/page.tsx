@@ -33,7 +33,7 @@ const CompanyBilling = () => {
 
   // Obtener empleados de la empresa
   const {
-    employees,
+    employees: _employees,
     loading: employeesLoading,
     error: employeesError,
   } = useCompanyEmployees();

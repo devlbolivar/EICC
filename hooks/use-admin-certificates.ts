@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { ERROR_MESSAGES, UI_TEXT } from "@/lib/constants";
+import { UI_TEXT } from "@/lib/constants";
 
 export interface Certificate {
   id: string;

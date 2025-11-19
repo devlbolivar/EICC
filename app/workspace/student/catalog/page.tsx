@@ -86,7 +86,7 @@ const CONSTANTS = {
 } as const;
 
 const StudentCatalog = () => {
-  const { session } = useAuth();
+  const { session: _session } = useAuth();
   const router = useRouter();
   const {
     courses,
@@ -107,7 +107,7 @@ const StudentCatalog = () => {
     null
   );
   const [categories, setCategories] = useState<string[]>(["Todos"]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [_loadingCategories, setLoadingCategories] = useState(true);
 
   // Helper functions
   const getCourseGradient = (isCompleted: boolean) => {

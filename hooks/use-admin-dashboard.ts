@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { DashboardData, UseAdminDashboardReturn } from "@/app/types";
-import { UI_TEXT, ERROR_MESSAGES } from "@/lib/constants";
+import { UI_TEXT } from "@/lib/constants";
 
 export function useAdminDashboard(): UseAdminDashboardReturn {
   const { session } = useAuth();

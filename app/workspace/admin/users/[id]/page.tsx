@@ -30,14 +30,40 @@ import {
   Edit,
   Trash2,
   Calendar,
-  Mail,
-  User,
+  User as UserIcon,
   Building,
   Save,
   X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
+
+// User data structure returned from admin API
+interface UserCompanyData {
+  id: string;
+  role: { id: string; name: string; description?: string; permissions?: string[] };
+  company?: { id: string; name: string; description?: string };
+  isActive?: boolean;
+  joinedAt: string | Date;
+  acceptedAt?: string | Date;
+  invitedBy?: { name: string; email: string };
+}
+
+interface AdminUserDetail {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string | null;
+  isActive: boolean;
+  emailVerified?: boolean;
+  age?: number | null;
+  subscriptionId?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  lastLoginAt?: string | Date | null;
+  userCompanies?: UserCompanyData[];
+}
 
 export default function UserDetailPage() {
   const { isAdmin } = useAdmin();
@@ -45,7 +71,7 @@ export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -82,7 +108,7 @@ export default function UserDetailPage() {
     if (params.id) {
       loadUser();
     }
-  }, [params.id]);
+  }, [params.id, getUser]);
 
   const handleDeleteUser = async () => {
     try {
@@ -109,7 +135,7 @@ export default function UserDetailPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -209,10 +235,13 @@ export default function UserDetailPage() {
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
             {user.avatar ? (
-              <img
+              <Image
                 src={user.avatar}
                 alt={user.name}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full"
+                unoptimized
               />
             ) : (
               <span className="text-gray-600 text-2xl font-medium">
@@ -240,7 +269,7 @@ export default function UserDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
+              <UserIcon className="w-5 h-5" />
               Información Personal
             </CardTitle>
           </CardHeader>
@@ -354,7 +383,7 @@ export default function UserDetailPage() {
           <CardContent>
             {user.userCompanies && user.userCompanies.length > 0 ? (
               <div className="space-y-4">
-                {user.userCompanies.map((userCompany: any, index: number) => (
+                {user.userCompanies.map((userCompany: UserCompanyData) => (
                   <div key={userCompany.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -471,7 +500,7 @@ export default function UserDetailPage() {
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <User className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <UserIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>No hay roles o empresas asignadas</p>
               </div>
             )}
@@ -484,7 +513,7 @@ export default function UserDetailPage() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
+              <UserIcon className="w-5 h-5" />
               Editar Usuario
             </DialogTitle>
             <DialogDescription>

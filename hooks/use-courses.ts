@@ -3,7 +3,6 @@ import {
   Course,
   CourseCreateData,
   ApiResponse,
-  PaginatedResponse,
   EnrolledCourseResponse,
   EnrollCourse,
   PaginationInfo,

@@ -1,6 +1,5 @@
 import { randomBytes, createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 // ===== CONFIGURACIÓN CSRF =====
 const CSRF_SECRET = process.env.CSRF_SECRET || process.env.JWT_SECRET;

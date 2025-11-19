@@ -59,9 +59,9 @@ export function useCompanyStatistics() {
   const [error, setError] = useState<string | null>(null);
 
   // Función para manejar errores
-  const handleError = useCallback((err: any) => {
+  const handleError = useCallback((err: unknown) => {
     console.error("Error en useCompanyStatistics:", err);
-    const errorMessage = err?.message || "Error interno del servidor";
+    const errorMessage = err instanceof Error ? err.message : "Error interno del servidor";
     setError(errorMessage);
     return null;
   }, []);

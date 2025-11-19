@@ -26,11 +26,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import {
-  HelpCircle,
   MessageCircle,
   Phone,
   Mail,
@@ -145,7 +143,7 @@ export default function AdminSupportPage() {
     switch (priority) {
       case "low":
         return "bg-gray-500";
-      case "normal":
+      case "medium":
         return "bg-blue-500";
       case "high":
         return "bg-orange-500";
@@ -160,8 +158,8 @@ export default function AdminSupportPage() {
     switch (priority) {
       case "low":
         return "Baja";
-      case "normal":
-        return "Normal";
+      case "medium":
+        return "Media";
       case "high":
         return "Alta";
       case "urgent":

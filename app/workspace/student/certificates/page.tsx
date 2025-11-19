@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Icons
@@ -24,6 +23,7 @@ import { Loader } from "@/components/ui/loader";
 // Hooks and Types
 import { useCertificates } from "@/hooks/use-certificates";
 import { PAGE_ROUTES } from "@/lib/constants";
+import { Certificate } from "@/app/types";
 
 // Constants
 const CONSTANTS = {
@@ -84,7 +84,7 @@ const StudentCertificates = () => {
     );
   };
 
-  const getCertificateDescription = (certificate: any) => {
+  const getCertificateDescription = (certificate: Certificate) => {
     return certificate.description || CONSTANTS.MESSAGES.DEFAULT_DESCRIPTION;
   };
 
@@ -100,7 +100,7 @@ const StudentCertificates = () => {
     );
   };
 
-  const handleDownload = (certificate: any) => {
+  const handleDownload = (certificate: Certificate) => {
     // Navigate to certificate detail page for download
     // Use certificateId (varchar) instead of id (uuid) for the API
     router.push(

@@ -157,7 +157,7 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
     if (session) {
       fetchEmployees(filters);
     }
-  }, [session, fetchEmployees]);
+  }, [session, fetchEmployees, filters]);
 
   return {
     employees,

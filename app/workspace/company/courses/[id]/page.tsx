@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   ArrowLeft,
   BookOpen,
@@ -31,9 +30,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
-  Star,
   Award,
-  TrendingUp,
 } from "lucide-react";
 import { Course, Module, Lesson } from "@/app/types";
 import { API_ROUTES, ERROR_MESSAGES } from "@/lib/constants";

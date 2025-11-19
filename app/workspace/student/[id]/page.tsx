@@ -24,6 +24,7 @@ import { useCertificates } from "@/hooks/use-certificates";
 import { redirect } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { EnrolledCourseResponse } from "@/app/types";
 
 export default function StudentDashboard() {
   const { session } = useAuth();
@@ -36,14 +37,14 @@ export default function StudentDashboard() {
   const MAX_COURSES_DISPLAY = 4;
 
   // Helper functions
-  const getStatusColor = (course: any) => {
+  const getStatusColor = (course: EnrolledCourseResponse) => {
     if (course.isCompleted) return "bg-green-500";
     if (course.progress && course.progress > 50) return "bg-blue-500";
     if (course.progress && course.progress > 0) return "bg-yellow-500";
     return "bg-gray-400";
   };
 
-  const getStatusText = (course: any) => {
+  const getStatusText = (course: EnrolledCourseResponse) => {
     if (course.isCompleted) return "Completaste";
     if (course.progress && course.progress > 0) return "Progreso en";
     return "Inscrito en";
@@ -288,7 +289,7 @@ export default function StudentDashboard() {
                       new Date(a.lastAccessed || 0).getTime()
                   )
                   .slice(0, MAX_COURSES_DISPLAY)
-                  .map((course, index) => (
+                  .map((course) => (
                     <div
                       key={course.id}
                       className="flex items-center space-x-4"

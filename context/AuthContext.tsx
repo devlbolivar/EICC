@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import {
   AuthSession,
   AuthContextType,
@@ -31,15 +31,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [initialized, setInitialized] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // ===== INICIALIZACIÓN =====
-  useEffect(() => {
-    // Siempre inicializar, pero de manera diferente según la ruta
-    if (!initialized) {
-      initializeAuth();
-    }
-  }, [initialized]);
-
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
     try {
       setLoading(true);
       setInitialized(true);
@@ -52,7 +44,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ===== INICIALIZACIÓN =====
+  useEffect(() => {
+    // Siempre inicializar, pero de manera diferente según la ruta
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, [initialized, initializeAuth]);
 
   const handleTokenExpiration = async () => {
     if (isRefreshing) {
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setSession(null);
       }
-    } catch (error) {
+    } catch {
       setSession(null);
     }
   };
@@ -104,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setSession(null);
       }
-    } catch (error) {
+    } catch {
       setSession(null);
     }
   };
