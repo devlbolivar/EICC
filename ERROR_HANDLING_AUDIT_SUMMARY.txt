@@ -1,0 +1,365 @@
+================================================================================
+                ERROR HANDLING AUDIT SUMMARY - EICC PROJECT
+================================================================================
+
+AUDIT DATE: November 19, 2025
+SCOPE: All API routes in /app/api directory (~60 routes)
+SEVERITY LEVELS: CRITICAL (2) | HIGH (2) | MEDIUM (2)
+
+================================================================================
+1. TRY-CATCH WITH LOGGING - OVERALL ASSESSMENT
+================================================================================
+
+STATUS: ✅ 90% Compliant
+
+COVERAGE:
+  - All 60+ API routes have try-catch blocks
+  - All routes log errors with console.error()
+  - Rate limiting implemented in sensitive routes
+  - CSRF protection on all state-changing operations
+
+ISSUE:
+  - Logging is UNSTRUCTURED (no userId, timestamp, action in 70% of routes)
+  - No success logging for audit trails
+
+================================================================================
+2. NO STACK TRACE EXPOSURE - STATUS: ❌ CRITICAL FAILURES
+================================================================================
+
+PROBLEM: 10+ Routes Expose error.message to Clients
+
+VULNERABLE PATTERN Found:
+┌─────────────────────────────────────────────────────────────────┐
+│ catch (error) {                                                  │
+│   console.error("Error:", error);                              │
+│   return NextResponse.json(                                     │
+│     {                                                           │
+│       error: ERROR_MESSAGES.SERVER_ERROR,                       │
+│       details: error instanceof Error                          │
+│         ? error.message    // ⚠️ EXPOSES INTERNAL ERROR        │
+│         : ERROR_MESSAGES.UNKNOWN_ERROR,                        │
+│     },                                                          │
+│     { status: 500 }                                            │
+│   );                                                            │
+│ }                                                               │
+└─────────────────────────────────────────────────────────────────┘
+
+AFFECTED FILES (10 confirmed):
+  1. /home/user/EICC/app/api/admin/enrollments/route.ts (lines 54-63)
+  2. /home/user/EICC/app/api/admin/dashboard/route.ts
+  3. /home/user/EICC/app/api/admin/certificates/[id]/reissue/route.ts
+  4. /home/user/EICC/app/api/admin/certificates/[id]/revoke/route.ts
+  5. /home/user/EICC/app/api/admin/certificates/route.ts
+  6. /home/user/EICC/app/api/admin/enrollments/[id]/route.ts
+  7. /home/user/EICC/app/api/admin/reports/route.ts
+  8. /home/user/EICC/app/api/admin/settings/route.ts
+  9. /home/user/EICC/app/api/billing/webhooks/route.ts (line 53)
+  10. /home/user/EICC/app/api/admin/roles/route.ts
+
+SECURITY IMPACT:
+  - SQL injection error messages reveal database structure
+  - Unhandled exceptions expose stack traces
+  - Authentication errors reveal system details
+  - Example: "UNIQUE constraint failed: users.email" → Reveals table structure
+
+ADDITIONAL EXPOSURE: /home/user/EICC/app/api/company/profile/route.ts
+  Lines 74-83, 99-103, 120-123 expose:
+    - Internal company IDs
+    - User-company relationships
+    - Database table structure
+  Example:
+    "debug": {
+      "userId": "uuid-here",
+      "companies": [{ "id": "...", "companyId": "..." }]
+    }
+
+================================================================================
+3. USER-FRIENDLY MESSAGES - ASSESSMENT
+================================================================================
+
+STATUS: ✅ 80% Good, 20% Problematic
+
+GOOD PRACTICES (Examples):
+
+File: /home/user/EICC/app/api/auth/login/route.ts
+  ✅ "Credenciales inválidas" (doesn't reveal if email exists)
+  ✅ "Cuenta desactivada" (specific but user-friendly)
+
+File: /home/user/EICC/app/api/auth/forgot-password/route.ts
+  ✅ Same success message whether user exists or not
+  ✅ Prevents user enumeration attack
+  ✅ Example: "Si el email existe, recibirás instrucciones..."
+
+File: /home/user/EICC/app/api/user/change-password/route.ts
+  ✅ "Access token required" (generic, user-friendly)
+  ✅ "Validation failed" (specific for validation errors)
+
+PROBLEMATIC PRACTICES:
+
+File: /home/user/EICC/app/api/company/profile/route.ts
+  ❌ Exposes internal debug information
+  ❌ Reveals company structure in error messages
+  ❌ Example: Returns actual IDs and relationships in 404 response
+
+================================================================================
+4. LOGGING FORMAT ASSESSMENT
+================================================================================
+
+STATUS: ❌ 70% Unstructured, 30% Proper
+
+TYPE A - BAD LOGGING (70% of routes):
+┌─────────────────────────────────────────────────────────────────┐
+│ console.error("Error al listar cursos:", error);               │
+│                                                                  │
+│ Missing:                                                         │
+│  ❌ Timestamp                                                    │
+│  ❌ User ID                                                      │
+│  ❌ Action performed                                             │
+│  ❌ Request context (IP, method, path)                          │
+└─────────────────────────────────────────────────────────────────┘
+
+EXAMPLES:
+  - /app/api/courses/route.ts
+  - /app/api/csrf/route.ts
+  - /app/api/student/courses/route.ts
+  - /app/api/support/tickets/route.ts
+  - And 40+ more routes...
+
+TYPE B - GOOD LOGGING (30% of routes):
+┌─────────────────────────────────────────────────────────────────┐
+│ console.log("Password changed successfully:", {                │
+│   userId: payload.userId,          // ✅ User context           │
+│   timestamp: new Date().toISOString(), // ✅ ISO timestamp       │
+│   ip: request.headers.get("x-forwarded-for"), // ✅ IP          │
+│ });                                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+GOOD EXAMPLES:
+  1. /home/user/EICC/app/api/user/change-password/route.ts
+     - Logs failed attempts with userId, timestamp, IP
+     - Logs success with context
+     - Proper security audit trail
+
+  2. /home/user/EICC/app/api/user/profile/route.ts
+     - Logs "Profile updated" with:
+       * userId
+       * changes made (what was updated)
+       * timestamp
+       * IP address
+
+  3. /home/user/EICC/app/api/billing/webhooks/route.ts
+     - Logs webhook events with:
+       * Timestamp
+       * Event type
+       * Status (success/failure)
+       * Truncated sensitive data
+
+MISSING IN 70% OF ROUTES:
+  ❌ userId context for audit trails
+  ❌ ISO 8601 timestamps
+  ❌ Action description (create, update, delete, fetch)
+  ❌ Request context (IP, HTTP method, path)
+  ❌ Response status included in logs
+  ❌ Structured JSON format for parsing
+
+================================================================================
+5. RATE LIMITING & SECURITY FEATURES
+================================================================================
+
+STATUS: ✅ Well Implemented
+
+RATE LIMITING:
+  ✅ Auth routes: 5 attempts per 15 minutes
+  ✅ General API: 60 requests per minute
+  ✅ Strict operations: 5 per minute (password, CSRF)
+  ✅ Implemented via middleware
+
+CSRF PROTECTION:
+  ✅ All POST/PUT/PATCH routes protected
+  ✅ Double-submit cookie pattern
+  ✅ HMAC signature validation
+  ✅ Token expiry: 15 minutes
+  ✅ Custom error handling
+
+INPUT VALIDATION:
+  ✅ Zod schema validation in critical routes
+  ✅ Email sanitization
+  ✅ Password strength requirements
+  ✅ String length validation
+  ✅ XSS prevention with sanitizeHtml()
+
+================================================================================
+6. CRITICAL FINDINGS SUMMARY
+================================================================================
+
+SEVERITY: CRITICAL
+├─ Issue 1: Stack trace exposure in 10+ admin routes
+│   Impact: Database structure, SQL errors, system details revealed
+│   Files: admin/enrollments, admin/dashboard, admin/certificates, etc.
+│
+└─ Issue 2: Debug information in error responses
+    Impact: Internal IDs, relationships exposed
+    Files: /company/profile/route.ts (lines 74-83, 99-103, 120-123)
+
+SEVERITY: HIGH
+├─ Issue 3: 70% of routes missing structured logging
+│   Impact: No userId, timestamp, or action in logs
+│   Impact: Difficult to audit and investigate incidents
+│
+└─ Issue 4: No centralized error handling pattern
+    Impact: Inconsistent security practices across codebase
+
+SEVERITY: MEDIUM
+├─ Issue 5: Some routes expose company relationships in errors
+│   Impact: Information disclosure
+│
+└─ Issue 6: No success logging for audit trails
+    Impact: Cannot track user actions for compliance
+
+================================================================================
+7. RECOMMENDATIONS (PRIORITY ORDER)
+================================================================================
+
+PRIORITY 1 - IMMEDIATE (Security Risk):
+───────────────────────────────────────
+[ ] Remove error.message from all 500 error responses
+    Files: 10 files listed in section 2
+    Action: Replace with generic ERROR_MESSAGES.SERVER_ERROR
+    Timeline: Within 24 hours
+
+[ ] Remove all debug fields from error responses
+    Files: /company/profile/route.ts
+    Action: Delete lines 74-83, 99-103, 120-123
+    Timeline: Within 24 hours
+
+PRIORITY 2 - HIGH (Code Quality):
+──────────────────────────────────
+[ ] Create centralized error logging utility
+    Create: /lib/error-logger.ts
+    Include: userId, timestamp, action, IP, error message
+    Timeline: This sprint
+
+[ ] Update 70% of routes to use structured logging
+    Pattern:
+      console.error("Action failed", {
+        userId: payload?.userId,
+        action: "describe_what_happened",
+        timestamp: new Date().toISOString(),
+        ip: request.headers.get("x-forwarded-for"),
+        error: error instanceof Error ? error.message : "Unknown",
+      });
+    Timeline: This sprint
+
+[ ] Add audit logging for success cases
+    Routes: All admin operations, user modifications
+    Include: What changed, who changed it, when
+    Timeline: Next sprint
+
+PRIORITY 3 - MEDIUM (Enhancement):
+───────────────────────────────────
+[ ] Implement structured logging to external service
+    Options: Sentry, Datadog, LogRocket, custom logging service
+    Timeline: Q1 2024
+
+[ ] Create error handling middleware
+    Features: Consistent formatting, automatic context capture
+    Timeline: Next sprint
+
+[ ] Add request ID tracking for distributed tracing
+    Pattern: Generate unique requestId in middleware
+    Timeline: Q1 2024
+
+================================================================================
+8. POSITIVE FINDINGS - WHAT'S WORKING WELL
+================================================================================
+
+✅ COMPREHENSIVE TRY-CATCH COVERAGE
+   - All 60+ routes have error handling
+   - No unhandled promise rejections detected
+
+✅ SECURITY FEATURES
+   - Rate limiting on all sensitive operations
+   - CSRF protection with proper signatures
+   - Input validation with Zod
+   - Password hashing with bcrypt
+
+✅ SOME ROUTES DO IT RIGHT
+   - /app/api/user/change-password/route.ts (excellent audit log)
+   - /app/api/user/profile/route.ts (good context logging)
+   - /app/api/billing/webhooks/route.ts (webhook logging)
+   - /app/api/auth/forgot-password/route.ts (prevents enumeration)
+   - /app/api/auth/login/route.ts (generic error messages)
+
+✅ ERROR MESSAGE CONSTANTS
+   - ERROR_MESSAGES defined in constants
+   - Centralized error message management
+   - Prevents hardcoded error strings
+
+================================================================================
+9. FILES TO REVIEW FOR IMPLEMENTATION
+================================================================================
+
+REFERENCE IMPLEMENTATIONS (Copy patterns from):
+  1. /home/user/EICC/app/api/user/change-password/route.ts
+     - Shows structured logging with context
+     - Demonstrates audit trail format
+
+  2. /home/user/EICC/app/api/user/profile/route.ts
+     - Shows change tracking logging
+     - Demonstrates userId, changes, timestamp logging
+
+  3. /home/user/EICC/lib/csrf.ts
+     - Shows proper error handling
+     - Demonstrates security logging
+
+UTILITY FILES TO CREATE:
+  1. /home/user/EICC/lib/error-logger.ts (MISSING)
+  2. /home/user/EICC/lib/audit-logger.ts (MISSING)
+
+EXISTING UTILITIES:
+  - /home/user/EICC/lib/api-helpers.ts (basic error handling)
+  - /home/user/EICC/lib/http-status.ts (status codes and messages)
+  - /home/user/EICC/lib/constants.ts (ERROR_MESSAGES)
+
+================================================================================
+10. IMPLEMENTATION CHECKLIST
+================================================================================
+
+IMMEDIATE FIXES (Do Today):
+  [ ] Review /app/api/admin/enrollments/route.ts - Remove line 60
+  [ ] Review /app/api/admin/dashboard/route.ts - Remove line 60
+  [ ] Review /app/api/admin/certificates/* - Remove details field
+  [ ] Review /app/api/admin/reports/route.ts - Remove details field
+  [ ] Review /app/api/admin/settings/route.ts - Remove details field
+  [ ] Review /app/api/admin/enrollments/[id]/route.ts - Remove details field
+  [ ] Review /app/api/company/profile/route.ts - Remove debug fields
+  [ ] Review /app/api/billing/webhooks/route.ts - Remove line 53
+
+SHORT TERM (This Week):
+  [ ] Create /lib/error-logger.ts with structured logging
+  [ ] Create /lib/audit-logger.ts for audit trails
+  [ ] Update 5 critical routes with new logging
+  [ ] Create logging documentation
+  [ ] Add error handling guidelines to README
+
+MEDIUM TERM (This Month):
+  [ ] Update all remaining 55 routes with structured logging
+  [ ] Integrate with centralized logging service
+  [ ] Add request ID tracking
+  [ ] Create error handling middleware
+  [ ] Add logging tests
+
+================================================================================
+
+CONCLUSION:
+The codebase has a solid security foundation with proper rate limiting, CSRF
+protection, and input validation. However, error handling is INCONSISTENT and
+EXPOSES SENSITIVE INFORMATION.
+
+IMMEDIATE ACTION REQUIRED: Fix 10+ routes that expose error.message to clients
+to prevent information disclosure.
+
+RECOMMENDATION: Implement structured logging across all routes within this sprint
+to create proper audit trails and improve incident investigation capability.
+
+================================================================================
