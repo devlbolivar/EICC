@@ -93,8 +93,6 @@ export async function POST(
     return NextResponse.json(
       {
         error: ERROR_MESSAGES.SERVER_ERROR,
-        details:
-          error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
       },
       { status: 500 }
     );
