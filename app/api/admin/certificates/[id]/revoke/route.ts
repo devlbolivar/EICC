@@ -5,6 +5,7 @@ import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq } from "drizzle-orm";
 import { ERROR_MESSAGES } from "@/lib/constants";
 import { validateUUID } from "@/lib/validation";
+import { sanitizeString } from "@/lib/utils";
 
 export async function POST(
   request: NextRequest,
@@ -31,6 +32,8 @@ export async function POST(
     // ===== OBTENER DATOS DEL BODY (opcional: razón de revocación) =====
     const body = await request.json().catch(() => ({}));
     const { reason } = body;
+    // Sanitizar razón para prevenir XSS almacenado
+    const sanitizedReason = reason ? sanitizeString(reason) : undefined;
 
     // ===== VERIFICAR QUE EL CERTIFICADO EXISTE =====
     const existingCertificate = await db
@@ -61,8 +64,8 @@ export async function POST(
         isActive: false,
         updatedAt: new Date(),
         // Si tuviéramos un campo para la razón, lo agregaríamos aquí
-        description: reason
-          ? `${existingCertificate[0].description || ""}\n\n[REVOCADO] Razón: ${reason}`
+        description: sanitizedReason
+          ? `${existingCertificate[0].description || ""}\n\n[REVOCADO] Razón: ${sanitizedReason}`
           : existingCertificate[0].description,
       })
       .where(eq(schema.certificatesTable.id, certificateId))
