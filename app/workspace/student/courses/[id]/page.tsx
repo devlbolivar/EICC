@@ -45,7 +45,7 @@ import { Loader } from "@/components/ui/loader";
 // Hooks and Types
 import { useCourses } from "@/hooks/use-courses";
 import { useCertificateCheck } from "@/hooks/use-certificate-check";
-import { Course, EnrolledCourseResponse, Lesson } from "@/app/types";
+import { Course, EnrolledCourseResponse } from "@/app/types";
 import { safeLocalStorage } from "@/lib/storage";
 
 // Constants
@@ -97,14 +97,14 @@ export default function CourseLearning() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentChapter, setCurrentChapter] = useState(0);
-  const [currentLesson, setCurrentLesson] = useState(0);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [_currentLesson, setCurrentLesson] = useState(0);
+  const [_isVideoPlaying, _setIsVideoPlaying] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [_isFullscreen, setIsFullscreen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showResources, setShowResources] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [lastWatchedTime, setLastWatchedTime] = useState<number>(0);
+  const [_lastWatchedTime, _setLastWatchedTime] = useState<number>(0);
   const [bookmarkedChapters, setBookmarkedChapters] = useState<Set<number>>(
     new Set()
   );
@@ -138,7 +138,7 @@ export default function CourseLearning() {
     );
   }, [course, enrollment]);
 
-  const getCourseGradient = (isCompleted: boolean) => {
+  const _getCourseGradient = (isCompleted: boolean) => {
     return isCompleted
       ? "bg-gradient-to-br from-green-500 to-emerald-600"
       : "bg-gradient-to-br from-blue-500 to-purple-600";

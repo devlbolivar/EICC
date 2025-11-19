@@ -134,11 +134,11 @@ export default function TestCertificatePage() {
             <ol className="list-decimal list-inside space-y-1 mt-2">
               <li>Enter a valid course ID</li>
               <li>
-                Click "Test Course Completion" to simulate completing a course
+                Click &quot;Test Course Completion&quot; to simulate completing a course
               </li>
               <li>Check the result to see if certificate generation worked</li>
               <li>
-                Click "Test Certificate Retrieval" to check if certificates
+                Click &quot;Test Certificate Retrieval&quot; to check if certificates
                 exist
               </li>
             </ol>

@@ -18,11 +18,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface CompanyData {
+  id: string;
+  name: string;
+  rut: string;
+  email: string;
+  phone: string;
+  address: string;
+  industry: string;
+  plan: string;
+  isActive: boolean;
+}
+
 export default function AdminEditCompanyPage() {
   const { isAdmin } = useAdmin();
   const { companies, updateCompany, fetchCompanies } = useAdminCompanies();
   const { id } = useParams();
-  const [company, setCompany] = useState<any>(null);
+  const [company, setCompany] = useState<CompanyData | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     rut: "",
@@ -53,7 +65,7 @@ export default function AdminEditCompanyPage() {
             fetchCompanies();
         }
     }
-  }, [id, companies]);
+  }, [id, companies, fetchCompanies]);
 
   // Redirigir si no es administrador
   if (!isAdmin) {

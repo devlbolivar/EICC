@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Generar nuevo token
-    const { token, signature } = generateCsrfToken();
+    const { token } = generateCsrfToken();
 
     // Configurar cookie
     const cookieConfig = getCsrfCookieConfig();

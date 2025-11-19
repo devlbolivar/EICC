@@ -35,21 +35,21 @@ export const FILE_CONFIG = {
  * Verifica si un tipo MIME es una imagen permitida
  */
 export function isAllowedImageType(mimeType: string): boolean {
-  return FILE_CONFIG.ALLOWED_IMAGE_TYPES.includes(mimeType as any);
+  return (FILE_CONFIG.ALLOWED_IMAGE_TYPES as readonly string[]).includes(mimeType);
 }
 
 /**
  * Verifica si un tipo MIME es un documento permitido
  */
 export function isAllowedDocumentType(mimeType: string): boolean {
-  return FILE_CONFIG.ALLOWED_DOCUMENT_TYPES.includes(mimeType as any);
+  return (FILE_CONFIG.ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(mimeType);
 }
 
 /**
  * Verifica si un tipo MIME es un video permitido
  */
 export function isAllowedVideoType(mimeType: string): boolean {
-  return FILE_CONFIG.ALLOWED_VIDEO_TYPES.includes(mimeType as any);
+  return (FILE_CONFIG.ALLOWED_VIDEO_TYPES as readonly string[]).includes(mimeType);
 }
 
 /**

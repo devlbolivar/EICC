@@ -145,8 +145,8 @@ const CompanySupport = () => {
     switch (priority) {
       case "low":
         return "Baja";
-      case "normal":
-        return "Normal";
+      case "medium":
+        return "Media";
       case "high":
         return "Alta";
       case "urgent":

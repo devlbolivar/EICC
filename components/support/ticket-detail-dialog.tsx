@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,6 @@ import { useSupport } from "@/hooks/use-support";
 import {
   Loader2,
   Send,
-  Clock,
   User,
   CheckCircle,
   XCircle,
@@ -50,13 +49,7 @@ export function TicketDetailDialog({
   const [loadingTicket, setLoadingTicket] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
 
-  useEffect(() => {
-    if (open && ticketId) {
-      loadTicket();
-    }
-  }, [open, ticketId]);
-
-  const loadTicket = async () => {
+  const loadTicket = useCallback(async () => {
     setLoadingTicket(true);
     const result = await getTicket(ticketId);
     if (result) {
@@ -64,7 +57,13 @@ export function TicketDetailDialog({
       setMessages(result.messages);
     }
     setLoadingTicket(false);
-  };
+  }, [getTicket, ticketId]);
+
+  useEffect(() => {
+    if (open && ticketId) {
+      loadTicket();
+    }
+  }, [open, ticketId, loadTicket]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -130,7 +129,7 @@ export function TicketDetailDialog({
     switch (priority) {
       case "low":
         return "bg-gray-500";
-      case "normal":
+      case "medium":
         return "bg-blue-500";
       case "high":
         return "bg-orange-500";
@@ -145,8 +144,8 @@ export function TicketDetailDialog({
     switch (priority) {
       case "low":
         return "Baja";
-      case "normal":
-        return "Normal";
+      case "medium":
+        return "Media";
       case "high":
         return "Alta";
       case "urgent":
@@ -162,10 +161,10 @@ export function TicketDetailDialog({
         return "Problema Técnico";
       case "billing":
         return "Facturación";
-      case "account":
-        return "Cuenta";
-      case "other":
-        return "Otro";
+      case "general":
+        return "General";
+      case "feature_request":
+        return "Solicitud de Función";
       default:
         return category;
     }

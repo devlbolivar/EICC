@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
 import { safeLocalStorage } from "@/lib/storage";
@@ -180,7 +180,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
 
   const clearError = () => setError(null);
 
-  const fetchUsers = async (params?: {
+  const fetchUsers = useCallback(async (params?: {
     page?: number;
     limit?: number;
     search?: string;
@@ -248,7 +248,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session, pagination.page, pagination.limit, filters.search, filters.role, filters.status, filters.sortBy, filters.sortOrder]);
 
   const createUser = async (userData: CreateUserData): Promise<UserDetail> => {
     const token = getToken();
@@ -322,7 +322,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
     }
   };
 
-  const getUser = async (userId: string): Promise<UserDetail> => {
+  const getUser = useCallback(async (userId: string): Promise<UserDetail> => {
     const token = getToken();
     if (!token && !session) throw new Error("No hay token de autenticación");
 
@@ -342,9 +342,9 @@ export function useAdminUsers(): UseAdminUsersReturn {
 
     const data = await response.json();
     return data;
-  };
+  }, [session]);
 
-  const getRoles = async (): Promise<Role[]> => {
+  const getRoles = useCallback(async (): Promise<Role[]> => {
     const token = getToken();
     if (!token && !session) throw new Error("No hay token de autenticación");
 
@@ -364,9 +364,9 @@ export function useAdminUsers(): UseAdminUsersReturn {
 
     const data = await response.json();
     return data.roles;
-  };
+  }, [session]);
 
-  const getCompanies = async (): Promise<Company[]> => {
+  const getCompanies = useCallback(async (): Promise<Company[]> => {
     const token = getToken();
     if (!token && !session) throw new Error("No hay token de autenticación");
 
@@ -386,7 +386,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
 
     const data = await response.json();
     return data.companies;
-  };
+  }, [session]);
 
   const setFilters = (
     newFilters: Partial<{
@@ -403,7 +403,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
   // Cargar usuarios al montar el componente
   useEffect(() => {
     fetchUsers();
-  }, [session]);
+  }, [session, fetchUsers]);
 
   return {
     users,

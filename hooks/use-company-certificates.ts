@@ -190,6 +190,8 @@ export function useCompanyCertificates(
     options.status,
     options.courseId,
     options.userId,
+    fetchCertificates,
+    fetchStats,
   ]);
 
   return {

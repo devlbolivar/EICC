@@ -40,7 +40,13 @@ export default function AdminCompaniesPage() {
 
   // ===== EFECTO PARA BÚSQUEDA EN TIEMPO REAL =====
   useEffect(() => {
-    const filters: any = {
+    const filters: {
+      search: string;
+      page: number;
+      industry?: string;
+      plan?: string;
+      isActive?: boolean;
+    } = {
       search: debouncedSearch,
       page: 1, // Reset a la primera página cuando se busca
     };
@@ -52,7 +58,7 @@ export default function AdminCompaniesPage() {
     }
 
     fetchCompanies(filters);
-  }, [debouncedSearch, industryFilter, planFilter, statusFilter]);
+  }, [debouncedSearch, industryFilter, planFilter, statusFilter, fetchCompanies]);
 
   // ===== FUNCIÓN PARA LIMPIAR FILTROS =====
   const clearFilters = () => {

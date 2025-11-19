@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { safeLocalStorage } from "@/lib/storage";
 
@@ -54,7 +54,7 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
     return safeLocalStorage.getItem("accessToken");
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -89,7 +89,7 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session]);
 
   const updateProfile = async (data: CompanyProfileUpdateData) => {
     try {
@@ -144,7 +144,7 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
     if (session) {
       fetchProfile();
     }
-  }, [session]);
+  }, [session, fetchProfile]);
 
   return {
     companyProfile,

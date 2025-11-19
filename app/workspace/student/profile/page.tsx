@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 // UI Components
 import {
@@ -140,7 +141,7 @@ const StudentProfile = () => {
     );
   };
 
-  const resetFormData = () => {
+  const resetFormData = React.useCallback(() => {
     if (profile) {
       setFormData({
         name: profile.name || "",
@@ -150,7 +151,7 @@ const StudentProfile = () => {
         avatar: profile.avatar || "",
       });
     }
-  };
+  }, [profile]);
 
   const resetPasswordData = () => {
     setPasswordData({
@@ -183,7 +184,7 @@ const StudentProfile = () => {
   // Update form data when profile loads
   React.useEffect(() => {
     resetFormData();
-  }, [profile]);
+  }, [profile, resetFormData]);
 
   // Fetch enrolled courses when component mounts
   React.useEffect(() => {
@@ -512,10 +513,13 @@ const StudentProfile = () => {
                     onClick={handleAvatarClick}
                   >
                     {profile.avatar ? (
-                      <img
+                      <Image
                         src={profile.avatar}
                         alt="Avatar"
+                        width={96}
+                        height={96}
                         className="w-full h-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <User

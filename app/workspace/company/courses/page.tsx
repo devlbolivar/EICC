@@ -7,15 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
   Search,
-  Filter,
   Play,
   Clock,
   Users,
-  Star,
   TrendingUp,
   Award,
   Loader2,
@@ -42,7 +39,7 @@ const CompanyCourses = () => {
   }, [fetchCourses, searchTerm, selectedCategory, selectedLevel]);
 
   // Simple statistics based on courses
-  const stats = {
+  const _stats = {
     totalCourses: courses.length,
   };
 
@@ -59,7 +56,7 @@ const CompanyCourses = () => {
     }
   };
 
-  const getEnrollmentProgress = (enrolled: number, total: number) => {
+  const _getEnrollmentProgress = (enrolled: number, total: number) => {
     return (enrolled / total) * 100;
   };
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { supportTicketsTable, supportMessagesTable, usersTable } from "@/config/schema";
 import { verifyAuth } from "@/lib/admin-auth";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { apiRateLimit } from "@/lib/rate-limit";
 import { hasAnyPermission } from "@/lib/permissions";
@@ -12,7 +12,7 @@ import { validateUUID } from "@/lib/validation";
 // Zod schema for PATCH validation
 const updateTicketSchema = z.object({
   status: z.enum(["open", "in_progress", "resolved", "closed"], {
-    errorMap: () => ({ message: "Estado inválido" }),
+    message: "Estado inválido",
   }),
 });
 

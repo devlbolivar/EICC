@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp,
   Search,
-  Filter,
   Users,
   BookOpen,
   Award,
@@ -111,18 +110,18 @@ const CompanyProgress = () => {
     return matchesSearch && matchesRole && matchesProgress;
   });
 
-  const getProgressPercentage = (completed: number, total: number) => {
+  const _getProgressPercentage = (completed: number, total: number) => {
     if (total === 0) return 0;
     return (completed / total) * 100;
   };
 
-  const getScoreColor = (score: number) => {
+  const _getScoreColor = (score: number) => {
     if (score >= 90) return "text-green-600";
     if (score >= 80) return "text-yellow-600";
     return "text-red-600";
   };
 
-  const getScoreBadge = (score: number) => {
+  const _getScoreBadge = (score: number) => {
     if (score >= 90)
       return <Badge className="bg-green-100 text-green-800">Excelente</Badge>;
     if (score >= 80)
@@ -360,7 +359,7 @@ const CompanyProgress = () => {
             <div className="space-y-6">
               {filteredEmployees.map((employee) => {
                 // Estimamos un promedio de cursos totales basado en los completados
-                const estimatedTotalCourses = Math.max(employee.coursesCompleted, 1);
+                const _estimatedTotalCourses = Math.max(employee.coursesCompleted, 1);
                 const progressPercentage = employee.coursesCompleted > 0 ? 100 : 0;
 
                 return (

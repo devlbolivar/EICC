@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import { supportTicketsTable, supportMessagesTable, usersTable, companiesTable } from "@/config/schema";
+import { supportTicketsTable, usersTable, companiesTable } from "@/config/schema";
 import { verifyAdminAuth } from "@/lib/admin-auth";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 
@@ -136,7 +136,7 @@ export async function PATCH(req: NextRequest) {
     return authResult.response;
   }
 
-  const { payload } = authResult;
+  const { payload: _payload } = authResult;
 
   try {
     const body = await req.json();

@@ -3,7 +3,6 @@ import {
   Certificate,
   CertificateCreateData,
   CertificateUpdateData,
-  PaginatedResponse,
   PaginationInfo,
 } from "@/app/types";
 import { API_ROUTES } from "@/lib/constants";

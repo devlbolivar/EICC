@@ -30,9 +30,7 @@ export function generateCertificateId(): string {
  * Calculates the grade based on course completion and performance
  */
 export function calculateCertificateGrade(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _enrollment: EnrollCourse,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _course: Course
 ): number {
   // Base grade for completion

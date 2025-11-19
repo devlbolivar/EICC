@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { supportTicketsTable, usersTable } from "@/config/schema";
-import { verifyAuth, verifyAdminAuth } from "@/lib/admin-auth";
+import { verifyAuth } from "@/lib/admin-auth";
 import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 import { strictRateLimit, apiRateLimit } from "@/lib/rate-limit";
@@ -21,11 +21,11 @@ const createTicketSchema = z.object({
     .min(10, "La descripción debe tener al menos 10 caracteres")
     .max(5000, "La descripción debe tener máximo 5000 caracteres"),
   category: z.enum(["technical", "billing", "general", "feature_request"], {
-    errorMap: () => ({ message: "Categoría inválida" }),
+    message: "Categoría inválida",
   }),
   priority: z
     .enum(["low", "medium", "high", "urgent"], {
-      errorMap: () => ({ message: "Prioridad inválida" }),
+      message: "Prioridad inválida",
     })
     .optional()
     .default("medium"),
