@@ -55,6 +55,30 @@ export function handleApiError(error: unknown) {
     return error.response;
   }
 
+  // Detectar errores de base de datos: tabla no existe (PostgreSQL error code 42P01)
+  if (error instanceof Error) {
+    const errorObj = error as any;
+
+    // Verificar si es un error de Neon/PostgreSQL
+    if (errorObj.code === '42P01' || error.message.includes('relation') && error.message.includes('does not exist')) {
+      const tableName = extractTableNameFromError(error.message);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database not initialized",
+          message: `The database table "${tableName}" does not exist. Please run database migrations.`,
+          instructions: [
+            "Run: npm run db:migrate",
+            "Or run: npm run db:push",
+            "See README.md for detailed setup instructions"
+          ],
+          technicalDetails: process.env.NODE_ENV === 'development' ? error.message : undefined
+        },
+        { status: 503 } // Service Unavailable
+      );
+    }
+  }
+
   return NextResponse.json(
     {
       success: false,
@@ -62,6 +86,14 @@ export function handleApiError(error: unknown) {
     },
     { status: 500 }
   );
+}
+
+/**
+ * Extrae el nombre de la tabla de un mensaje de error de PostgreSQL
+ */
+function extractTableNameFromError(errorMessage: string): string {
+  const match = errorMessage.match(/relation "([^"]+)" does not exist/);
+  return match ? match[1] : 'unknown';
 }
 
 /**
