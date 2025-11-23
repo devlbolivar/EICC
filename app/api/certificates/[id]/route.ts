@@ -52,10 +52,10 @@ export async function GET(
         u.${sql.identifier(usersTable.name.name)} as user_name,
         u.${sql.identifier(usersTable.email.name)} as user_email,
         comp.${sql.identifier(companiesTable.name.name)} as company_name
-      FROM ${sql.identifier(certificatesTable._.name)} cert
-      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
-      LEFT JOIN ${sql.identifier(usersTable._.name)} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
-      LEFT JOIN ${sql.identifier(companiesTable._.name)} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
+      FROM ${sql.identifier("certificates")} cert
+      LEFT JOIN ${sql.identifier("courses")} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      LEFT JOIN ${sql.identifier("users")} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      LEFT JOIN ${sql.identifier("companies")} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
       WHERE cert.${sql.identifier(certificatesTable.certificateId.name)} = ${certificateId} AND cert.${sql.identifier(certificatesTable.isActive.name)} = true
     `);
 
@@ -137,7 +137,7 @@ export async function PUT(
 
     // Verificar que el certificado existe
     const existingCert = await db.execute(sql`
-      SELECT * FROM ${sql.identifier(certificatesTable._.name)} WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
+      SELECT * FROM ${sql.identifier("certificates")} WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
     `);
 
     if (existingCert.rows.length === 0) {
@@ -149,7 +149,7 @@ export async function PUT(
 
     // Actualizar certificado
     const updateQuery = sql`
-      UPDATE ${sql.identifier(certificatesTable._.name)}
+      UPDATE ${sql.identifier("certificates")}
       SET
         ${sql.identifier(certificatesTable.updatedAt.name)} = ${new Date().toISOString()},
         ${sql.identifier(certificatesTable.title.name)} = ${body.title || existingCert.rows[0].title},
@@ -223,7 +223,7 @@ export async function DELETE(
 
     // Soft delete - marcar como inactivo
     const result = await db.execute(sql`
-      UPDATE ${sql.identifier(certificatesTable._.name)}
+      UPDATE ${sql.identifier("certificates")}
       SET ${sql.identifier(certificatesTable.isActive.name)} = false, ${sql.identifier(certificatesTable.updatedAt.name)} = ${new Date().toISOString()}
       WHERE ${sql.identifier(certificatesTable.id.name)} = ${certificateId}
       RETURNING ${sql.identifier(certificatesTable.id.name)}
