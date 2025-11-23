@@ -198,9 +198,84 @@ npm run lint             # Linting
 
 ### Problemas Comunes
 
-1. **Error de JWT_SECRET**: Asegúrate de configurar la variable de entorno
-2. **Error de base de datos**: Verifica la conexión y credenciales
-3. **Errores de CORS**: Configura CORS_ORIGIN correctamente
+#### 1. Error de JWT_SECRET
+Asegúrate de configurar la variable de entorno en `.env.local`:
+```env
+JWT_SECRET="tu-clave-super-segura-de-al-menos-32-caracteres"
+```
+
+#### 2. Error: "relation does not exist" / Tablas no encontradas
+
+**Síntomas:**
+- Errores como `Error [NeonDbError]: relation "invoices" does not exist`
+- Código de error PostgreSQL: `42P01`
+- Errores al cargar páginas que acceden a la base de datos
+
+**Causa:** Las migraciones de base de datos no se han ejecutado.
+
+**Solución:**
+
+```bash
+# Opción 1: Ejecutar migraciones (RECOMENDADO)
+npm run db:migrate
+
+# Opción 2: Push directo del schema
+npm run db:push
+
+# Verificar que las tablas se crearon correctamente
+npm run db:test
+
+# Opcional: Agregar datos iniciales (roles, usuarios de prueba)
+npm run db:setup
+```
+
+**Verificar estado de la base de datos:**
+- Accede a: `http://localhost:3000/api/health/db`
+- Este endpoint verifica qué tablas existen y cuáles faltan
+
+#### 3. Error de conexión a base de datos
+Verifica la conexión y credenciales en `.env.local`:
+```env
+DATABASE_URL="postgresql://user:password@host:port/database"
+```
+
+#### 4. Errores de CORS
+Configura CORS_ORIGIN correctamente en `.env.local`:
+```env
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Health Check Endpoints
+
+El proyecto incluye endpoints de salud para verificar el estado del sistema:
+
+- **`/api/health/db`**: Verifica la conexión a la base de datos y existencia de tablas
+  - ✅ Status 200: Todo correcto
+  - ❌ Status 503: Problema con la base de datos (migraciones faltantes o sin conexión)
+
+**Ejemplo de uso:**
+```bash
+# Verificar estado de la base de datos
+curl http://localhost:3000/api/health/db
+
+# Respuesta cuando faltan migraciones:
+{
+  "success": false,
+  "status": "unhealthy",
+  "database": {
+    "connected": true,
+    "tablesChecked": 13,
+    "tablesExisting": 8,
+    "tablesMissing": 5
+  },
+  "tables": {
+    "existing": ["users", "companies", "roles", ...],
+    "missing": ["invoices", "subscriptions", "enroll_course", ...]
+  },
+  "message": "Database migrations have not been run. Some tables are missing.",
+  "instructions": [...]
+}
+```
 
 ## 📝 Licencia
 
