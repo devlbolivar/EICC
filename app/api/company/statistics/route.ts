@@ -3,7 +3,7 @@ import { db } from "@/config/db";
 import { coursesTable, userCompaniesTable, enrollCourseTable, certificatesTable, usersTable } from "@/config/schema";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
-import { sql } from "drizzle-orm";
+import { sql, getTableName } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -44,7 +44,7 @@ export async function GET() {
         COUNT(CASE WHEN ${sql.identifier(coursesTable.status.name)} = 'Publicado' THEN 1 END) as published_courses,
         COUNT(CASE WHEN ${sql.identifier(coursesTable.status.name)} = 'Borrador' THEN 1 END) as draft_courses,
         COUNT(CASE WHEN ${sql.identifier(coursesTable.isActive.name)} = true THEN 1 END) as active_courses
-      FROM ${sql.identifier(coursesTable._.name)}
+      FROM ${sql.identifier(getTableName(coursesTable))}
       WHERE ${sql.identifier(coursesTable.companyId.name)} = ${companyId}
     `);
 
@@ -54,8 +54,8 @@ export async function GET() {
         COUNT(DISTINCT uc.${sql.identifier(userCompaniesTable.userId.name)}) as enrolled_employees,
         COUNT(ec.${sql.identifier(enrollCourseTable.userId.name)}) as total_enrollments,
         COUNT(CASE WHEN ec.${sql.identifier(enrollCourseTable.completedAt.name)} IS NOT NULL THEN 1 END) as completed_enrollments
-      FROM ${sql.identifier(userCompaniesTable._.name)} uc
-      LEFT JOIN ${sql.identifier(enrollCourseTable._.name)} ec ON uc.${sql.identifier(userCompaniesTable.userId.name)} = ec.${sql.identifier(enrollCourseTable.userId.name)}
+      FROM ${sql.identifier(getTableName(userCompaniesTable))} uc
+      LEFT JOIN ${sql.identifier(getTableName(enrollCourseTable))} ec ON uc.${sql.identifier(userCompaniesTable.userId.name)} = ec.${sql.identifier(enrollCourseTable.userId.name)}
       WHERE uc.${sql.identifier(userCompaniesTable.companyId.name)} = ${companyId} AND uc.${sql.identifier(userCompaniesTable.isActive.name)} = true
     `);
 
@@ -65,7 +65,7 @@ export async function GET() {
         COUNT(*) as total_certificates,
         COUNT(CASE WHEN ${sql.identifier(certificatesTable.issuedDate.name)} >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as certificates_last_month,
         COUNT(CASE WHEN ${sql.identifier(certificatesTable.issuedDate.name)} >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as certificates_last_week
-      FROM ${sql.identifier(certificatesTable._.name)}
+      FROM ${sql.identifier(getTableName(certificatesTable))}
       WHERE ${sql.identifier(certificatesTable.companyId.name)} = ${companyId}
     `);
 
@@ -80,8 +80,8 @@ export async function GET() {
           )
           ELSE 0
         END as average_completion
-      FROM ${sql.identifier(enrollCourseTable._.name)} ec
-      JOIN ${sql.identifier(coursesTable._.name)} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      FROM ${sql.identifier(getTableName(enrollCourseTable))} ec
+      JOIN ${sql.identifier(getTableName(coursesTable))} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
       WHERE c.${sql.identifier(coursesTable.companyId.name)} = ${companyId}
     `);
 
@@ -92,8 +92,8 @@ export async function GET() {
         c.${sql.identifier(coursesTable.name.name)},
         c.${sql.identifier(coursesTable.bannerImage.name)},
         COUNT(ec.${sql.identifier(enrollCourseTable.userId.name)}) as enrollment_count
-      FROM ${sql.identifier(coursesTable._.name)} c
-      LEFT JOIN ${sql.identifier(enrollCourseTable._.name)} ec ON c.${sql.identifier(coursesTable.id.name)} = ec.${sql.identifier(enrollCourseTable.courseId.name)}
+      FROM ${sql.identifier(getTableName(coursesTable))} c
+      LEFT JOIN ${sql.identifier(getTableName(enrollCourseTable))} ec ON c.${sql.identifier(coursesTable.id.name)} = ec.${sql.identifier(enrollCourseTable.courseId.name)}
       WHERE c.${sql.identifier(coursesTable.companyId.name)} = ${companyId} AND c.${sql.identifier(coursesTable.isActive.name)} = true
       GROUP BY c.${sql.identifier(coursesTable.id.name)}, c.${sql.identifier(coursesTable.name.name)}, c.${sql.identifier(coursesTable.bannerImage.name)}
       ORDER BY enrollment_count DESC
@@ -107,9 +107,9 @@ export async function GET() {
         u.${sql.identifier(usersTable.name.name)} as user_name,
         c.${sql.identifier(coursesTable.name.name)} as course_name,
         ec.${sql.identifier(enrollCourseTable.enrolledAt.name)} as activity_date
-      FROM ${sql.identifier(enrollCourseTable._.name)} ec
-      JOIN ${sql.identifier(usersTable._.name)} u ON ec.${sql.identifier(enrollCourseTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
-      JOIN ${sql.identifier(coursesTable._.name)} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      FROM ${sql.identifier(getTableName(enrollCourseTable))} ec
+      JOIN ${sql.identifier(getTableName(usersTable))} u ON ec.${sql.identifier(enrollCourseTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      JOIN ${sql.identifier(getTableName(coursesTable))} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
       WHERE c.${sql.identifier(coursesTable.companyId.name)} = ${companyId}
       AND ec.${sql.identifier(enrollCourseTable.enrolledAt.name)} >= CURRENT_DATE - INTERVAL '7 days'
 
@@ -120,9 +120,9 @@ export async function GET() {
         u.${sql.identifier(usersTable.name.name)} as user_name,
         c.${sql.identifier(coursesTable.name.name)} as course_name,
         ec.${sql.identifier(enrollCourseTable.completedAt.name)} as activity_date
-      FROM ${sql.identifier(enrollCourseTable._.name)} ec
-      JOIN ${sql.identifier(usersTable._.name)} u ON ec.${sql.identifier(enrollCourseTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
-      JOIN ${sql.identifier(coursesTable._.name)} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      FROM ${sql.identifier(getTableName(enrollCourseTable))} ec
+      JOIN ${sql.identifier(getTableName(usersTable))} u ON ec.${sql.identifier(enrollCourseTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      JOIN ${sql.identifier(getTableName(coursesTable))} c ON ec.${sql.identifier(enrollCourseTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
       WHERE c.${sql.identifier(coursesTable.companyId.name)} = ${companyId}
       AND ec.${sql.identifier(enrollCourseTable.completedAt.name)} >= CURRENT_DATE - INTERVAL '7 days'
 

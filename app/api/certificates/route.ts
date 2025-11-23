@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { certificatesTable, usersTable, coursesTable, companiesTable } from "@/config/schema";
-import { sql } from "drizzle-orm";
+import { sql, getTableName } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { CertificateCreateData } from "@/app/types";
@@ -90,10 +90,10 @@ export async function GET(request: NextRequest) {
         u.${sql.identifier(usersTable.name.name)} as user_name,
         u.${sql.identifier(usersTable.email.name)} as user_email,
         comp.${sql.identifier(companiesTable.name.name)} as company_name
-      FROM ${sql.identifier(certificatesTable._.name)} cert
-      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
-      LEFT JOIN ${sql.identifier(usersTable._.name)} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
-      LEFT JOIN ${sql.identifier(companiesTable._.name)} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
+      FROM ${sql.identifier(getTableName(certificatesTable))} cert
+      LEFT JOIN ${sql.identifier(getTableName(coursesTable))} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      LEFT JOIN ${sql.identifier(getTableName(usersTable))} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
+      LEFT JOIN ${sql.identifier(getTableName(companiesTable))} comp ON cert.${sql.identifier(certificatesTable.companyId.name)} = comp.${sql.identifier(companiesTable.id.name)}
       WHERE ${whereConditions}
       ORDER BY cert.${sql.identifier(certificatesTable.issuedDate.name)} DESC
       LIMIT ${limit} OFFSET ${(page - 1) * limit}
@@ -104,8 +104,8 @@ export async function GET(request: NextRequest) {
     // Obtener total de registros para paginación
     const countQuery = sql`
       SELECT COUNT(*) as total
-      FROM ${sql.identifier(certificatesTable._.name)} cert
-      LEFT JOIN ${sql.identifier(coursesTable._.name)} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      FROM ${sql.identifier(getTableName(certificatesTable))} cert
+      LEFT JOIN ${sql.identifier(getTableName(coursesTable))} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
       WHERE ${whereConditions}
     `;
 
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el curso existe
     const courseResult = await db.execute(
-      sql`SELECT ${sql.identifier(coursesTable.id.name)} FROM ${sql.identifier(coursesTable._.name)} WHERE ${sql.identifier(coursesTable.id.name)} = ${body.courseId} AND ${sql.identifier(coursesTable.isActive.name)} = true`
+      sql`SELECT ${sql.identifier(coursesTable.id.name)} FROM ${sql.identifier(getTableName(coursesTable))} WHERE ${sql.identifier(coursesTable.id.name)} = ${body.courseId} AND ${sql.identifier(coursesTable.isActive.name)} = true`
     );
 
     if (courseResult.rows.length === 0) {
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el usuario existe
     const userResult = await db.execute(
-      sql`SELECT ${sql.identifier(usersTable.id.name)} FROM ${sql.identifier(usersTable._.name)} WHERE ${sql.identifier(usersTable.id.name)} = ${body.userId} AND ${sql.identifier(usersTable.isActive.name)} = true`
+      sql`SELECT ${sql.identifier(usersTable.id.name)} FROM ${sql.identifier(getTableName(usersTable))} WHERE ${sql.identifier(usersTable.id.name)} = ${body.userId} AND ${sql.identifier(usersTable.isActive.name)} = true`
     );
 
     if (userResult.rows.length === 0) {
