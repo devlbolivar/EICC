@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
  * GET /api/health/db
  * Health check endpoint to verify database setup and table existence
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const requiredTables = [
       'users',
@@ -33,9 +33,10 @@ export async function GET(req: NextRequest) {
         // Intentar hacer una consulta simple a la tabla
         await db.execute(sql`SELECT 1 FROM ${sql.raw(`"${tableName}"`)} LIMIT 1`);
         existingTables.push(tableName);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Si el error es "relation does not exist", la tabla no existe
-        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        const dbError = error as { code?: string; message?: string };
+        if (dbError.code === '42P01' || dbError.message?.includes('does not exist')) {
           missingTables.push(tableName);
         } else {
           // Si es otro tipo de error, la tabla existe pero hay otro problema

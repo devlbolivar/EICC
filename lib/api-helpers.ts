@@ -57,7 +57,7 @@ export function handleApiError(error: unknown) {
 
   // Detectar errores de base de datos: tabla no existe (PostgreSQL error code 42P01)
   if (error instanceof Error) {
-    const errorObj = error as any;
+    const errorObj = error as { code?: string; message: string };
 
     // Verificar si es un error de Neon/PostgreSQL
     if (errorObj.code === '42P01' || error.message.includes('relation') && error.message.includes('does not exist')) {
