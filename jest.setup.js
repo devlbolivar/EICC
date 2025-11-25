@@ -4,6 +4,24 @@ import "@testing-library/jest-dom";
 global.TextDecoder = global.TextDecoder || require("util").TextDecoder;
 global.TextEncoder = global.TextEncoder || require("util").TextEncoder;
 
+// Mock window.matchMedia (needed for responsive hooks)
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock fetch for tests that need it (like Stripe)
+global.fetch = jest.fn();
+
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
   useRouter() {

@@ -16,7 +16,7 @@ export function sanitizeString(input: string): string {
   }
 
   return input
-    .replace(/[<>]/g, "")
+    .replace(/<[^>]*>/g, "") // Quita etiquetas HTML completas
     .replace(/javascript:/gi, "")
     .replace(/on\w+=/gi, "")
     .trim();
@@ -92,11 +92,21 @@ export function sanitizeObject<T extends Record<string, unknown>>(
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "string") {
-      sanitized[key as keyof T] = sanitizeString(value) as T[keyof T];
+      // Si es un email, sanitizarlo como email
+      if (key === "email" || key.toLowerCase().includes("email")) {
+        const emailSanitized = validateAndSanitizeEmail(value);
+        sanitized[key as keyof T] = (emailSanitized || value) as T[keyof T];
+      } else {
+        sanitized[key as keyof T] = sanitizeString(value) as T[keyof T];
+      }
+    } else if (Array.isArray(value)) {
+      // Sanitizar cada elemento del array si es una cadena
+      sanitized[key as keyof T] = value.map((item) =>
+        typeof item === "string" ? sanitizeString(item) : item
+      ) as T[keyof T];
     } else if (
       typeof value === "object" &&
-      value !== null &&
-      !Array.isArray(value)
+      value !== null
     ) {
       sanitized[key as keyof T] = sanitizeObject(
         value as Record<string, unknown>

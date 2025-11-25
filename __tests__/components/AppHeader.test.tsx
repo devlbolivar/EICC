@@ -1,46 +1,52 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import AppHeader from "@/app/workspace/_components/AppHeader";
+import { SidebarProvider } from "@/components/ui/sidebar";
+
+// Helper function to render with SidebarProvider
+const renderWithProvider = (component: React.ReactElement) => {
+  return render(<SidebarProvider>{component}</SidebarProvider>);
+};
 
 describe("AppHeader Component", () => {
   it("renders header with default props", () => {
-    render(<AppHeader />);
+    renderWithProvider(<AppHeader />);
 
     // Verificar que el componente se renderiza sin errores
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toBeInTheDocument();
   });
 
   it("renders header with hideSidebar prop", () => {
-    render(<AppHeader hideSidebar={true} />);
+    renderWithProvider(<AppHeader hideSidebar={true} />);
 
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toHaveClass("justify-end");
   });
 
   it("renders header without hideSidebar prop", () => {
-    render(<AppHeader hideSidebar={false} />);
+    renderWithProvider(<AppHeader hideSidebar={false} />);
 
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toHaveClass("justify-between");
   });
 
   it("renders header with default hideSidebar value", () => {
-    render(<AppHeader />);
+    renderWithProvider(<AppHeader />);
 
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toHaveClass("justify-between");
   });
 
   it("applies correct styling classes", () => {
-    render(<AppHeader />);
+    renderWithProvider(<AppHeader />);
 
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toHaveClass("flex", "items-center", "p-5", "shadow-sm");
   });
 
   it("renders with sidebar trigger when hideSidebar is false", () => {
-    render(<AppHeader hideSidebar={false} />);
+    renderWithProvider(<AppHeader hideSidebar={false} />);
 
     // El SidebarTrigger debería estar presente
     const sidebarTrigger = document.querySelector(
@@ -50,7 +56,7 @@ describe("AppHeader Component", () => {
   });
 
   it("does not render sidebar trigger when hideSidebar is true", () => {
-    render(<AppHeader hideSidebar={true} />);
+    renderWithProvider(<AppHeader hideSidebar={true} />);
 
     // El SidebarTrigger no debería estar presente
     const sidebarTrigger = document.querySelector(
@@ -60,20 +66,24 @@ describe("AppHeader Component", () => {
   });
 
   it("handles different hideSidebar values correctly", () => {
-    const { rerender } = render(<AppHeader hideSidebar={true} />);
+    const { rerender } = renderWithProvider(<AppHeader hideSidebar={true} />);
 
-    let header = document.querySelector("div");
+    let header = screen.getByTestId("app-header");
     expect(header).toHaveClass("justify-end");
 
-    rerender(<AppHeader hideSidebar={false} />);
-    header = document.querySelector("div");
+    rerender(
+      <SidebarProvider>
+        <AppHeader hideSidebar={false} />
+      </SidebarProvider>
+    );
+    header = screen.getByTestId("app-header");
     expect(header).toHaveClass("justify-between");
   });
 
   it("maintains consistent structure", () => {
-    render(<AppHeader />);
+    renderWithProvider(<AppHeader />);
 
-    const header = document.querySelector("div");
+    const header = screen.getByTestId("app-header");
     expect(header).toBeInTheDocument();
     expect(header?.children.length).toBeGreaterThan(0);
   });

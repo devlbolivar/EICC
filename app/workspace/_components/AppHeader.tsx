@@ -4,6 +4,7 @@ import React from "react";
 const AppHeader = ({ hideSidebar = false }: { hideSidebar?: boolean }) => {
   return (
     <div
+      data-testid="app-header"
       className={`flex items-center ${
         hideSidebar ? "justify-end" : "justify-between"
       } p-5 shadow-sm`}

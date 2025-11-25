@@ -22,6 +22,8 @@ export const useAdmin = () => {
     if (session.permissions && session.permissions.length > 0) {
       const adminPermissions: Permission[] = [
         "platform:admin",
+        "platform:write",
+        "platform:read",
         "courses:create",
         "courses:edit",
         "courses:delete",

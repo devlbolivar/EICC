@@ -13,6 +13,9 @@ const customJestConfig = {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
+  transformIgnorePatterns: [
+    "node_modules/(?!(jose)/)", // Transform jose module
+  ],
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "components/**/*.{js,jsx,ts,tsx}",
