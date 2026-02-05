@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
-import { safeLocalStorage } from "@/lib/storage";
 
 interface User {
   id: string;
@@ -149,15 +148,16 @@ interface UseAdminUsersReturn {
 export function useAdminUsers(): UseAdminUsersReturn {
   const { session } = useAuth();
 
-  // Obtener token del localStorage o usar cookies
-  const getToken = (): string | null => {
-    // Intentar obtener del localStorage primero (SSR-safe)
-    const token = safeLocalStorage.getItem("accessToken");
-    if (token) return token;
-
-    // Si no hay token en localStorage, las cookies se enviarán automáticamente
-    // en las peticiones HTTP, así que retornamos null para usar cookies
-    return null;
+  const fetchCsrfToken = async (): Promise<string | null> => {
+    try {
+      const response = await fetch("/api/csrf");
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.data?.token || null;
+    } catch (error) {
+      console.error("Error fetching CSRF token:", error);
+      return null;
+    }
   };
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,8 +189,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
   }) => {
-    const token = getToken();
-    if (!token && !session) return;
+    if (!session) return;
 
     setLoading(true);
     setError(null);
@@ -214,25 +213,19 @@ export function useAdminUsers(): UseAdminUsersReturn {
       if (sortBy) searchParams.append("sortBy", sortBy);
       if (sortOrder) searchParams.append("sortOrder", sortOrder);
 
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
       const response = await fetch(`/api/admin/users?${searchParams}`, {
-        headers,
+        credentials: "include",
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al obtener usuarios");
+        throw new Error("Error al obtener usuarios");
       }
 
       const data: UsersResponse = await response.json();
       setUsers(data.users);
       setPagination(data.pagination);
 
-      // Actualizar filtros si se proporcionaron nuevos parámetros
+      // Actualizar filtros si se proporcionaron nuevos parámetrosre
       if (params) {
         setFiltersState((prev) => ({
           ...prev,
@@ -251,25 +244,25 @@ export function useAdminUsers(): UseAdminUsersReturn {
   }, [session, pagination.page, pagination.limit, filters.search, filters.role, filters.status, filters.sortBy, filters.sortOrder]);
 
   const createUser = async (userData: CreateUserData): Promise<UserDetail> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
+    if (!session) throw new Error("No hay token de autenticación");
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    const csrfToken = await fetchCsrfToken();
+    if (csrfToken) {
+      headers["x-csrf-token"] = csrfToken;
     }
 
     const response = await fetch("/api/admin/users/create", {
       method: "POST",
+      credentials: "include",
       headers,
       body: JSON.stringify(userData),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al crear usuario");
+      throw new Error("Error al crear usuario");
     }
 
     const data = await response.json();
@@ -280,64 +273,57 @@ export function useAdminUsers(): UseAdminUsersReturn {
     userId: string,
     userData: UpdateUserData
   ): Promise<void> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
+    if (!session) throw new Error("No hay token de autenticación");
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    const csrfToken = await fetchCsrfToken();
+    if (csrfToken) {
+      headers["x-csrf-token"] = csrfToken;
     }
 
     const response = await fetch(`/api/admin/users/${userId}`, {
       method: "PUT",
+      credentials: "include",
       headers,
       body: JSON.stringify(userData),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al actualizar usuario");
+      throw new Error("Error al actualizar usuario");
     }
   };
 
   const deleteUser = async (userId: string): Promise<void> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
+    if (!session) throw new Error("No hay token de autenticación");
 
     const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    const csrfToken = await fetchCsrfToken();
+    if (csrfToken) {
+      headers["x-csrf-token"] = csrfToken;
     }
 
     const response = await fetch(`/api/admin/users/${userId}`, {
       method: "DELETE",
+      credentials: "include",
       headers,
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al eliminar usuario");
+      throw new Error("Error al eliminar usuario");
     }
   };
 
   const getUser = useCallback(async (userId: string): Promise<UserDetail> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch(`/api/admin/users/${userId}`, {
-      headers,
+      credentials: "include",
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al obtener usuario");
+      throw new Error("Error al obtener usuario");
     }
 
     const data = await response.json();
@@ -345,21 +331,14 @@ export function useAdminUsers(): UseAdminUsersReturn {
   }, [session]);
 
   const getRoles = useCallback(async (): Promise<Role[]> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch("/api/admin/roles", {
-      headers,
+      credentials: "include",
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al obtener roles");
+      throw new Error("Error al obtener roles");
     }
 
     const data = await response.json();
@@ -367,21 +346,14 @@ export function useAdminUsers(): UseAdminUsersReturn {
   }, [session]);
 
   const getCompanies = useCallback(async (): Promise<Company[]> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch("/api/admin/companies", {
-      headers,
+      credentials: "include",
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al obtener empresas");
+      throw new Error("Error al obtener empresas");
     }
 
     const data = await response.json();

@@ -5,6 +5,7 @@ import { useAdminUsers } from "@/hooks/use-admin-users";
 import { redirect } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { validatePassword } from "@/lib/auth-shared";
 import {
   Card,
   CardContent,
@@ -46,8 +47,6 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
   Plus,
-  Search,
-  Filter,
   Edit,
   Trash2,
   Eye,
@@ -110,7 +109,6 @@ export default function AdminUsersPage() {
     deleteUser,
     getRoles,
     getCompanies,
-    setFilters,
     clearError,
   } = useAdminUsers();
 
@@ -165,44 +163,29 @@ export default function AdminUsersPage() {
     }
   }, [searchParams]);
 
-  // Manejar cambios en los filtros
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters({ [key]: value });
-  };
-
-  // Aplicar filtros
-  const applyFilters = () => {
-    fetchUsers({
-      page: 1,
-      search: filters.search,
-      role: filters.role === "all-roles" ? "" : filters.role,
-      status: filters.status === "all-status" ? "" : filters.status,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
-    });
-  };
-
-  // Limpiar filtros
-  const clearFilters = () => {
-    setFilters({
-      search: "",
-      role: "all-roles",
-      status: "all-status",
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    });
-    fetchUsers({
-      page: 1,
-      search: "",
-      role: "",
-      status: "",
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    });
-  };
 
   // Manejar creación de usuario
   const handleCreateUser = async () => {
+    // Validar campos requeridos
+    if (!formData.name || !formData.email || !formData.password || !formData.roleId) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("El email no es válido");
+      return;
+    }
+
+    // Validar contraseña using shared validator
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.errors[0] || "Contraseña inválida");
+      return;
+    }
+
     try {
       await createUser({
         name: formData.name,
@@ -541,73 +524,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Buscar usuarios..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select
-              value={filters.role}
-              onValueChange={(value) => handleFilterChange("role", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filtrar por rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-roles">Todos los roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="company">Company</SelectItem>
-                <SelectItem value="student">Student</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => handleFilterChange("status", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-status">Todos los estados</SelectItem>
-                <SelectItem value="active">Activo</SelectItem>
-                <SelectItem value="inactive">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.sortBy}
-              onValueChange={(value) => handleFilterChange("sortBy", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt">Fecha de creación</SelectItem>
-                <SelectItem value="name">Nombre</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="lastLoginAt">Último login</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
-              <Button onClick={applyFilters} className="flex-1">
-                <Filter className="w-4 h-4 mr-2" />
-                Aplicar
-              </Button>
-              <Button variant="outline" onClick={clearFilters}>
-                Limpiar
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Mensaje de error */}
       {error && (

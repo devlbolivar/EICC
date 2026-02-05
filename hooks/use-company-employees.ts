@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
-import { safeLocalStorage } from "@/lib/storage";
 
 export interface CompanyEmployee {
   id: string;
@@ -69,10 +68,6 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
     limit: 10,
   });
 
-  const getToken = () => {
-    return safeLocalStorage.getItem("accessToken");
-  };
-
   const buildQueryString = (filters: EmployeesFilters): string => {
     const params = new URLSearchParams();
 
@@ -92,8 +87,7 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
         setLoading(true);
         setError(null);
 
-        const token = getToken();
-        if (!token && !session) {
+        if (!session) {
           throw new Error("No hay token de autenticación");
         }
 
@@ -102,14 +96,9 @@ export function useCompanyEmployees(): UseCompanyEmployeesReturn {
           queryString ? `?${queryString}` : ""
         }`;
 
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-
         const response = await fetch(url, {
           method: "GET",
-          headers,
+          credentials: "include",
         });
 
         if (!response.ok) {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { safeLocalStorage } from "@/lib/storage";
 
 export interface CompanyProfile {
   id: string;
@@ -50,28 +49,18 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const getToken = () => {
-    return safeLocalStorage.getItem("accessToken");
-  };
-
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const token = getToken();
-      if (!token && !session) {
+      if (!session) {
         throw new Error("No hay token de autenticación");
-      }
-
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
       }
 
       const response = await fetch("/api/company/profile", {
         method: "GET",
-        headers,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -96,21 +85,16 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
       setLoading(true);
       setError(null);
 
-      const token = getToken();
-      if (!token && !session) {
+      if (!session) {
         throw new Error("No hay token de autenticación");
-      }
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
       }
 
       const response = await fetch("/api/company/profile", {
         method: "PUT",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
         body: JSON.stringify(data),
       });
 

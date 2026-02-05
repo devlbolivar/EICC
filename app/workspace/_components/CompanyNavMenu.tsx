@@ -79,11 +79,7 @@ const CompanyNavMenu = () => {
       icon: Award,
       path: PAGE_ROUTES.COMPANY.CERTIFICATES,
     },
-    {
-      title: "Facturación / Pagos",
-      icon: CreditCard,
-      path: PAGE_ROUTES.COMPANY.BILLING,
-    },
+
     {
       title: "Soporte",
       icon: HelpCircle,
@@ -127,10 +123,9 @@ const CompanyNavMenu = () => {
                 >
                   <Link
                     href={item.path}
-                    className={`text-[17px] ${
-                      isActive(item.path) &&
+                    className={`text-[17px] ${isActive(item.path) &&
                       "text-primary bg-sidebar-primary-foreground"
-                    }`}
+                      }`}
                   >
                     <item.icon className="w-7 h-7" />
                     <span>{item.title}</span>
@@ -149,10 +144,9 @@ const CompanyNavMenu = () => {
                       >
                         <Link
                           href={subItem.path}
-                          className={`flex items-center gap-2 ${
-                            isSubItemActive(subItem.path) &&
+                          className={`flex items-center gap-2 ${isSubItemActive(subItem.path) &&
                             "text-primary bg-sidebar-primary-foreground"
-                          }`}
+                            }`}
                         >
                           <subItem.icon className="w-4 h-4" />
                           <span>{subItem.title}</span>

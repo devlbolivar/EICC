@@ -5,7 +5,7 @@ import {
   mockSession,
   mockStudentSession,
   mockCompanySession,
-} from "../utils/test-utils";
+} from "@/lib/test-utils";
 import WorkspaceGuard from "@/app/workspace/_components/WorkspaceGuard";
 
 // Mock del contexto de autenticación

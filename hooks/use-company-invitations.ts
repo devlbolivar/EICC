@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { safeLocalStorage } from "@/lib/storage";
 
 export interface PendingInvitation {
   id: string;
@@ -53,28 +52,18 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const getToken = () => {
-    return safeLocalStorage.getItem("accessToken");
-  };
-
   const fetchInvitations = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const token = getToken();
-      if (!token && !session) {
+      if (!session) {
         throw new Error("No hay token de autenticación");
-      }
-
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
       }
 
       const response = await fetch("/api/company/invite", {
         method: "GET",
-        headers,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -105,21 +94,16 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
         setCreating(true);
         setError(null);
 
-        const token = getToken();
-        if (!token && !session) {
+        if (!session) {
           throw new Error("No hay token de autenticación");
-        }
-
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
         }
 
         const response = await fetch("/api/company/invite", {
           method: "POST",
-          headers,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
           body: JSON.stringify(data),
         });
 
@@ -153,19 +137,13 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
       try {
         setError(null);
 
-        const token = getToken();
-        if (!token && !session) {
+        if (!session) {
           throw new Error("No hay token de autenticación");
-        }
-
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
         }
 
         const response = await fetch(`/api/company/invite?id=${invitationId}`, {
           method: "DELETE",
-          headers,
+          credentials: "include",
         });
 
         if (!response.ok) {

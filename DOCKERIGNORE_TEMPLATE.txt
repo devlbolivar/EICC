@@ -1,0 +1,50 @@
+# Ignorar archivos de desarrollo y configuración
+.git
+.gitignore
+.env*
+!.env.production.example
+ENV_PRODUCTION_TEMPLATE.md
+
+# Node modules (se instalan en el build)
+node_modules
+
+# Archivos de testing
+__tests__
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.js
+jest.setup.js
+playwright.config.ts
+
+# Archivos de desarrollo
+.vscode
+.next
+.swc
+tsconfig.tsbuildinfo
+
+# Scripts de mantenimiento
+scripts/archive
+scripts/fix-*
+scripts/debug-*
+scripts/check-*
+scripts/test-*
+scripts/create-test-*
+scripts/migrate-*
+scripts/verify-*
+scripts/execute-*
+scripts/run-*
+scripts/cleanup-*
+
+# Documentación de desarrollo
+README.md
+SECURITY.md
+VERCEL_DEPLOYMENT.md
+EMAIL_CONFIGURATION.md
+
+# Archivos temporales
+*.log
+npm-debug.log*
+.DS_Store

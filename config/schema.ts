@@ -21,9 +21,7 @@ import {
 } from "@/lib/enums";
 
 // ===== ENUMERACIONES =====
-export const roleEnum = pgTable("role_enum", {
-  value: varchar("value", { length: 20 }).primaryKey(),
-});
+
 
 // ===== USUARIOS Y AUTENTICACIÓN =====
 export const usersTable = pgTable("users", {
@@ -245,33 +243,7 @@ export const subscriptionsTable = pgTable(
 );
 
 // ===== FACTURAS =====
-export const invoicesTable = pgTable(
-  "invoices",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    companyId: uuid("company_id")
-      .notNull()
-      .references(() => companiesTable.id, { onDelete: "cascade" }),
-    stripeInvoiceId: varchar({ length: 255 }).notNull().unique(),
-    stripeCustomerId: varchar({ length: 255 }).notNull(),
-    amount: integer().notNull(), // en centavos
-    currency: varchar({ length: 10 }).notNull().default(Currency.USD),
-    status: varchar({ length: 50 }).notNull(), // paid, open, void, uncollectible
-    invoiceNumber: varchar({ length: 100 }),
-    description: text(),
-    pdfUrl: text(),
-    hostedInvoiceUrl: text(),
-    billingReason: varchar({ length: 100 }), // subscription_create, subscription_cycle, subscription_update
-    dueDate: timestamp(),
-    paidAt: timestamp(),
-    createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp().notNull().defaultNow(),
-  },
-  (table) => ({
-    companyInvoiceIdx: index("company_invoice_idx").on(table.companyId),
-    stripeInvoiceIdx: index("stripe_invoice_idx").on(table.stripeInvoiceId),
-  })
-);
+
 
 // ===== CONFIGURACIONES DEL SISTEMA =====
 export const settingsTable = pgTable("settings", {
@@ -285,59 +257,18 @@ export const settingsTable = pgTable("settings", {
   updatedAt: timestamp().notNull().defaultNow(),
 });
 
-// ===== TICKETS DE SOPORTE =====
-export const supportTicketsTable = pgTable("support_tickets", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-  companyId: uuid("company_id").references(() => companiesTable.id, {
-    onDelete: "set null",
-  }),
-  subject: varchar({ length: 255 }).notNull(),
-  description: text().notNull(),
-  category: varchar({ length: 50 }).notNull(), // technical, billing, account, other
-  priority: varchar({ length: 20 }).notNull().default("normal"), // low, normal, high, urgent
-  status: varchar({ length: 20 }).notNull().default("open"), // open, in_progress, resolved, closed
-  attachments: json().$type<string[]>().default([]),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-  resolvedAt: timestamp(),
-  assignedTo: uuid("assigned_to").references(() => usersTable.id, {
-    onDelete: "set null",
-  }),
-}, (table) => ({
-  userTicketIdx: index("user_ticket_idx").on(table.userId),
-  statusIdx: index("ticket_status_idx").on(table.status),
-  companyTicketIdx: index("company_ticket_idx").on(table.companyId),
-}));
 
-// ===== MENSAJES DE SOPORTE =====
-export const supportMessagesTable = pgTable("support_messages", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  ticketId: uuid("ticket_id")
-    .notNull()
-    .references(() => supportTicketsTable.id, { onDelete: "cascade" }),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
-  message: text().notNull(),
-  isStaffReply: boolean().notNull().default(false),
-  attachments: json().$type<string[]>().default([]),
-  createdAt: timestamp().notNull().defaultNow(),
-}, (table) => ({
-  ticketMessageIdx: index("ticket_message_idx").on(table.ticketId),
-}));
+
+
 
 // ===== RELACIONES =====
 export const usersRelations = relations(usersTable, ({ many }) => ({
-  userCompanies: many(userCompaniesTable),
+  userCompanies: many(userCompaniesTable, { relationName: "userMember" }),
   createdCourses: many(coursesTable, { relationName: "courseCreator" }),
   enrolledCourses: many(enrollCourseTable),
   certificates: many(certificatesTable),
   sentInvitations: many(invitationTokensTable, { relationName: "inviter" }),
-  supportTickets: many(supportTicketsTable),
-  supportMessages: many(supportMessagesTable),
+  invitedUserCompanies: many(userCompaniesTable, { relationName: "userCompanyInviter" }),
 }));
 
 export const companiesRelations = relations(
@@ -348,8 +279,6 @@ export const companiesRelations = relations(
     certificates: many(certificatesTable),
     invitationTokens: many(invitationTokensTable),
     subscription: one(subscriptionsTable),
-    invoices: many(invoicesTable),
-    supportTickets: many(supportTicketsTable),
   })
 );
 
@@ -364,6 +293,7 @@ export const userCompaniesRelations = relations(
     user: one(usersTable, {
       fields: [userCompaniesTable.userId],
       references: [usersTable.id],
+      relationName: "userMember",
     }),
     company: one(companiesTable, {
       fields: [userCompaniesTable.companyId],
@@ -376,7 +306,7 @@ export const userCompaniesRelations = relations(
     invitedByUser: one(usersTable, {
       fields: [userCompaniesTable.invitedBy],
       references: [usersTable.id],
-      relationName: "invitedBy",
+      relationName: "userCompanyInviter",
     }),
   })
 );
@@ -460,59 +390,9 @@ export const subscriptionsRelations = relations(
   })
 );
 
-export const invoicesRelations = relations(invoicesTable, ({ one }) => ({
-  company: one(companiesTable, {
-    fields: [invoicesTable.companyId],
-    references: [companiesTable.id],
-  }),
-}));
 
-export const supportTicketsRelations = relations(
-  supportTicketsTable,
-  ({ one, many }) => ({
-    user: one(usersTable, {
-      fields: [supportTicketsTable.userId],
-      references: [usersTable.id],
-    }),
-    company: one(companiesTable, {
-      fields: [supportTicketsTable.companyId],
-      references: [companiesTable.id],
-    }),
-    assignedToUser: one(usersTable, {
-      fields: [supportTicketsTable.assignedTo],
-      references: [usersTable.id],
-      relationName: "assignedTickets",
-    }),
-    messages: many(supportMessagesTable),
-  })
-);
 
-export const supportMessagesRelations = relations(
-  supportMessagesTable,
-  ({ one }) => ({
-    ticket: one(supportTicketsTable, {
-      fields: [supportMessagesTable.ticketId],
-      references: [supportTicketsTable.id],
-    }),
-    user: one(usersTable, {
-      fields: [supportMessagesTable.userId],
-      references: [usersTable.id],
-    }),
-  })
-);
 
-// ===== ALIASES PARA COMPATIBILIDAD =====
-// Exportar con nombres alternativos para mantener compatibilidad con el schema de drizzle
-export const users = usersTable;
-export const companies = companiesTable;
-export const courses = coursesTable;
-export const enrollCourse = enrollCourseTable;
-export const certificates = certificatesTable;
-export const invitationTokens = invitationTokensTable;
-export const roles = rolesTable;
-export const userCompanies = userCompaniesTable;
-export const subscriptions = subscriptionsTable;
-export const invoices = invoicesTable;
-export const settings = settingsTable;
-export const supportTickets = supportTicketsTable;
-export const supportMessages = supportMessagesTable;
+
+
+

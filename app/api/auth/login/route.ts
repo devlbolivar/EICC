@@ -1,10 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import { comparePassword, generateTokenPair, validateEmail } from "@/lib/auth";
+import { comparePassword, hashPassword, generateTokenPair, validateEmail } from "@/lib/auth";
 import { validateAndSanitizeEmail } from "@/lib/utils";
 import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";
 import { authRateLimit } from "@/lib/rate-limit";
+
+// Dummy hash for timing-safe comparison when user doesn't exist
+// Pre-computed bcrypt hash to prevent timing side-channel user enumeration
+const DUMMY_HASH = "$2a$12$LJ3m4ys3Lg6YfEMpnXPmRuG3qEe.FCvY5xO.sMHMwqGxnEFqSP4nW";
+
+// ===== PER-ACCOUNT LOCKOUT =====
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+function checkAccountLockout(email: string): { locked: boolean; remainingMs: number } {
+  const record = failedAttempts.get(email);
+  if (!record) return { locked: false, remainingMs: 0 };
+
+  if (record.lockedUntil > Date.now()) {
+    return { locked: true, remainingMs: record.lockedUntil - Date.now() };
+  }
+
+  // Lockout expired, reset
+  failedAttempts.delete(email);
+  return { locked: false, remainingMs: 0 };
+}
+
+function recordFailedAttempt(email: string): void {
+  const record = failedAttempts.get(email) || { count: 0, lockedUntil: 0 };
+  record.count += 1;
+
+  if (record.count >= MAX_FAILED_ATTEMPTS) {
+    record.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+  }
+
+  failedAttempts.set(email, record);
+}
+
+function clearFailedAttempts(email: string): void {
+  failedAttempts.delete(email);
+}
 
 // ===== PERMISOS VÁLIDOS =====
 const VALID_PERMISSIONS: readonly Permission[] = [
@@ -114,6 +151,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
+    // ===== CHECK ACCOUNT LOCKOUT =====
+    const lockout = checkAccountLockout(sanitizedEmail);
+    if (lockout.locked) {
+      const minutesLeft = Math.ceil(lockout.remainingMs / 60000);
+      return NextResponse.json(
+        { error: `Cuenta bloqueada temporalmente. Intenta de nuevo en ${minutesLeft} minutos.` },
+        { status: 429 }
+      );
+    }
+
     // ===== VALIDAR CONTRASEÑA =====
     if (typeof password !== "string" || password.length < 1) {
       return NextResponse.json(
@@ -127,14 +174,20 @@ export async function POST(request: NextRequest) {
       sql`SELECT * FROM users WHERE email = ${sanitizedEmail}`
     );
 
-    if (userResult.rows.length === 0) {
+    const user = userResult.rows.length > 0 ? userResult.rows[0] : null;
+
+    // Always run bcrypt comparison to prevent timing side-channel user enumeration.
+    // If user doesn't exist, compare against a dummy hash so response time is consistent.
+    const hashToCompare = user?.passwordHash ? String(user.passwordHash) : DUMMY_HASH;
+    const isPasswordValid = await comparePassword(password, hashToCompare);
+
+    if (!user || !user.passwordHash || !isPasswordValid) {
+      recordFailedAttempt(sanitizedEmail);
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
-
-    const user = userResult.rows[0];
 
     // ===== VERIFICAR SI EL USUARIO ESTÁ ACTIVO =====
     if (!user.isActive) {
@@ -144,24 +197,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ===== VERIFICAR CONTRASEÑA =====
-    if (!user.passwordHash) {
-      return NextResponse.json(
-        { error: "Credenciales inválidas" },
-        { status: 401 }
-      );
-    }
-
-    const isPasswordValid = await comparePassword(
-      password,
-      String(user.passwordHash)
-    );
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Credenciales inválidas" },
-        { status: 401 }
-      );
-    }
+    // Clear failed attempts on successful login
+    clearFailedAttempts(sanitizedEmail);
 
     // ===== OBTENER RELACIONES USUARIO-EMPRESA CON SQL DIRECTO =====
     const userCompaniesResult = await db.execute(
@@ -308,7 +345,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("accessToken", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60, // 7 días
       path: "/",
     });
@@ -316,7 +353,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 días
       path: "/",
     });

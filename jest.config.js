@@ -11,10 +11,16 @@ const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
+    // Mock jose with a simple implementation for tests
+    "^jose$": "<rootDir>/__mocks__/jose.js",
   },
-  testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/.next/", 
+    "<rootDir>/node_modules/",
+    "<rootDir>/__tests__/e2e/", // Exclude E2E tests from Jest
+  ],
   transformIgnorePatterns: [
-    "node_modules/(?!(jose)/)", // Transform jose module
+    "node_modules/(?!(jose|node-fetch)/)", // Transform ESM modules
   ],
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",

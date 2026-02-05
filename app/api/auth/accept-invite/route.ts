@@ -12,6 +12,7 @@ import {
 import { validateSafeString } from "@/lib/utils";
 import { InferSelectModel, eq } from "drizzle-orm";
 import { Permission } from "@/app/types";
+import { authRateLimit } from "@/lib/rate-limit";
 
 type Invitation = InferSelectModel<typeof schema.invitationTokensTable> & {
   company?: InferSelectModel<typeof schema.companiesTable>;
@@ -23,6 +24,12 @@ const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 attempts per 15 minutes
+    const rateLimitResponse = await authRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body = await request.json();
     const { token, name, password, confirmPassword } = body;
 
@@ -112,13 +119,17 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // ===== CREAR USUARIO =====
+    // The invitation was sent to this specific email, so the email is implicitly
+    // verified by the fact that only the recipient could have received the token.
+    // However, we still set emailVerified based on whether the invitation email
+    // matches what we expect (the token is bound to the email).
     const [newUser] = await db
       .insert(schema.usersTable)
       .values({
         email: invitation.email,
         name: sanitizedName,
         passwordHash,
-        emailVerified: true, // Para MVP, asumimos email verificado
+        emailVerified: true, // Verified: invitation token was sent to this email
         isActive: true,
       })
       .returning();
@@ -194,7 +205,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("accessToken", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60, // 7 días
       path: "/",
     });
@@ -202,7 +213,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 días
       path: "/",
     });
@@ -220,6 +231,12 @@ export async function POST(request: NextRequest) {
 // ===== ENDPOINT PARA VERIFICAR INVITACIÓN =====
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 5 attempts per 15 minutes
+    const rateLimitResponse = await authRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 

@@ -211,23 +211,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ===== OBTENER ROL POR DEFECTO (EMPLEADO) =====
-    let role = await db.query.rolesTable.findFirst({
-      where: eq(schema.rolesTable.name, "Empleado"),
+    // ===== OBTENER ROL POR DEFECTO (STUDENT) =====
+    // Según reglas de negocio: Invitados por empresa son estudiantes asociados a esa empresa
+    const role = await db.query.rolesTable.findFirst({
+      where: eq(schema.rolesTable.name, "student"), // Usando string directo o constante SYSTEM_ROLES.STUDENT si está importada
     });
 
-    // Si no existe el rol "Empleado", crear uno por defecto
     if (!role) {
-      const [newRole] = await db
-        .insert(schema.rolesTable)
-        .values({
-          name: "Empleado",
-          description: "Rol básico para empleados de la empresa",
-          permissions: ["company:read", "courses:read", "certificates:read"],
-          isSystemRole: false,
-        })
-        .returning();
-      role = newRole;
+      return NextResponse.json(
+        { error: "Error de configuración: Rol de estudiante no encontrado" },
+        { status: 500 }
+      );
     }
 
     // ===== VERIFICAR QUE NO EXISTE UNA INVITACIÓN PENDIENTE =====
@@ -407,14 +401,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     const companyId = userCompany[0].companyId;
+    if (!companyId) {
+      return NextResponse.json(
+        { error: "Usuario no está asociado a ninguna empresa" },
+        { status: 404 }
+      );
+    }
 
     // ===== VERIFICAR QUE LA INVITACIÓN PERTENECE A LA EMPRESA =====
     const invitation = await db.query.invitationTokensTable.findFirst({
       where: and(
         eq(schema.invitationTokensTable.id, invitationId),
-        companyId
-          ? eq(schema.invitationTokensTable.companyId, companyId)
-          : undefined
+        eq(schema.invitationTokensTable.companyId, companyId)
       ),
     });
 

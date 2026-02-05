@@ -62,8 +62,8 @@ export const PAGE_ROUTES = {
     COURSES_CREATE: "/workspace/admin/courses/create",
     ENROLLMENTS: "/workspace/admin/enrollments",
     CERTIFICATES: "/workspace/admin/certificates",
-    REPORTS: "/workspace/admin/reports",
-    SETTINGS: "/workspace/admin/settings",
+
+
     SUPPORT: "/workspace/admin/support",
   },
   // Company specific routes
@@ -75,7 +75,7 @@ export const PAGE_ROUTES = {
     COURSES: "/workspace/company/courses",
     PROGRESS: "/workspace/company/progress",
     CERTIFICATES: "/workspace/company/certificates",
-    BILLING: "/workspace/company/billing",
+
     SUPPORT: "/workspace/company/support",
   },
   // Student specific routes
@@ -312,3 +312,29 @@ export const DB_CONFIG = {
   MAX_CONNECTIONS: 10,
   CONNECTION_TIMEOUT: 30000,
 } as const;
+
+// ===== FETCH WITH TIMEOUT =====
+const DEFAULT_FETCH_TIMEOUT_MS = 30000; // 30 seconds
+
+/**
+ * Wrapper around fetch that adds a timeout via AbortController.
+ * Prevents requests from hanging indefinitely.
+ */
+export async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit & { timeoutMs?: number }
+): Promise<Response> {
+  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...fetchInit } = init || {};
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(input, {
+      ...fetchInit,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}

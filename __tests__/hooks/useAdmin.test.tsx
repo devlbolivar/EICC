@@ -4,7 +4,7 @@ import {
   mockSession,
   mockStudentSession,
   mockCompanySession,
-} from "../utils/test-utils";
+} from "@/lib/test-utils";
 
 // Mock del contexto de autenticación
 jest.mock("@/context/AuthContext", () => ({

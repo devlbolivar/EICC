@@ -59,11 +59,13 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   );
 
   // Content Security Policy
+  // Note: 'unsafe-inline' for style-src is required by Next.js for styled-jsx.
+  // script-src avoids unsafe-inline/unsafe-eval for stronger XSS protection.
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+      "script-src 'self' https://js.stripe.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
@@ -83,6 +85,40 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   }
 
   return response;
+}
+
+// ===== REDIRECCIÓN HTTPS =====
+/**
+ * Fuerza el uso de HTTPS en producción redirigiendo peticiones HTTP.
+ * 
+ * COMPORTAMIENTO:
+ * - Producción (NODE_ENV=production): Redirige HTTP → HTTPS con código 301
+ * - Desarrollo: No aplica redirección, permite HTTP para desarrollo local
+ * 
+ * NOTA: Trabaja en conjunto con el header Strict-Transport-Security (HSTS)
+ * que ya está configurado en addSecurityHeaders() para producción.
+ */
+function enforceHttps(request: NextRequest): NextResponse | null {
+  // Solo aplicar en producción
+  if (process.env.NODE_ENV !== "production") {
+    return null;
+  }
+
+  // Verificar el protocolo desde el header x-forwarded-proto
+  // Este header es establecido por proxies/load balancers (Vercel, Nginx, etc.)
+  const protocol = request.headers.get("x-forwarded-proto");
+
+  if (protocol === "http") {
+    // Construir URL HTTPS preservando pathname y query params
+    const httpsUrl = new URL(request.url);
+    httpsUrl.protocol = "https:";
+
+    // Redirección permanente 301 (Moved Permanently)
+    // Esto indica a los navegadores y motores de búsqueda que la redirección es permanente
+    return NextResponse.redirect(httpsUrl, 301);
+  }
+
+  return null;
 }
 
 // ===== RUTAS PÚBLICAS =====
@@ -209,6 +245,12 @@ function getClientIP(request: NextRequest): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const clientIP = getClientIP(request);
+
+  // ===== FORZAR HTTPS EN PRODUCCIÓN =====
+  const httpsRedirect = enforceHttps(request);
+  if (httpsRedirect) {
+    return addSecurityHeaders(httpsRedirect);
+  }
 
   // ===== MANEJAR RUTAS PÚBLICAS =====
   if (isPublicRoute(pathname)) {

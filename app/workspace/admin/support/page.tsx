@@ -92,7 +92,7 @@ export default function AdminSupportPage() {
     setSendingReply(false);
   };
 
-  const handleUpdateStatus = async (ticketId: string, status: string) => {
+  const handleUpdateStatus = async (ticketId: string, status: TicketStatus) => {
     await updateTicket(ticketId, { status });
     if (selectedTicket && selectedTicket.id === ticketId) {
       setSelectedTicket({ ...selectedTicket, status: status as TicketStatus });
@@ -317,17 +317,16 @@ export default function AdminSupportPage() {
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div
-                          className={`w-3 h-3 rounded-full ${
-                            ticket.priority === "urgent"
+                          className={`w-3 h-3 rounded-full ${ticket.priority === "urgent"
                               ? "bg-red-500"
                               : ticket.priority === "high"
-                              ? "bg-orange-500"
-                              : ticket.status === "open"
-                              ? "bg-blue-500"
-                              : ticket.status === "in_progress"
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                          }`}
+                                ? "bg-orange-500"
+                                : ticket.status === "open"
+                                  ? "bg-blue-500"
+                                  : ticket.status === "in_progress"
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
+                            }`}
                         ></div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -506,16 +505,14 @@ export default function AdminSupportPage() {
                       ticketMessages.map((msg) => (
                         <div
                           key={msg.id}
-                          className={`flex ${
-                            msg.isStaffReply ? "justify-end" : "justify-start"
-                          }`}
+                          className={`flex ${msg.isStaffReply ? "justify-end" : "justify-start"
+                            }`}
                         >
                           <div
-                            className={`max-w-[80%] p-3 rounded-lg ${
-                              msg.isStaffReply
+                            className={`max-w-[80%] p-3 rounded-lg ${msg.isStaffReply
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-medium">

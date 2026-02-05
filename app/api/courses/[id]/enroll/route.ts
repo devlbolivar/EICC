@@ -62,19 +62,6 @@ export async function POST(
       );
     }
 
-    // Verificar si el usuario ya está inscrito
-    const existingEnrollment = await db.execute(sql`
-      SELECT * FROM "enroll_course" 
-      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
-    `);
-
-    if (existingEnrollment.rows.length > 0) {
-      return NextResponse.json(
-        { error: "Ya estás inscrito en este curso" },
-        { status: 409 }
-      );
-    }
-
     // Verificar visibilidad del curso
     if (!course.isPublic && course.companyId !== payload.companyId) {
       return NextResponse.json(
@@ -83,24 +70,25 @@ export async function POST(
       );
     }
 
-    // Inscribir al usuario
-    console.log("Course data:", {
-      cid: course.cid,
-      courseId,
-      userId: payload.userId,
-      companyId: payload.companyId,
-      email: payload.email,
-    });
-
+    // Use INSERT ... ON CONFLICT to prevent race condition (duplicate enrollments)
     const enrollment = await db.execute(sql`
       INSERT INTO "enroll_course" (
-        "course_id", "user_id", "company_id", "progress", "isCompleted", 
+        "course_id", "user_id", "company_id", "progress", "isCompleted",
         "completedChapters", "cid", "userEmail"
       ) VALUES (
-        ${courseId}, ${payload.userId}, ${payload.companyId || null}, 0, false, 
+        ${courseId}, ${payload.userId}, ${payload.companyId || null}, 0, false,
         '{}', ${course.cid || ""}, ${payload.email}
-      ) RETURNING *
+      )
+      ON CONFLICT ("course_id", "user_id") DO NOTHING
+      RETURNING *
     `);
+
+    if (enrollment.rows.length === 0) {
+      return NextResponse.json(
+        { error: "Ya estás inscrito en este curso" },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
       {
@@ -281,21 +269,30 @@ export async function PUT(
         });
 
         if (courseResult.rows.length > 0) {
-          const course = courseResult.rows[0] as Record<string, unknown>;
-          const enrollment = updatedEnrollment.rows[0] as Record<string, unknown>;
-
-          console.log(`🔍 Debug: Certificate generation data`, {
-            courseId,
-            userId: payload.userId,
-            courseName: course.name,
-            companyId: payload.companyId,
-          });
+          const courseRow = courseResult.rows[0];
+          const enrollmentRow = updatedEnrollment.rows[0];
 
           const certificateResult = await generateCertificateForCompletion({
             courseId,
             userId: payload.userId,
-            course: course as unknown as Course,
-            enrollment: enrollment as unknown as EnrollCourse,
+            course: {
+              id: String(courseRow.id),
+              name: String(courseRow.name || ""),
+              description: String(courseRow.description || ""),
+              cid: String(courseRow.cid || ""),
+            } as Course,
+            enrollment: {
+              id: String(enrollmentRow.id),
+              courseId: String(enrollmentRow.course_id),
+              userId: String(enrollmentRow.user_id),
+              progress: Number(enrollmentRow.progress || 0),
+              isCompleted: Boolean(enrollmentRow.isCompleted),
+              completedAt: enrollmentRow.completedAt ? new Date(String(enrollmentRow.completedAt)) : undefined,
+              completedChapters: [],
+              enrolledAt: new Date(),
+              createdAt: new Date(String(enrollmentRow.createdAt || new Date())),
+              updatedAt: new Date(String(enrollmentRow.updatedAt || new Date())),
+            } satisfies EnrollCourse,
             companyId: payload.companyId,
           });
 

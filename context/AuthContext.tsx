@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {
   AuthSession,
   AuthContextType,
@@ -10,7 +10,7 @@ import {
   Permission,
 } from "@/app/types";
 import { toast } from "sonner";
-import { API_ROUTES, UI_TEXT } from "@/lib/constants";
+import { API_ROUTES, UI_TEXT, fetchWithTimeout } from "@/lib/constants";
 
 // ===== CONTEXTO =====
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +29,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Use ref instead of state for isRefreshing to avoid race conditions
+  // (React state updates are async, so concurrent calls could both read false)
+  const isRefreshingRef = useRef(false);
 
   const initializeAuth = useCallback(async () => {
     try {
@@ -56,20 +58,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [initialized, initializeAuth]);
 
   const handleTokenExpiration = async () => {
-    if (isRefreshing) {
+    if (isRefreshingRef.current) {
       return;
     }
-    setIsRefreshing(true);
+    isRefreshingRef.current = true;
     try {
       await refreshToken();
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
   };
 
   const validateAndSetSession = async () => {
     try {
-      const response = await fetch(API_ROUTES.AUTH.VALIDATE, {
+      const response = await fetchWithTimeout(API_ROUTES.AUTH.VALIDATE, {
         method: "GET",
       });
 
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const data = await response.json();
         setSession(data.data);
       } else if (response.status === 401) {
-        if (!isRefreshing) {
+        if (!isRefreshingRef.current) {
           await handleTokenExpiration();
         }
       } else {
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshToken = async () => {
     try {
-      const response = await fetch(API_ROUTES.AUTH.REFRESH, {
+      const response = await fetchWithTimeout(API_ROUTES.AUTH.REFRESH, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -115,7 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
 
-      const response = await fetch(API_ROUTES.AUTH.LOGIN, {
+      const response = await fetchWithTimeout(API_ROUTES.AUTH.LOGIN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,7 +151,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (data: UserRegistrationData) => {
     try {
       setLoading(true);
-      const response = await fetch(API_ROUTES.AUTH.REGISTER, {
+      const response = await fetchWithTimeout(API_ROUTES.AUTH.REGISTER, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       // Llamar al endpoint de logout para invalidar el refresh token
-      await fetch(API_ROUTES.AUTH.LOGOUT, {
+      await fetchWithTimeout(API_ROUTES.AUTH.LOGOUT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -196,7 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const switchCompany = async (companyId: string) => {
     try {
       // ✅ CORREGIDO: Tokens están en cookies httpOnly, no necesitamos pasarlos manualmente
-      const response = await fetch(API_ROUTES.AUTH.SWITCH_COMPANY, {
+      const response = await fetchWithTimeout(API_ROUTES.AUTH.SWITCH_COMPANY, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

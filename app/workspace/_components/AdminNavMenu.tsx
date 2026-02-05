@@ -114,16 +114,8 @@ const AdminNavMenu = () => {
       icon: Award,
       path: PAGE_ROUTES.ADMIN.CERTIFICATES,
     },
-    {
-      title: "Reportes & Analytics",
-      icon: BarChart3,
-      path: PAGE_ROUTES.ADMIN.REPORTS,
-    },
-    {
-      title: "Configuraciones",
-      icon: Settings,
-      path: PAGE_ROUTES.ADMIN.SETTINGS,
-    },
+
+
     {
       title: "Soporte",
       icon: HelpCircle,
@@ -167,10 +159,9 @@ const AdminNavMenu = () => {
                 >
                   <Link
                     href={item.path}
-                    className={`text-[17px] ${
-                      isActive(item.path) &&
+                    className={`text-[17px] ${isActive(item.path) &&
                       "text-primary bg-sidebar-primary-foreground"
-                    }`}
+                      }`}
                   >
                     <item.icon className="w-7 h-7" />
                     <span>{item.title}</span>
@@ -198,10 +189,9 @@ const AdminNavMenu = () => {
                         >
                           <Link
                             href={subItem.path}
-                            className={`flex items-center gap-2 ${
-                              isSubItemActive(subItem.path) &&
+                            className={`flex items-center gap-2 ${isSubItemActive(subItem.path) &&
                               "text-primary bg-sidebar-primary-foreground"
-                            }`}
+                              }`}
                           >
                             <subItem.icon className="w-4 h-4" />
                             <span>{subItem.title}</span>

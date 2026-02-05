@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
 import { UserLoginData } from "@/app/types";
-import { validateEmail } from "@/lib/auth";
+import { validateEmail } from "@/lib/auth-shared";
 
 function SignInForm() {
   const [formData, setFormData] = useState<UserLoginData>({
@@ -29,7 +29,9 @@ function SignInForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // Validate redirect to prevent open redirect attacks - only allow relative paths
+  const redirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

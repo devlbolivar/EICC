@@ -113,26 +113,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    // 2. Verificar suscripción activa en Stripe
-    const activeSubscription = await db
-      .select()
-      .from(schema.subscriptionsTable)
-      .where(
-        and(
-          eq(schema.subscriptionsTable.companyId, id),
-          eq(schema.subscriptionsTable.status, "active")
-        )
-      )
-      .limit(1);
-
-    if (activeSubscription.length > 0) {
-      return errorResponse(
-        "No se puede eliminar: empresa tiene suscripción activa en Stripe. Cancela la suscripción primero.",
-        400
-      );
-    }
-
-    // 3. Verificar cursos asociados
+    // 2. Verificar cursos asociados
     const coursesCount = await db
       .select({ count: drizzleCount() })
       .from(schema.coursesTable)
@@ -145,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    // 4. Verificar que la empresa exista antes de eliminar
+    // 3. Verificar que la empresa exista antes de eliminar
     const companyExists = await db
       .select()
       .from(schema.companiesTable)

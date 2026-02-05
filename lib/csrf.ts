@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 // ===== CONFIGURACIÓN CSRF =====
 const CSRF_SECRET = process.env.CSRF_SECRET || process.env.JWT_SECRET;
 const CSRF_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutos
-const CSRF_TOKEN_LENGTH = 32; // bytes
 const CSRF_COOKIE_NAME = "csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
 
@@ -20,114 +19,79 @@ if (!isBuildPhase && !CSRF_SECRET) {
 }
 
 // ===== TIPOS =====
-interface CsrfTokenData {
-  token: string;
-  expiresAt: number;
-  signature: string;
-}
-
 interface CsrfValidationResult {
   valid: boolean;
   error?: string;
 }
 
-// ===== STORE EN MEMORIA (para MVP, usar Redis en producción) =====
-const csrfTokenStore = new Map<string, CsrfTokenData>();
-
 /**
- * Genera un token CSRF criptográficamente seguro
- * @returns Token CSRF con su firma
+ * Genera un token CSRF stateless firmado
+ * Formato: timestamp:random:signature
+ * @returns Token CSRF completo
  */
-export function generateCsrfToken(): { token: string; signature: string } {
-  const token = randomBytes(CSRF_TOKEN_LENGTH).toString("hex");
-  const expiresAt = Date.now() + CSRF_TOKEN_EXPIRY_MS;
+export function generateCsrfToken(): { token: string } {
+  const timestamp = Date.now().toString();
+  const random = randomBytes(16).toString("hex");
+  const data = `${timestamp}:${random}`;
 
-  // Crear firma HMAC para el token
-  const signature = createHmac("sha256", CSRF_SECRET || "dev-secret")
-    .update(`${token}:${expiresAt}`)
+  const signature = createHmac("sha256", CSRF_SECRET || "unsafe-dev-csrf-secret-do-not-use-in-production")
+    .update(data)
     .digest("hex");
 
-  // Almacenar en memoria
-  csrfTokenStore.set(token, {
-    token,
-    expiresAt,
-    signature,
-  });
+  const token = `${data}:${signature}`;
 
-  // Limpiar tokens expirados probabilísticamente
-  if (Math.random() < 0.01) {
-    cleanExpiredTokens();
-  }
-
-  return { token, signature };
+  return { token };
 }
 
 /**
- * Valida un token CSRF
+ * Valida un token CSRF stateless
  * @param token - Token a validar
- * @param signature - Firma del token (opcional, para doble validación)
  * @returns Resultado de la validación
  */
-export function validateCsrfToken(
-  token: string,
-  signature?: string
-): CsrfValidationResult {
+export function validateCsrfToken(token: string): CsrfValidationResult {
   if (!token) {
     return { valid: false, error: "CSRF token not provided" };
   }
 
-  const tokenData = csrfTokenStore.get(token);
+  const parts = token.split(":");
+  if (parts.length !== 3) {
+    return { valid: false, error: "Invalid CSRF token format" };
+  }
 
-  if (!tokenData) {
-    console.warn("CSRF validation failed: token not found", {
-      token: token.substring(0, 8) + "...",
-      timestamp: new Date().toISOString(),
-    });
-    return { valid: false, error: "Invalid CSRF token" };
+  const [timestampStr, random, signature] = parts;
+  const timestamp = parseInt(timestampStr, 10);
+
+  if (isNaN(timestamp)) {
+    return { valid: false, error: "Invalid CSRF token timestamp" };
   }
 
   // Verificar expiración
-  if (Date.now() > tokenData.expiresAt) {
-    csrfTokenStore.delete(token);
-    console.warn("CSRF validation failed: token expired", {
-      token: token.substring(0, 8) + "...",
-      expiredAt: new Date(tokenData.expiresAt).toISOString(),
-    });
+  if (Date.now() > timestamp + CSRF_TOKEN_EXPIRY_MS) {
     return { valid: false, error: "CSRF token expired" };
   }
 
-  // Verificar firma si se proporciona
-  if (signature) {
-    const expectedSignature = tokenData.signature;
+  // Verificar firma
+  const data = `${timestampStr}:${random}`;
+  const expectedSignature = createHmac("sha256", CSRF_SECRET || "unsafe-dev-csrf-secret-do-not-use-in-production")
+    .update(data)
+    .digest("hex");
 
-    try {
-      const signatureBuffer = Buffer.from(signature, "hex");
-      const expectedBuffer = Buffer.from(expectedSignature, "hex");
+  try {
+    const signatureBuffer = Buffer.from(signature, "hex");
+    const expectedBuffer = Buffer.from(expectedSignature, "hex");
 
-      if (signatureBuffer.length !== expectedBuffer.length) {
-        return { valid: false, error: "Invalid CSRF signature" };
-      }
-
-      if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
-        console.warn("CSRF validation failed: signature mismatch", {
-          token: token.substring(0, 8) + "...",
-        });
-        return { valid: false, error: "Invalid CSRF signature" };
-      }
-    } catch {
-      return { valid: false, error: "Invalid CSRF signature format" };
+    if (signatureBuffer.length !== expectedBuffer.length) {
+      return { valid: false, error: "Invalid CSRF signature" };
     }
+
+    if (!timingSafeEqual(signatureBuffer, expectedBuffer)) {
+      return { valid: false, error: "Invalid CSRF signature" };
+    }
+  } catch {
+    return { valid: false, error: "Invalid CSRF signature format" };
   }
 
   return { valid: true };
-}
-
-/**
- * Invalida un token CSRF (útil para single-use tokens)
- * @param token - Token a invalidar
- */
-export function invalidateCsrfToken(token: string): void {
-  csrfTokenStore.delete(token);
 }
 
 /**
@@ -174,7 +138,7 @@ export async function validateCsrfRequest(
     return { valid: false, error: "CSRF token mismatch" };
   }
 
-  // Validar token en el store
+  // Validar la firma y expiración del token
   const validation = validateCsrfToken(headerToken);
 
   if (!validation.valid) {
@@ -232,19 +196,20 @@ export class CsrfError extends Error {
 
 // ===== RUTAS EXENTAS DE CSRF =====
 const csrfExemptRoutes = [
-  // Auth routes (usan sus propios mecanismos)
+  // Only exempt routes that truly cannot include CSRF tokens:
+  // - Login: no prior session to set CSRF cookie
+  // - Forgot-password: no prior session
+  // - Verify-email: GET-like operation via POST
+  // - Refresh: uses httpOnly refresh token as implicit CSRF protection
   "/api/auth/login",
-  "/api/auth/register",
-  "/api/auth/logout",
   "/api/auth/refresh",
   "/api/auth/forgot-password",
-  "/api/auth/reset-password",
   "/api/auth/verify-email",
   "/api/auth/accept-invite",
-  // Webhooks externos
+  // Webhooks from external services (use webhook signature verification)
   "/api/billing/webhooks",
   "/api/webhooks",
-  // CSRF token endpoint
+  // CSRF token endpoint itself
   "/api/csrf",
 ];
 
@@ -280,40 +245,7 @@ function logCsrfFailure(request: NextRequest, reason: string): void {
   });
 }
 
-/**
- * Limpia tokens expirados del store
- */
-function cleanExpiredTokens(): void {
-  const now = Date.now();
-  let cleaned = 0;
-
-  for (const [token, data] of csrfTokenStore.entries()) {
-    if (now > data.expiresAt) {
-      csrfTokenStore.delete(token);
-      cleaned++;
-    }
-  }
-
-  if (cleaned > 0) {
-    console.log(`CSRF store: cleaned ${cleaned} expired tokens`);
-  }
-}
-
 // ===== UTILIDADES PARA TESTING =====
-
-/**
- * Obtiene el tamaño actual del store
- */
-export function getCsrfStoreSize(): number {
-  return csrfTokenStore.size;
-}
-
-/**
- * Limpia todo el store (para testing)
- */
-export function clearCsrfStore(): void {
-  csrfTokenStore.clear();
-}
 
 /**
  * Obtiene la configuración de cookie para CSRF
@@ -338,5 +270,4 @@ export const CSRF_CONFIG = {
   COOKIE_NAME: CSRF_COOKIE_NAME,
   HEADER_NAME: CSRF_HEADER_NAME,
   EXPIRY_MS: CSRF_TOKEN_EXPIRY_MS,
-  TOKEN_LENGTH: CSRF_TOKEN_LENGTH,
 } as const;

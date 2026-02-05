@@ -1,6 +1,7 @@
+import "server-only";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { Permission, SYSTEM_ROLES, ROLE_PERMISSIONS } from "@/app/types";
 import type { SignOptions } from "jsonwebtoken";
 import { SECURITY_CONFIG, TIMEOUT_CONFIG } from "@/lib/config";
@@ -45,10 +46,11 @@ export async function comparePassword(
 
 // ===== GENERACIÓN DE TOKENS =====
 export function generateAccessToken(payload: Omit<JWTPayload, "type">): string {
-  if (!JWT_SECRET) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
     throw new Error("JWT_SECRET not configured");
   }
-  return jwt.sign({ ...payload, type: "access" as const }, JWT_SECRET, {
+  return jwt.sign({ ...payload, type: "access" as const, jti: randomUUID() }, secret, {
     expiresIn: JWT_EXPIRES_IN,
   } as SignOptions);
 }
@@ -56,10 +58,11 @@ export function generateAccessToken(payload: Omit<JWTPayload, "type">): string {
 export function generateRefreshToken(
   payload: Omit<JWTPayload, "type">
 ): string {
-  if (!JWT_SECRET) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
     throw new Error("JWT_SECRET not configured");
   }
-  return jwt.sign({ ...payload, type: "refresh" as const }, JWT_SECRET, {
+  return jwt.sign({ ...payload, type: "refresh" as const, jti: randomUUID() }, secret, {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   } as SignOptions);
 }
@@ -76,11 +79,12 @@ export function generateTokenPair(
 // ===== VERIFICACIÓN DE TOKENS (API Routes - Node.js) =====
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    if (!JWT_SECRET) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
       console.error("JWT_SECRET not configured");
       return null;
     }
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, secret);
     return decoded as JWTPayload;
   } catch {
     return null;
@@ -157,45 +161,6 @@ export function isSystemRole(roleName: string): boolean {
   );
 }
 
-// ===== VALIDACIÓN DE DATOS =====
-export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-export function validatePassword(password: string): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
-
-  if (password.length < PASSWORD_REQUIREMENTS.MIN_LENGTH) {
-    errors.push(`La contraseña debe tener al menos ${PASSWORD_REQUIREMENTS.MIN_LENGTH} caracteres`);
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    errors.push("La contraseña debe contener al menos una letra mayúscula");
-  }
-
-  if (!/[a-z]/.test(password)) {
-    errors.push("La contraseña debe contener al menos una letra minúscula");
-  }
-
-  if (!/\d/.test(password)) {
-    errors.push("La contraseña debe contener al menos un número");
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-
-export function validateOrganizationSlug(slug: string): boolean {
-  const slugRegex = /^[a-z0-9-]+$/;
-  return slugRegex.test(slug) && slug.length >= 3 && slug.length <= 50;
-}
-
 // ===== UTILIDADES DE FECHA =====
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
@@ -213,23 +178,6 @@ export function isExpired(date: Date): boolean {
   return new Date() > date;
 }
 
-// ===== SANITIZACIÓN =====
-export function sanitizeEmail(email: string): string {
-  return email.toLowerCase().trim();
-}
-
-export function sanitizeName(name: string): string {
-  return name.trim().replace(/\s+/g, " ");
-}
-
-export function sanitizeSlug(slug: string): string {
-  return slug
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-");
-}
-
 // ===== CONSTANTES =====
 export const TOKEN_EXPIRY = {
   EMAIL_VERIFICATION: TIMEOUT_CONFIG.EMAIL_VERIFICATION_TOKEN_MS, // 24 horas
@@ -237,14 +185,9 @@ export const TOKEN_EXPIRY = {
   INVITATION: TIMEOUT_CONFIG.INVITATION_TOKEN_MS, // 7 días
 } as const;
 
-export const PASSWORD_REQUIREMENTS = {
-  MIN_LENGTH: SECURITY_CONFIG.PASSWORD_MIN_LENGTH,
-  REQUIRE_UPPERCASE: true,
-  REQUIRE_LOWERCASE: true,
-  REQUIRE_NUMBERS: true,
-  REQUIRE_SPECIAL_CHARS: false,
-} as const;
-
 // ===== RE-EXPORTS =====
 // Re-export verifyAuth from admin-auth for convenience
 export { verifyAuth } from "@/lib/admin-auth";
+
+// Re-export shared validation logic for server-side usage
+export * from "@/lib/auth-shared";

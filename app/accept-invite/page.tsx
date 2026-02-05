@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { validatePassword } from "@/lib/auth-shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,28 +46,9 @@ export default function AcceptInvitePage() {
     validateToken();
   }, [token]);
 
-  const validatePasswordStrength = (password: string): string[] => {
-    const errors: string[] = [];
-
-    if (password.length < 8) {
-      errors.push("Mínimo 8 caracteres");
-    }
-    if (!/[A-Z]/.test(password)) {
-      errors.push("Al menos una mayúscula");
-    }
-    if (!/[a-z]/.test(password)) {
-      errors.push("Al menos una minúscula");
-    }
-    if (!/\d/.test(password)) {
-      errors.push("Al menos un número");
-    }
-
-    return errors;
-  };
-
   const handlePasswordChange = (password: string) => {
     setFormData({ ...formData, password });
-    const errors = validatePasswordStrength(password);
+    const { errors } = validatePassword(password);
     setPasswordErrors(errors);
   };
 

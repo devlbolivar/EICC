@@ -14,6 +14,8 @@ const db = drizzle(pg, { schema });
 
 export async function POST(request: NextRequest) {
   try {
+
+
     // ===== CSRF PROTECTION =====
     const csrfError = await requireCsrf(request);
     if (csrfError) return csrfError;
@@ -33,6 +35,8 @@ export async function POST(request: NextRequest) {
 
     // ===== OBTENER DATOS DEL BODY =====
     const body = await request.json();
+
+
     const {
       name,
       email,
@@ -74,6 +78,7 @@ export async function POST(request: NextRequest) {
       where: eq(schema.usersTable.email, email),
     });
 
+
     if (existingUser) {
       return NextResponse.json(
         { error: "El email ya está registrado" },
@@ -85,6 +90,7 @@ export async function POST(request: NextRequest) {
     const role = await db.query.rolesTable.findFirst({
       where: eq(schema.rolesTable.id, roleId),
     });
+
 
     if (!role) {
       return NextResponse.json({ error: "Rol no encontrado" }, { status: 400 });
@@ -108,6 +114,7 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+
     // ===== CREAR USUARIO =====
     const newUser = await db
       .insert(schema.usersTable)
@@ -121,6 +128,7 @@ export async function POST(request: NextRequest) {
         emailVerified: true, // Los usuarios creados por admin se consideran verificados
       })
       .returning();
+
 
     if (!newUser.length) {
       return NextResponse.json(
@@ -141,6 +149,7 @@ export async function POST(request: NextRequest) {
       acceptedAt: new Date(), // Se considera aceptado automáticamente
     });
 
+
     // ===== OBTENER USUARIO CREADO CON RELACIONES =====
     const userWithRelations = await db.query.usersTable.findFirst({
       where: eq(schema.usersTable.id, createdUser.id),
@@ -154,6 +163,7 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
 
     // ===== FORMATEAR RESPUESTA =====
     const formattedUser = {
@@ -178,20 +188,20 @@ export async function POST(request: NextRequest) {
         },
         company: uc.company
           ? {
-              id: uc.company.id,
-              name: uc.company.name,
-              description: uc.company.description,
-            }
+            id: uc.company.id,
+            name: uc.company.name,
+            description: uc.company.description,
+          }
           : null,
         isActive: uc.isActive,
         joinedAt: uc.joinedAt,
         acceptedAt: uc.acceptedAt,
         invitedBy: uc.invitedByUser
           ? {
-              id: uc.invitedByUser.id,
-              name: uc.invitedByUser.name,
-              email: uc.invitedByUser.email,
-            }
+            id: uc.invitedByUser.id,
+            name: uc.invitedByUser.name,
+            email: uc.invitedByUser.email,
+          }
           : null,
       })),
     };
@@ -203,8 +213,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    console.error("Error creating user:", error);
     return NextResponse.json(
+
       { error: "Error interno del servidor" },
       { status: 500 }
     );

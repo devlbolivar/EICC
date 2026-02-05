@@ -115,14 +115,14 @@ export async function POST(request: NextRequest) {
     response.cookies.set("accessToken", tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60, // 7 días
     });
 
     response.cookies.set("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60, // 30 días
     });
 

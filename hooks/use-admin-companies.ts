@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PaginationInfo } from "@/app/types";
-import { safeLocalStorage } from "@/lib/storage";
 
 interface Company {
   id: string;
@@ -67,12 +66,6 @@ interface UseAdminCompaniesReturn {
 export function useAdminCompanies(): UseAdminCompaniesReturn {
   const { session } = useAuth();
 
-  const getToken = (): string | null => {
-    const token = safeLocalStorage.getItem("accessToken");
-    if (token) return token;
-    return null;
-  };
-
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +81,7 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   const clearError = () => setError(null);
 
   const fetchCompanies = useCallback(async (params?: CompanyFilters) => {
-    const token = getToken();
-    if (!token && !session) return;
+    if (!session) return;
 
     setLoading(true);
     setError(null);
@@ -110,13 +102,8 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
       if (plan) searchParams.append("plan", plan);
       if (isActive !== undefined) searchParams.append("isActive", isActive.toString());
 
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
       const response = await fetch(`/api/admin/companies?${searchParams}`, {
-        headers,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -135,19 +122,14 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   }, [session, pagination.page, pagination.limit]);
 
   const createCompany = async (companyData: CreateCompanyData): Promise<Company> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch("/api/admin/companies/create", {
       method: "POST",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
       body: JSON.stringify(companyData),
     });
 
@@ -164,19 +146,14 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
     companyId: string,
     companyData: UpdateCompanyData
   ): Promise<void> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch(`/api/admin/companies/${companyId}`, {
       method: "PUT",
-      headers,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
       body: JSON.stringify(companyData),
     });
 
@@ -187,17 +164,11 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   };
 
   const deleteCompany = async (companyId: string): Promise<void> => {
-    const token = getToken();
-    if (!token && !session) throw new Error("No hay token de autenticación");
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    if (!session) throw new Error("No hay token de autenticación");
 
     const response = await fetch(`/api/admin/companies/${companyId}`, {
       method: "DELETE",
-      headers,
+      credentials: "include",
     });
 
     if (!response.ok) {
