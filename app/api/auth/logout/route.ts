@@ -1,6 +1,10 @@
-import { NextResponse } from "next/server";
+import { requireCsrf } from "@/lib/csrf";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     const response = NextResponse.json(
       { success: true, message: "Logout exitoso" },

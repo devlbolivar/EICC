@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { PaginationInfo } from "@/app/types";
 
 interface User {
@@ -147,18 +148,7 @@ interface UseAdminUsersReturn {
 
 export function useAdminUsers(): UseAdminUsersReturn {
   const { session } = useAuth();
-
-  const fetchCsrfToken = async (): Promise<string | null> => {
-    try {
-      const response = await fetch("/api/csrf");
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.data?.token || null;
-    } catch (error) {
-      console.error("Error fetching CSRF token:", error);
-      return null;
-    }
-  };
+  const { fetchWithCsrf } = useCsrfToken();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -246,18 +236,9 @@ export function useAdminUsers(): UseAdminUsersReturn {
   const createUser = async (userData: CreateUserData): Promise<UserDetail> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    const csrfToken = await fetchCsrfToken();
-    if (csrfToken) {
-      headers["x-csrf-token"] = csrfToken;
-    }
-
-    const response = await fetch("/api/admin/users/create", {
+    const response = await fetchWithCsrf("/api/admin/users/create", {
       method: "POST",
-      credentials: "include",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
 
@@ -275,18 +256,9 @@ export function useAdminUsers(): UseAdminUsersReturn {
   ): Promise<void> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    const csrfToken = await fetchCsrfToken();
-    if (csrfToken) {
-      headers["x-csrf-token"] = csrfToken;
-    }
-
-    const response = await fetch(`/api/admin/users/${userId}`, {
+    const response = await fetchWithCsrf(`/api/admin/users/${userId}`, {
       method: "PUT",
-      credentials: "include",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
 
@@ -298,16 +270,8 @@ export function useAdminUsers(): UseAdminUsersReturn {
   const deleteUser = async (userId: string): Promise<void> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const headers: Record<string, string> = {};
-    const csrfToken = await fetchCsrfToken();
-    if (csrfToken) {
-      headers["x-csrf-token"] = csrfToken;
-    }
-
-    const response = await fetch(`/api/admin/users/${userId}`, {
+    const response = await fetchWithCsrf(`/api/admin/users/${userId}`, {
       method: "DELETE",
-      credentials: "include",
-      headers,
     });
 
     if (!response.ok) {

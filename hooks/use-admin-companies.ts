@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { PaginationInfo } from "@/app/types";
 
 interface Company {
@@ -65,6 +66,7 @@ interface UseAdminCompaniesReturn {
 
 export function useAdminCompanies(): UseAdminCompaniesReturn {
   const { session } = useAuth();
+  const { fetchWithCsrf } = useCsrfToken();
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
@@ -124,12 +126,11 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   const createCompany = async (companyData: CreateCompanyData): Promise<Company> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const response = await fetch("/api/admin/companies/create", {
+    const response = await fetchWithCsrf("/api/admin/companies/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(companyData),
     });
 
@@ -148,12 +149,11 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   ): Promise<void> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const response = await fetch(`/api/admin/companies/${companyId}`, {
+    const response = await fetchWithCsrf(`/api/admin/companies/${companyId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(companyData),
     });
 
@@ -166,9 +166,8 @@ export function useAdminCompanies(): UseAdminCompaniesReturn {
   const deleteCompany = async (companyId: string): Promise<void> => {
     if (!session) throw new Error("No hay token de autenticación");
 
-    const response = await fetch(`/api/admin/companies/${companyId}`, {
+    const response = await fetchWithCsrf(`/api/admin/companies/${companyId}`, {
       method: "DELETE",
-      credentials: "include",
     });
 
     if (!response.ok) {

@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { usersTable } from "@/config/schema";
@@ -6,6 +7,9 @@ import { hashPassword, validatePassword } from "@/lib/auth";
 import { authRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Rate limiting: 5 intentos por 15 minutos
     const rateLimitResponse = await authRateLimit(request);
@@ -61,12 +65,14 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Actualizar contraseña y limpiar tokens de reset
+    // passwordChangedAt invalida todos los refresh tokens emitidos antes de este momento
     await db
       .update(usersTable)
       .set({
         passwordHash,
         resetPasswordToken: null,
         resetPasswordExpires: null,
+        passwordChangedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(usersTable.id, user.id));

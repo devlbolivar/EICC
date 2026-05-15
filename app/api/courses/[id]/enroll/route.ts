@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { sql } from "drizzle-orm";
@@ -12,6 +13,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();
@@ -70,36 +74,66 @@ export async function POST(
       );
     }
 
-    // Use INSERT ... ON CONFLICT to prevent race condition (duplicate enrollments)
-    const enrollment = await db.execute(sql`
-      INSERT INTO "enroll_course" (
-        "course_id", "user_id", "company_id", "progress", "isCompleted",
-        "completedChapters", "cid", "userEmail"
-      ) VALUES (
-        ${courseId}, ${payload.userId}, ${payload.companyId || null}, 0, false,
-        '{}', ${course.cid || ""}, ${payload.email}
-      )
-      ON CONFLICT ("course_id", "user_id") DO NOTHING
-      RETURNING *
-    `);
+    const companyId = request.headers.get("x-company-id") || payload.companyId;
 
-    if (enrollment.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Ya estás inscrito en este curso" },
-        { status: 409 }
-      );
+    // FIX 3: Verificar suscripción activa si el usuario pertenece a una empresa
+    if (companyId) {
+      const subResult = await db.execute(sql`
+        SELECT id FROM subscriptions 
+        WHERE "companyId" = ${companyId} 
+          AND status = 'active' 
+          AND "currentPeriodEnd" > NOW()
+        LIMIT 1
+      `);
+      
+      if (subResult.rows.length === 0) {
+        return NextResponse.json(
+          { error: "Tu empresa no tiene una suscripción activa" },
+          { status: 403 }
+        );
+      }
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Inscripción exitosa",
-        data: {
-          enrollment: enrollment.rows[0],
+    try {
+      // FIX 5: Use transaction to prevent race condition (duplicate enrollments)
+      const enrollment = await db.transaction(async (tx) => {
+        const result = await tx.execute(sql`
+          INSERT INTO "enroll_course" (
+            "course_id", "user_id", "company_id", "progress", "isCompleted",
+            "completedChapters", "cid", "userEmail"
+          ) VALUES (
+            ${courseId}, ${payload.userId}, ${companyId || null}, 0, false,
+            '{}', ${course.cid || ""}, ${payload.email}
+          )
+          ON CONFLICT ("course_id", "user_id") DO NOTHING
+          RETURNING *
+        `);
+
+        if (result.rows.length === 0) {
+          throw new Error("ALREADY_ENROLLED");
+        }
+        return result.rows[0];
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Inscripción exitosa",
+          data: {
+            enrollment: enrollment,
+          },
         },
-      },
-      { status: 201 }
-    );
+        { status: 201 }
+      );
+    } catch (error: any) {
+      if (error.message === "ALREADY_ENROLLED") {
+        return NextResponse.json(
+          { error: "Ya estás inscrito en este curso" },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
   } catch (error) {
     console.error("Error al inscribirse en el curso:", error);
     return NextResponse.json(
@@ -183,6 +217,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();
@@ -227,52 +264,67 @@ export async function PUT(
       );
     }
 
-    // Actualizar progreso - use individual field updates
+    const enrollment = existingEnrollment.rows[0];
+    const isNowCompleted = isCompleted !== undefined ? isCompleted : enrollment.isCompleted;
+    const justCompleted = isNowCompleted && !enrollment.isCompleted;
+
+    // Get course details for certificate generation (if needed)
+    let courseRow: any;
+    if (justCompleted) {
+      const courseResult = await db.execute(sql`
+        SELECT * FROM courses WHERE id = ${courseId} AND "isActive" = true
+      `);
+      if (courseResult.rows.length === 0) {
+        console.error(`❌ Course not found for certificate generation: ${courseId}`);
+        // Decide whether to fail the update or proceed without certificate generation
+        // For now, we'll proceed, but log the error.
+      } else {
+        courseRow = courseResult.rows[0];
+      }
+    }
+
+    // Actualizar progreso
     let updateQuery = sql`UPDATE "enroll_course" SET "updatedAt" = ${new Date().toISOString()}`;
 
     if (completedChapters !== undefined) {
-      updateQuery = sql`${updateQuery}, "completedChapters" = ${JSON.stringify(
-        completedChapters
-      )}`;
+      updateQuery = sql`${updateQuery}, "completedChapters" = ${JSON.stringify(completedChapters)}`;
     }
     if (progress !== undefined) {
       updateQuery = sql`${updateQuery}, "progress" = ${progress}`;
     }
-    if (isCompleted !== undefined) {
-      updateQuery = sql`${updateQuery}, "isCompleted" = ${isCompleted}`;
-      if (isCompleted) {
-        updateQuery = sql`${updateQuery}, "completedAt" = ${new Date()}`;
-      }
+    
+    updateQuery = sql`${updateQuery}, "isCompleted" = ${isNowCompleted}`;
+    if (justCompleted || (isNowCompleted && !enrollment.completedAt)) {
+      updateQuery = sql`${updateQuery}, "completedAt" = ${new Date().toISOString()}`;
     }
 
-    const updatedEnrollment = await db.execute(sql`
-      ${updateQuery}
-      WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
-      RETURNING *
-    `);
+    // FIX 5: Envolver en db.transaction
+    const result = await db.transaction(async (tx) => {
+      // 1. Actualizar enrollment
+      const updatedEnrollment = await tx.execute(sql`
+        ${updateQuery}
+        WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
+        RETURNING *
+      `);
+      
+      const enrollmentRow = updatedEnrollment.rows[0];
+      let certificateGenerated = false;
 
-    // If course is completed, generate certificate automatically
-    let certificateGenerated = false;
-    if (isCompleted) {
-      console.log(
-        `🔍 Debug: Course completed, generating certificate for user ${payload.userId} and course ${courseId}`
-      );
-
-      try {
-        // Get course details for certificate generation
-        const courseResult = await db.execute(sql`
-          SELECT * FROM courses WHERE id = ${courseId} AND "isActive" = true
+      // 2. Generar certificado si recién completó el curso
+      if (justCompleted && courseRow) { // Only attempt if courseRow was found
+        console.log(`🔍 Debug: Course completed, generating certificate for user ${payload.userId} and course ${courseId}`);
+        
+        // Verificar existencia previa
+        const existingCert = await tx.execute(sql`
+          SELECT id FROM certificates 
+          WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId} AND "isActive" = true
         `);
 
-        console.log(`🔍 Debug: Course query result`, {
-          courseFound: courseResult.rows.length > 0,
-        });
-
-        if (courseResult.rows.length > 0) {
-          const courseRow = courseResult.rows[0];
-          const enrollmentRow = updatedEnrollment.rows[0];
-
-          const certificateResult = await generateCertificateForCompletion({
+        if (existingCert.rows.length === 0) {
+          const { createCertificateData } = await import("@/lib/certificate-service");
+          const { certificatesTable } = await import("@/config/schema");
+          
+          const certData = createCertificateData({
             courseId,
             userId: payload.userId,
             course: {
@@ -288,52 +340,34 @@ export async function PUT(
               progress: Number(enrollmentRow.progress || 0),
               isCompleted: Boolean(enrollmentRow.isCompleted),
               completedAt: enrollmentRow.completedAt ? new Date(String(enrollmentRow.completedAt)) : undefined,
-              completedChapters: [],
-              enrolledAt: new Date(),
+              completedChapters: [], // This might need to be populated from enrollmentRow if available
+              enrolledAt: new Date(), // This might need to be populated from enrollmentRow if available
               createdAt: new Date(String(enrollmentRow.createdAt || new Date())),
               updatedAt: new Date(String(enrollmentRow.updatedAt || new Date())),
             } satisfies EnrollCourse,
             companyId: payload.companyId,
           });
 
-          certificateGenerated = certificateResult.success;
-
-          console.log(
-            `🔍 Debug: Certificate generation result`,
-            certificateResult
-          );
-
-          if (certificateResult.success) {
-            console.log(
-              `✅ Certificate generated for user ${payload.userId} and course ${courseId}`
-            );
-          } else {
-            console.error(
-              `❌ Failed to generate certificate: ${certificateResult.error}`
-            );
-          }
+          await tx.insert(certificatesTable).values(certData);
+          certificateGenerated = true;
+          console.log(`✅ Certificate generated logically inside transaction for user ${payload.userId} and course ${courseId}`);
         } else {
-          console.error(
-            `❌ Course not found for certificate generation: ${courseId}`
-          );
+          console.log(`ℹ️ Certificate already exists for user ${payload.userId} and course ${courseId}. Skipping generation.`);
         }
-      } catch (error) {
-        console.error("❌ Error generating certificate:", error);
-        // Don't fail the progress update if certificate generation fails
+      } else if (justCompleted && !courseRow) {
+        console.error(`❌ Cannot generate certificate: Course details not found for course ID ${courseId}.`);
       }
-    } else {
-      console.log(
-        `🔍 Debug: Course not completed yet (progress: ${progress}%)`
-      );
-    }
+
+      return {
+        enrollment: enrollmentRow,
+        certificateGenerated
+      };
+    });
 
     return NextResponse.json({
       success: true,
       message: "Progreso actualizado exitosamente",
-      data: {
-        enrollment: updatedEnrollment.rows[0],
-        certificateGenerated,
-      },
+      data: result,
     });
   } catch (error) {
     console.error("Error al actualizar progreso del curso:", error);
@@ -349,6 +383,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();

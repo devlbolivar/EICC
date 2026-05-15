@@ -197,6 +197,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ===== VERIFICAR EMAIL VERIFICADO =====
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { error: "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada." },
+        { status: 403 }
+      );
+    }
+
     // Clear failed attempts on successful login
     clearFailedAttempts(sanitizedEmail);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import {
   Certificate,
   CertificateCreateData,
@@ -36,6 +37,7 @@ interface UseCertificatesReturn {
 export function useCertificates(
   options: UseCertificatesOptions = {}
 ): UseCertificatesReturn {
+  const { fetchWithCsrf } = useCsrfToken();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,12 +113,9 @@ export function useCertificates(
       setError(null);
 
       try {
-        const response = await fetch(API_ROUTES.CERTIFICATES, {
+        const response = await fetchWithCsrf(API_ROUTES.CERTIFICATES, {
           method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
@@ -144,7 +143,7 @@ export function useCertificates(
         setLoading(false);
       }
     },
-    []
+    [fetchWithCsrf]
   );
 
   const updateCertificate = useCallback(
@@ -156,12 +155,9 @@ export function useCertificates(
       setError(null);
 
       try {
-        const response = await fetch(`${API_ROUTES.CERTIFICATES}/${id}`, {
+        const response = await fetchWithCsrf(`${API_ROUTES.CERTIFICATES}/${id}`, {
           method: "PUT",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
@@ -191,7 +187,7 @@ export function useCertificates(
         setLoading(false);
       }
     },
-    []
+    [fetchWithCsrf]
   );
 
   const deleteCertificate = useCallback(
@@ -200,12 +196,9 @@ export function useCertificates(
       setError(null);
 
       try {
-        const response = await fetch(`${API_ROUTES.CERTIFICATES}/${id}`, {
+        const response = await fetchWithCsrf(`${API_ROUTES.CERTIFICATES}/${id}`, {
           method: "DELETE",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
 
         if (!response.ok) {
@@ -231,7 +224,7 @@ export function useCertificates(
         setLoading(false);
       }
     },
-    []
+    [fetchWithCsrf]
   );
 
   const getCertificate = useCallback(

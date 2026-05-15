@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 
 export interface PendingInvitation {
   id: string;
@@ -45,6 +46,7 @@ interface UseCompanyInvitationsReturn {
 
 export function useCompanyInvitations(): UseCompanyInvitationsReturn {
   const { session } = useAuth();
+  const { fetchWithCsrf } = useCsrfToken();
   const [pendingInvitations, setPendingInvitations] = useState<
     PendingInvitation[]
   >([]);
@@ -98,12 +100,9 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
           throw new Error("No hay token de autenticación");
         }
 
-        const response = await fetch("/api/company/invite", {
+        const response = await fetchWithCsrf("/api/company/invite", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
 
@@ -141,9 +140,8 @@ export function useCompanyInvitations(): UseCompanyInvitationsReturn {
           throw new Error("No hay token de autenticación");
         }
 
-        const response = await fetch(`/api/company/invite?id=${invitationId}`, {
+        const response = await fetchWithCsrf(`/api/company/invite?id=${invitationId}`, {
           method: "DELETE",
-          credentials: "include",
         });
 
         if (!response.ok) {

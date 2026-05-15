@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 
 export interface CompanyProfile {
   id: string;
@@ -42,6 +43,7 @@ interface UseCompanyProfileReturn {
 
 export function useCompanyProfile(): UseCompanyProfileReturn {
   const { session } = useAuth();
+  const { fetchWithCsrf } = useCsrfToken();
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
     null
   );
@@ -89,12 +91,9 @@ export function useCompanyProfile(): UseCompanyProfileReturn {
         throw new Error("No hay token de autenticación");
       }
 
-      const response = await fetch("/api/company/profile", {
+      const response = await fetchWithCsrf("/api/company/profile", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 

@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -164,6 +165,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     const { id } = await params;
 
@@ -243,6 +247,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     const { id } = await params;
 

@@ -46,6 +46,7 @@ export const usersTable = pgTable("users", {
   phone: varchar({ length: 50 }),
   location: varchar({ length: 255 }),
   bio: text(),
+  passwordChangedAt: timestamp(), // set on password change; refresh tokens issued before this are invalid
 });
 
 // ===== EMPRESAS/COMPAÑÍAS =====

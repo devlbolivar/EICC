@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import {
   Course,
   CourseCreateData,
@@ -51,6 +52,7 @@ interface UseCoursesReturn {
 }
 
 export function useCourses(): UseCoursesReturn {
+  const { fetchWithCsrf } = useCsrfToken();
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrolledCourses, setEnrolledCourses] = useState<
     EnrolledCourseResponse[]
@@ -74,15 +76,10 @@ export function useCourses(): UseCoursesReturn {
       setError(null);
 
       try {
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-
-        const response = await fetch(url, {
+        const response = await fetchWithCsrf(url, {
           ...options,
-          credentials: "include", // Incluir cookies en la petición
           headers: {
-            ...headers,
+            "Content-Type": "application/json",
             ...options.headers,
           },
         });
@@ -98,7 +95,7 @@ export function useCourses(): UseCoursesReturn {
         return handleError(err);
       }
     },
-    [handleError]
+    [handleError, fetchWithCsrf]
   );
 
   // Obtener lista de cursos

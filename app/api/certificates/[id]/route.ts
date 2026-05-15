@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { certificatesTable, usersTable, coursesTable, companiesTable } from "@/config/schema";
@@ -97,6 +98,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();
@@ -185,6 +189,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();

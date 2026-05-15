@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { useRouter } from "next/navigation";
 import { API_ROUTES, SUCCESS_MESSAGES } from "@/lib/constants";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ export interface CourseActionParams {
 
 export const useCourseActions = () => {
   const router = useRouter();
+  const { fetchWithCsrf } = useCsrfToken();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Función para ver curso
@@ -89,12 +91,9 @@ export const useCourseActions = () => {
         return;
       }
 
-      const response = await fetch(`${API_ROUTES.COURSES}/${courseId}`, {
+      const response = await fetchWithCsrf(`${API_ROUTES.COURSES}/${courseId}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!response.ok) {
@@ -126,15 +125,10 @@ export const useCourseActions = () => {
     try {
       setActionLoading(`status-${courseId}`);
 
-      const response = await fetch(`${API_ROUTES.COURSES}/${courseId}`, {
+      const response = await fetchWithCsrf(`${API_ROUTES.COURSES}/${courseId}`, {
         method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
       });
 
       if (!response.ok) {
@@ -196,12 +190,9 @@ export const useCourseActions = () => {
       delete duplicateCourse.createdAt;
       delete duplicateCourse.updatedAt;
 
-      const createResponse = await fetch(API_ROUTES.COURSES, {
+      const createResponse = await fetchWithCsrf(API_ROUTES.COURSES, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(duplicateCourse),
       });
 

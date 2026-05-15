@@ -11,6 +11,7 @@ import {
 } from "@/app/types";
 import { toast } from "sonner";
 import { API_ROUTES, UI_TEXT, fetchWithTimeout } from "@/lib/constants";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 
 // ===== CONTEXTO =====
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Use ref instead of state for isRefreshing to avoid race conditions
   // (React state updates are async, so concurrent calls could both read false)
   const isRefreshingRef = useRef(false);
+  const { fetchWithCsrf } = useCsrfToken();
 
   const initializeAuth = useCallback(async () => {
     try {
@@ -73,6 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await fetchWithTimeout(API_ROUTES.AUTH.VALIDATE, {
         method: "GET",
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -97,13 +100,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
       });
 
       if (response.ok) {
-        const data = await response.json();
-        // ✅ CORREGIDO: Tokens se manejan automáticamente en cookies httpOnly
-        // No necesitamos localStorage (previene vulnerabilidades XSS)
-        setSession(data.data.session);
+        // Tokens actualizados en cookies httpOnly por el servidor.
+        // Re-validamos para obtener la sesión con el nuevo accessToken.
+        await validateAndSetSession();
       } else {
         setSession(null);
       }
@@ -180,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       // Llamar al endpoint de logout para invalidar el refresh token
-      await fetchWithTimeout(API_ROUTES.AUTH.LOGOUT, {
+      await fetchWithCsrf(API_ROUTES.AUTH.LOGOUT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

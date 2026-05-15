@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
 import { coursesTable } from "@/config/schema";
@@ -47,8 +48,10 @@ export async function GET(request: NextRequest) {
 
     // Obtener parámetros de consulta
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const page = Math.max(parseInt(searchParams.get("page") || "1"), 1);
+    const rawLimit = parseInt(searchParams.get("limit") || "10");
+    // FIX 4: Limit pagination to max 100 items to prevent DoS
+    const limit = Math.min(Math.max(rawLimit, 1), 100);
 
     // Construir consulta base
     const query = sql`
@@ -97,6 +100,9 @@ export async function GET(request: NextRequest) {
 
 // ===== POST - Crear curso =====
 export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Rate limiting: 60 requests por minuto
     const rateLimitResponse = await apiRateLimit(request);

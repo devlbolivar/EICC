@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 import { db } from "@/config/db";
@@ -6,6 +7,9 @@ import { cookies } from "next/headers";
 
 // ===== POST - Upload avatar (base64) =====
 export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();
@@ -82,6 +86,9 @@ export async function POST(request: NextRequest) {
 
 // ===== DELETE - Eliminar avatar =====
 export async function DELETE(_request: NextRequest) {
+    const csrfResult = await requireCsrf(_request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();

@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/database";
 import * as schema from "@/config/schema";
@@ -11,6 +12,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // ===== VERIFICAR AUTENTICACIÓN Y PERMISOS DE ADMIN =====
     const authResult = await verifyAdminAuth(request);

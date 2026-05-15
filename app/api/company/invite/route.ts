@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -124,6 +125,9 @@ export async function GET(request: NextRequest) {
 
 // ===== CREAR INVITACIÓN =====
 export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Rate limiting: 10 invitaciones por minuto
     const rateLimitResponse = await strictRateLimit(request);
@@ -331,6 +335,9 @@ export async function POST(request: NextRequest) {
 
 // ===== CANCELAR INVITACIÓN =====
 export async function DELETE(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Rate limiting: 10 operaciones por minuto
     const rateLimitResponse = await strictRateLimit(request);

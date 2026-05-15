@@ -204,6 +204,7 @@ const csrfExemptRoutes = [
   "/api/auth/login",
   "/api/auth/refresh",
   "/api/auth/forgot-password",
+  "/api/auth/reset-password", // public flow: user arrives from email link with no session/CSRF cookie
   "/api/auth/verify-email",
   "/api/auth/accept-invite",
   // Webhooks from external services (use webhook signature verification)

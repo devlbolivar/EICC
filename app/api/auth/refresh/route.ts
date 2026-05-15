@@ -38,6 +38,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ===== VERIFICAR QUE EL TOKEN NO FUE EMITIDO ANTES DE UN CAMBIO DE CONTRASEÑA =====
+    if (user.passwordChangedAt) {
+      const iat = (payload as typeof payload & { iat?: number }).iat;
+      if (iat && user.passwordChangedAt > new Date(iat * 1000)) {
+        return NextResponse.json(
+          { error: "Sesión inválida. Por favor inicia sesión nuevamente." },
+          { status: 401 }
+        );
+      }
+    }
+
     // ===== VERIFICAR QUE TENEMOS LOS DATOS NECESARIOS =====
     if (!payload.roleId) {
       return NextResponse.json(

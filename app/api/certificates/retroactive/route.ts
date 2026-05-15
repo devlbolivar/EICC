@@ -1,3 +1,4 @@
+import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -8,6 +9,9 @@ import {
 
 // ===== POST - Create missing certificates for user =====
 export async function POST(request: NextRequest) {
+    const csrfResult = await requireCsrf(request);
+    if (csrfResult) return csrfResult;
+
   try {
     // Verificar autenticación
     const cookieStore = await cookies();

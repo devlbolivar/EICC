@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { User } from "@/app/types";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ export interface PasswordChangeData {
 
 export const useUserProfile = () => {
   const { session } = useAuth();
+  const { fetchWithCsrf } = useCsrfToken();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -76,12 +78,9 @@ export const useUserProfile = () => {
   const updateProfile = async (data: UserProfileUpdateData) => {
     try {
       setUpdating(true);
-      const response = await fetch("/api/user", {
+      const response = await fetchWithCsrf("/api/user", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
@@ -112,12 +111,9 @@ export const useUserProfile = () => {
   const changePassword = async (data: PasswordChangeData) => {
     try {
       setUpdating(true);
-      const response = await fetch("/api/user/password", {
+      const response = await fetchWithCsrf("/api/user/password", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
@@ -172,12 +168,9 @@ export const useUserProfile = () => {
   const uploadAvatar = async (avatarBase64: string) => {
     try {
       setUpdating(true);
-      const response = await fetch("/api/user/avatar", {
+      const response = await fetchWithCsrf("/api/user/avatar", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ avatar: avatarBase64 }),
       });
 
@@ -208,9 +201,8 @@ export const useUserProfile = () => {
   const deleteAvatar = async () => {
     try {
       setUpdating(true);
-      const response = await fetch("/api/user/avatar", {
+      const response = await fetchWithCsrf("/api/user/avatar", {
         method: "DELETE",
-        credentials: "include",
       });
 
       if (response.ok) {

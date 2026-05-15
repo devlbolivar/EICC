@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { toast } from "sonner";
 
 interface UseCertificateCheckReturn {
@@ -8,6 +9,7 @@ interface UseCertificateCheckReturn {
 }
 
 export function useCertificateCheck(): UseCertificateCheckReturn {
+  const { fetchWithCsrf } = useCsrfToken();
   const [creatingCourses, setCreatingCourses] = useState<Set<string>>(
     new Set()
   );
@@ -53,11 +55,9 @@ export function useCertificateCheck(): UseCertificateCheckReturn {
         }
 
         // If no certificate exists, create one
-        const response = await fetch("/api/certificates/retroactive", {
+        const response = await fetchWithCsrf("/api/certificates/retroactive", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ courseId }),
         });
 
@@ -83,7 +83,7 @@ export function useCertificateCheck(): UseCertificateCheckReturn {
         setCreating(courseId, false);
       }
     },
-    [setCreating]
+    [setCreating, fetchWithCsrf]
   );
 
   return {
