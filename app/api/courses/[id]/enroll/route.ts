@@ -4,7 +4,7 @@ import { db } from "@/config/db";
 import { sql } from "drizzle-orm";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
-import { generateCertificateForCompletion } from "@/lib/certificate-service";
+
 import { Course, EnrollCourse } from "@/app/types";
 import { validateUUID } from "@/lib/validation";
 
@@ -125,8 +125,8 @@ export async function POST(
         },
         { status: 201 }
       );
-    } catch (error: any) {
-      if (error.message === "ALREADY_ENROLLED") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "ALREADY_ENROLLED") {
         return NextResponse.json(
           { error: "Ya estás inscrito en este curso" },
           { status: 409 }
@@ -269,7 +269,7 @@ export async function PUT(
     const justCompleted = isNowCompleted && !enrollment.isCompleted;
 
     // Get course details for certificate generation (if needed)
-    let courseRow: any;
+    let courseRow: Partial<Course> | undefined;
     if (justCompleted) {
       const courseResult = await db.execute(sql`
         SELECT * FROM courses WHERE id = ${courseId} AND "isActive" = true
@@ -279,7 +279,7 @@ export async function PUT(
         // Decide whether to fail the update or proceed without certificate generation
         // For now, we'll proceed, but log the error.
       } else {
-        courseRow = courseResult.rows[0];
+        courseRow = courseResult.rows[0] as Partial<Course>;
       }
     }
 

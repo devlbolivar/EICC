@@ -19,8 +19,6 @@ import {
   BookOpen,
   GraduationCap,
   Award,
-  BarChart3,
-  Settings,
   HelpCircle,
   Plus,
   List,

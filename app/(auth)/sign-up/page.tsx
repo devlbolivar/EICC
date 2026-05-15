@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
 import { UserRegistrationData } from "@/app/types";
-import { validateEmail, validatePassword, sanitizeName } from "@/lib/auth-shared";
+import { validateEmail, validatePassword } from "@/lib/auth-shared";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState<UserRegistrationData>({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
-import { comparePassword, hashPassword, generateTokenPair, validateEmail } from "@/lib/auth";
+import { comparePassword, generateTokenPair, validateEmail } from "@/lib/auth";
 import { validateAndSanitizeEmail } from "@/lib/utils";
 import { sql } from "drizzle-orm";
 import type { Permission } from "../../../types/index";

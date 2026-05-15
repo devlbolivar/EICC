@@ -14,7 +14,6 @@ import {
 import { sendVerificationEmail } from "@/lib/email-service";
 import {
   validateAndSanitizeEmail,
-  sanitizeString,
   validateSafeString,
 } from "@/lib/utils";
 import { SYSTEM_ROLES, Permission } from "@/app/types";

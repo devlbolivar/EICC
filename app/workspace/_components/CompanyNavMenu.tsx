@@ -18,7 +18,6 @@ import {
   Users,
   BookOpen,
   Award,
-  CreditCard,
   HelpCircle,
   UserPlus,
   LogOut,
