@@ -256,9 +256,8 @@ export async function GET(request: NextRequest) {
             DATE_TRUNC('month', s."currentPeriodStart") as month,
             COUNT(*) as subscriptions,
             SUM(CASE
-              WHEN s."planName" = 'enterprise' THEN 500
-              WHEN s."planName" = 'corporate' THEN 300
-              WHEN s."planName" = 'startup' THEN 100
+              WHEN s."planName" = 'pro' THEN 129
+              WHEN s."planName" = 'starter' THEN 49
               ELSE 0
             END) as revenue
           FROM subscriptions s
@@ -278,15 +277,13 @@ export async function GET(request: NextRequest) {
             "planName" as plan,
             COUNT(*) as count,
             SUM(CASE
-              WHEN "planName" = 'enterprise' THEN 500
-              WHEN "planName" = 'corporate' THEN 300
-              WHEN "planName" = 'startup' THEN 100
+              WHEN "planName" = 'pro' THEN 129
+              WHEN "planName" = 'starter' THEN 49
               ELSE 0
             END) as total_revenue,
             ROUND(AVG(CASE
-              WHEN "planName" = 'enterprise' THEN 500
-              WHEN "planName" = 'corporate' THEN 300
-              WHEN "planName" = 'startup' THEN 100
+              WHEN "planName" = 'pro' THEN 129
+              WHEN "planName" = 'starter' THEN 49
               ELSE 0
             END), 2) as avg_revenue
           FROM subscriptions

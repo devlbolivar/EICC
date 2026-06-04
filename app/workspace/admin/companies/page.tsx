@@ -157,9 +157,9 @@ export default function AdminCompaniesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Todos los planes</SelectItem>
-                      <SelectItem value="startup">Startup</SelectItem>
-                      <SelectItem value="corporate">Corporate</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                      <SelectItem value="free">Gratuito</SelectItem>
+                      <SelectItem value="starter">Starter</SelectItem>
+                      <SelectItem value="pro">Pro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -233,7 +233,7 @@ export default function AdminCompaniesPage() {
                       <td className="py-3 px-4">{company.rut}</td>
                       <td className="py-3 px-4">{company.industry}</td>
                       <td className="py-3 px-4">
-                        <Badge variant="secondary">{company.plan}</Badge>
+                        <Badge variant="secondary">{company.subscriptionPlan}</Badge>
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={company.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>

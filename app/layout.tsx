@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import Provider from "@/provider";
 import { Toaster } from "@/components/ui/sonner";
 import { validateEnv } from "@/lib/env-validator";
 
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="antialiased">
         <AuthProvider>
-          <Provider>{children}</Provider>
+          {children}
         </AuthProvider>
         <Toaster />
       </body>

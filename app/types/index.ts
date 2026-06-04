@@ -177,7 +177,7 @@ export interface Company extends BaseEntity {
   industry?: string;
   size?: "small" | "medium" | "large";
   isActive: boolean;
-  subscriptionPlan: "free" | "basic" | "premium";
+  subscriptionPlan: "free" | "starter" | "pro";
   subscriptionExpiresAt?: Date;
 }
 

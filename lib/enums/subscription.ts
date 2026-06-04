@@ -7,8 +7,8 @@
  */
 export enum SubscriptionPlan {
   FREE = 'free',
-  PREMIUM = 'premium',
-  ENTERPRISE = 'enterprise',
+  STARTER = 'starter',
+  PRO = 'pro',
 }
 
 /**
@@ -16,8 +16,8 @@ export enum SubscriptionPlan {
  */
 export const SUBSCRIPTION_PLAN_LABELS: Record<SubscriptionPlan, string> = {
   [SubscriptionPlan.FREE]: 'Plan Gratuito',
-  [SubscriptionPlan.PREMIUM]: 'Plan Premium',
-  [SubscriptionPlan.ENTERPRISE]: 'Plan Empresarial',
+  [SubscriptionPlan.STARTER]: 'Plan Starter',
+  [SubscriptionPlan.PRO]: 'Plan Pro',
 } as const;
 
 /**

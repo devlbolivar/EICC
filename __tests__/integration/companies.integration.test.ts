@@ -107,7 +107,7 @@ const mockCompany = {
     industry: "Technology",
     size: "medium",
     isActive: true,
-    subscriptionPlan: "premium",
+    subscriptionPlan: "starter",
     subscriptionExpiresAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),

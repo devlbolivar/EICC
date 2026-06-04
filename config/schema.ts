@@ -61,7 +61,7 @@ export const companiesTable = pgTable("companies", {
   industry: varchar({ length: 255 }),
   size: varchar({ length: 50 }), // small, medium, large
   isActive: boolean().notNull().default(true),
-  subscriptionPlan: varchar({ length: 50 }).default(SubscriptionPlan.FREE), // free, premium, enterprise
+  subscriptionPlan: varchar({ length: 50 }).default(SubscriptionPlan.FREE), // free, starter, pro
   subscriptionExpiresAt: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
@@ -224,7 +224,7 @@ export const subscriptionsTable = pgTable(
     stripeSubscriptionId: varchar({ length: 255 }),
     stripePriceId: varchar({ length: 255 }),
     status: varchar({ length: 50 }).notNull().default(SubscriptionStatus.INACTIVE), // active, inactive, cancelled, past_due, trialing
-    planName: varchar({ length: 100 }).notNull(), // free, premium, enterprise
+    planName: varchar({ length: 100 }).notNull(), // free, starter, pro
     currentPeriodStart: timestamp(),
     currentPeriodEnd: timestamp(),
     cancelAtPeriodEnd: boolean().notNull().default(false),

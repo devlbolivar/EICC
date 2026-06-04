@@ -1,7 +1,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import bcrypt from "bcryptjs";
 import * as schema from "../config/schema";
-import { hashPassword } from "../lib/auth";
+
+const hashPassword = (password: string) => bcrypt.hash(password, 12);
 
 // ===== CONFIGURACIÓN DE BASE DE DATOS =====
 const connectionString = process.env.DATABASE_URL;
@@ -314,7 +316,7 @@ async function seedDatabase() {
       if (!existingStudentRole) {
         await db.insert(schema.userCompaniesTable).values({
           userId: studentUser.id,
-          companyId: null,
+          companyId: exampleCompany.id,
           roleId: studentRole.id,
           isActive: true,
           acceptedAt: new Date(),

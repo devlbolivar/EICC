@@ -24,11 +24,16 @@ export async function POST(request: NextRequest) {
     // ✅ CORREGIDO: Verificar autenticación y permisos admin correctamente
     await requireAdmin(request);
 
-    const { name, rut, description, website, industry, size } = await request.json();
+    const { name, rut, description, website, industry, size, subscriptionPlan } = await request.json();
 
     if (!name || !rut) {
       return errorResponse("Nombre y RUT son requeridos", 400);
     }
+
+    const validPlans = ["free", "starter", "pro"];
+    const plan = subscriptionPlan && validPlans.includes(subscriptionPlan)
+      ? subscriptionPlan
+      : "free";
 
     const newCompany = await db
       .insert(schema.companiesTable)
@@ -39,6 +44,7 @@ export async function POST(request: NextRequest) {
         website: website || null,
         industry: industry || null,
         size: size || null,
+        subscriptionPlan: plan,
         isActive: true,
       })
       .returning();

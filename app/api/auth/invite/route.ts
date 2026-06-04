@@ -10,6 +10,7 @@ import {
   validateEmail,
 } from "@/lib/auth";
 import { verifyAccessToken } from "@/lib/auth";
+import { getPlanLimits } from "@/lib/plan-limits";
 
 const pg = neon(process.env.DATABASE_URL!);
 const db = drizzle(pg, { schema });
@@ -73,6 +74,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Empresa no encontrada" },
         { status: 404 }
+      );
+    }
+
+    // ===== VERIFICAR LÍMITE DE EMPLEADOS DEL PLAN =====
+    const limits = getPlanLimits(company.subscriptionPlan);
+    const countResult = await db.query.userCompaniesTable.findMany({
+      where: (uc, { and, eq }) =>
+        and(eq(uc.companyId, companyId), eq(uc.isActive, true)),
+      columns: { id: true },
+    });
+    if (countResult.length >= limits.maxEmployees) {
+      return NextResponse.json(
+        {
+          error: `Tu plan ${company.subscriptionPlan} permite un máximo de ${limits.maxEmployees} empleados. Actualiza tu plan para invitar más.`,
+          code: "EMPLOYEE_LIMIT_REACHED",
+        },
+        { status: 403 }
       );
     }
 

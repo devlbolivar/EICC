@@ -13,28 +13,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { PLAN_LIMITS } from "@/lib/plan-limits";
 
-interface CompanyData {
-  id: string;
-  name: string;
-  rut: string;
-  email: string;
-  phone: string;
-  address: string;
-  industry: string;
-  plan: string;
-  isActive: boolean;
-}
+const PLAN_OPTIONS = [
+  { value: "free",    label: "Gratuito",  description: `Hasta ${PLAN_LIMITS.free.maxEmployees} empleados · ${PLAN_LIMITS.free.maxDistinctCourses} cursos · Sin certificados` },
+  { value: "starter", label: "Starter",   description: `Hasta ${PLAN_LIMITS.starter.maxEmployees} empleados · Todos los cursos · Con certificados` },
+  { value: "pro",     label: "Pro",       description: `Hasta ${PLAN_LIMITS.pro.maxEmployees} empleados · Todos los cursos · Con certificados` },
+];
 
 export default function AdminEditCompanyPage() {
   const { isAdmin } = useAdmin();
   const { companies, updateCompany, fetchCompanies } = useAdminCompanies();
   const { id } = useParams();
-  const [company, setCompany] = useState<CompanyData | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     rut: "",
@@ -42,43 +44,47 @@ export default function AdminEditCompanyPage() {
     phone: "",
     address: "",
     industry: "",
-    plan: "",
+    subscriptionPlan: "free",
     isActive: true,
   });
 
-  useEffect(() => {
-    if (id) {
-        const companyToEdit = companies.find((c) => c.id === id);
-        if (companyToEdit) {
-            setCompany(companyToEdit);
-            setFormData({
-                name: companyToEdit.name,
-                rut: companyToEdit.rut,
-                email: companyToEdit.email,
-                phone: companyToEdit.phone,
-                address: companyToEdit.address,
-                industry: companyToEdit.industry,
-                plan: companyToEdit.plan,
-                isActive: companyToEdit.isActive,
-            });
-        } else {
-            fetchCompanies();
-        }
-    }
-  }, [id, companies, fetchCompanies]);
+  const company = companies.find((c) => c.id === id);
 
-  // Redirigir si no es administrador
+  useEffect(() => {
+    if (id && !company) {
+      fetchCompanies();
+    }
+  }, [id, company, fetchCompanies]);
+
+  useEffect(() => {
+    if (company) {
+      setFormData({
+        name: company.name ?? "",
+        rut: company.rut ?? "",
+        email: company.email ?? "",
+        phone: company.phone ?? "",
+        address: company.address ?? "",
+        industry: company.industry ?? "",
+        subscriptionPlan: company.subscriptionPlan ?? "free",
+        isActive: company.isActive,
+      });
+    }
+  }, [company]);
+
   if (!isAdmin) {
     redirect("/");
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await updateCompany(id as string, formData);
       toast.success("Empresa actualizada exitosamente");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al actualizar la empresa");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,9 +106,7 @@ export default function AdminEditCompanyPage() {
       <Card>
         <CardHeader>
           <CardTitle>Editar Empresa</CardTitle>
-          <CardDescription>
-            Modifica los detalles de la empresa.
-          </CardDescription>
+          <CardDescription>Modifica los detalles de la empresa.</CardDescription>
         </CardHeader>
         <CardContent>
           {company ? (
@@ -126,19 +130,56 @@ export default function AdminEditCompanyPage() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="address">Dirección</Label>
-                  <Input id="address" placeholder="Av. Siempre Viva 123, Springfield" value={formData.address} onChange={handleChange} />
+                  <Input id="address" placeholder="Av. Siempre Viva 123" value={formData.address} onChange={handleChange} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="industry">Industria</Label>
                   <Input id="industry" placeholder="Tecnología" value={formData.industry} onChange={handleChange} />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="plan">Plan</Label>
-                  <Input id="plan" placeholder="Premium" value={formData.plan} onChange={handleChange} />
+                  <Label>Plan de suscripción</Label>
+                  <Select
+                    value={formData.subscriptionPlan}
+                    onValueChange={(value) => setFormData({ ...formData, subscriptionPlan: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLAN_OPTIONS.map((plan) => (
+                        <SelectItem key={plan.value} value={plan.value}>
+                          <div>
+                            <span className="font-medium">{plan.label}</span>
+                            <span className="ml-2 text-xs text-muted-foreground">{plan.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Estado</Label>
+                  <Select
+                    value={formData.isActive ? "true" : "false"}
+                    onValueChange={(value) => setFormData({ ...formData, isActive: value === "true" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activa</SelectItem>
+                      <SelectItem value="false">Inactiva</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
               <div className="flex justify-end">
-                <Button type="submit">Guardar Cambios</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar Cambios"}
+                </Button>
               </div>
             </form>
           ) : (

@@ -83,7 +83,7 @@ describe('Billing Flow Integration Tests', () => {
     console.log('✅ Test data cleaned up');
   });
 
-  describe('📝 Flujo Completo: De Free a Premium', () => {
+  describe('📝 Flujo Completo: De Free a Starter', () => {
     it('debería crear suscripción inicial en estado free', async () => {
       // Arrange & Act
       testSubscription = await db
@@ -103,7 +103,7 @@ describe('Billing Flow Integration Tests', () => {
       expect(testSubscription[0].stripeCustomerId).toContain('cus_test_');
     });
 
-    it('debería actualizar a premium después de webhook de Stripe', async () => {
+    it('debería actualizar a starter después de webhook de Stripe', async () => {
       // Arrange - Simular webhook de Stripe: checkout.session.completed
       const stripeEvent = {
         id: `evt_test_${Date.now()}`,
@@ -146,7 +146,7 @@ describe('Billing Flow Integration Tests', () => {
         .limit(1);
 
       expect(updatedSubscription[0].status).toBe('active');
-      expect(updatedSubscription[0].planName).toBe('premium');
+      expect(updatedSubscription[0].planName).toBe('starter');
       expect(updatedSubscription[0].stripeSubscriptionId).toBeDefined();
     });
 
@@ -199,7 +199,7 @@ describe('Billing Flow Integration Tests', () => {
   });
 
   describe('🔄 Actualización de Plan', () => {
-    it('debería actualizar de premium a enterprise', async () => {
+    it('debería actualizar de starter a pro', async () => {
       // Arrange - Simular actualización de plan
       const updateEvent = {
         id: `evt_update_${Date.now()}`,
@@ -213,8 +213,8 @@ describe('Billing Flow Integration Tests', () => {
               data: [
                 {
                   price: {
-                    id: 'price_enterprise',
-                    product: 'prod_enterprise',
+                    id: 'price_pro',
+                    product: 'prod_pro',
                   },
                 },
               ],
@@ -245,7 +245,7 @@ describe('Billing Flow Integration Tests', () => {
         .where(eq(subscriptionsTable.id, testSubscription[0].id))
         .limit(1);
 
-      expect(updatedSubscription[0].planName).toBe('enterprise');
+      expect(updatedSubscription[0].planName).toBe('pro');
       expect(updatedSubscription[0].status).toBe('active');
     });
   });

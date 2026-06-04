@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 
 import { Course, EnrollCourse } from "@/app/types";
 import { validateUUID } from "@/lib/validation";
+import { getPlanLimits } from "@/lib/plan-limits";
 
 // ===== POST - Inscribirse en un curso =====
 export async function POST(
@@ -76,21 +77,44 @@ export async function POST(
 
     const companyId = request.headers.get("x-company-id") || payload.companyId;
 
-    // FIX 3: Verificar suscripción activa si el usuario pertenece a una empresa
+    // Verificar límites del plan si el usuario pertenece a una empresa
     if (companyId) {
-      const subResult = await db.execute(sql`
-        SELECT id FROM subscriptions 
-        WHERE "companyId" = ${companyId} 
-          AND status = 'active' 
-          AND "currentPeriodEnd" > NOW()
-        LIMIT 1
+      const companyResult = await db.execute(sql`
+        SELECT "subscriptionPlan" FROM companies WHERE id = ${companyId} LIMIT 1
       `);
-      
-      if (subResult.rows.length === 0) {
-        return NextResponse.json(
-          { error: "Tu empresa no tiene una suscripción activa" },
-          { status: 403 }
-        );
+
+      if (companyResult.rows.length === 0) {
+        return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+      }
+
+      const plan = String(companyResult.rows[0].subscriptionPlan ?? "free");
+      const limits = getPlanLimits(plan);
+
+      // Para planes con límite de cursos, verificar cuántos cursos distintos tiene la empresa
+      if (limits.maxDistinctCourses !== Infinity) {
+        const distinctResult = await db.execute(sql`
+          SELECT COUNT(DISTINCT "course_id") as count
+          FROM "enroll_course"
+          WHERE "company_id" = ${companyId}
+        `);
+        const distinctCount = Number(distinctResult.rows[0]?.count ?? 0);
+
+        // Verificar si ya está inscrito en este curso antes de bloquear
+        const alreadyEnrolled = await db.execute(sql`
+          SELECT id FROM "enroll_course"
+          WHERE "course_id" = ${courseId} AND "user_id" = ${payload.userId}
+          LIMIT 1
+        `);
+
+        if (alreadyEnrolled.rows.length === 0 && distinctCount >= limits.maxDistinctCourses) {
+          return NextResponse.json(
+            {
+              error: `Tu plan ${plan} permite acceso a un máximo de ${limits.maxDistinctCourses} cursos. Actualiza tu plan para acceder a más.`,
+              code: "COURSE_LIMIT_REACHED",
+            },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -310,8 +334,18 @@ export async function PUT(
       const enrollmentRow = updatedEnrollment.rows[0];
       let certificateGenerated = false;
 
-      // 2. Generar certificado si recién completó el curso
-      if (justCompleted && courseRow) { // Only attempt if courseRow was found
+      // 2. Generar certificado si recién completó el curso (solo planes que lo permiten)
+      const companyPlanResult = payload.companyId
+        ? await tx.execute(sql`SELECT "subscriptionPlan" FROM companies WHERE id = ${payload.companyId} LIMIT 1`)
+        : null;
+      const companyPlan = String(companyPlanResult?.rows[0]?.subscriptionPlan ?? "free");
+      const planLimits = getPlanLimits(companyPlan);
+
+      if (justCompleted && courseRow && !planLimits.certificates) {
+        console.log(`ℹ️ Plan ${companyPlan} no incluye certificados. Enrollment completado sin certificado.`);
+      }
+
+      if (justCompleted && courseRow && planLimits.certificates) { // Only attempt if courseRow was found
         console.log(`🔍 Debug: Course completed, generating certificate for user ${payload.userId} and course ${courseId}`);
         
         // Verificar existencia previa

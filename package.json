@@ -31,7 +31,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:introspect": "drizzle-kit introspect",
-    "db:setup": "node scripts/setup-database-safe.js",
+    "db:setup": "dotenv -e .env.local npx tsx scripts/seed.ts",
     "db:test": "node scripts/test-connection.js",
     "db:fix-enroll-course": "node scripts/fix-enroll-course-table.js"
   },

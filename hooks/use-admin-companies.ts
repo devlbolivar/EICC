@@ -11,7 +11,7 @@ interface Company {
   phone: string;
   address: string;
   industry: string;
-  plan: string;
+  subscriptionPlan: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -24,7 +24,7 @@ interface CreateCompanyData {
   phone: string;
   address: string;
   industry: string;
-  plan: string;
+  subscriptionPlan: string;
 }
 
 interface UpdateCompanyData {
@@ -34,7 +34,7 @@ interface UpdateCompanyData {
   phone?: string;
   address?: string;
   industry?: string;
-  plan?: string;
+  subscriptionPlan?: string;
   isActive?: boolean;
 }
 

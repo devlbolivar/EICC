@@ -12,8 +12,6 @@ const nextConfig = {
   },
   // Allow more time for static generation
   staticPageGenerationTimeout: 120,
-  // Use standalone output for deployment
-  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -40,11 +38,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-    // Provide dummy DATABASE_URL during build if not set
-    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://build:build@localhost:5432/builddb',
   },
   serverExternalPackages: ["bcryptjs"],
   poweredByHeader: false,

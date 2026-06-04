@@ -54,11 +54,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
+    const validPlans = ["free", "starter", "pro"];
+    const subscriptionPlan =
+      body.subscriptionPlan && validPlans.includes(body.subscriptionPlan)
+        ? body.subscriptionPlan
+        : undefined;
+
     const updatedCompany = await db
       .update(schema.companiesTable)
       .set({
         ...validation.data,
-        isActive: body.isActive !== undefined ? body.isActive : undefined,
+        ...(subscriptionPlan !== undefined && { subscriptionPlan }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
         updatedAt: new Date(),
       })
       .where(eq(schema.companiesTable.id, id))
