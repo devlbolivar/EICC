@@ -33,7 +33,8 @@
     "db:introspect": "drizzle-kit introspect",
     "db:setup": "dotenv -e .env.local npx tsx scripts/seed.ts",
     "db:test": "node scripts/test-connection.js",
-    "db:fix-enroll-course": "node scripts/fix-enroll-course-table.js"
+    "db:fix-enroll-course": "node scripts/fix-enroll-course-table.js",
+    "test:database": "node --import tsx --test tests/sql/*.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -79,6 +80,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
@@ -87,6 +89,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.17.47",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.7",

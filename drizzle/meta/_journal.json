@@ -15,6 +15,27 @@
       "when": 1759869792141,
       "tag": "0001_big_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763424000000,
+      "tag": "0002_rename_enroll_course",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1763424001000,
+      "tag": "0003_support_tickets",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763424002000,
+      "tag": "0004_enrollment_integrity",
+      "breakpoints": true
     }
   ]
 }

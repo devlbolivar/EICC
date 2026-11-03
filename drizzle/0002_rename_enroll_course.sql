@@ -1,17 +1,24 @@
--- Migration: Rename enrollCourse to enroll_course
--- Description: Rename table from mixedCase to snake_case for PostgreSQL conventions
--- Date: 2025-11-18
-
--- Step 1: Rename the table
-ALTER TABLE "enrollCourse" RENAME TO "enroll_course";--> statement-breakpoint
-
--- Step 2: Rename constraints (PostgreSQL automatically updates most references)
-ALTER TABLE "enroll_course" RENAME CONSTRAINT "enrollCourse_course_id_courses_id_fk" TO "enroll_course_course_id_courses_id_fk";--> statement-breakpoint
-ALTER TABLE "enroll_course" RENAME CONSTRAINT "enrollCourse_user_id_users_id_fk" TO "enroll_course_user_id_users_id_fk";--> statement-breakpoint
-ALTER TABLE "enroll_course" RENAME CONSTRAINT "enrollCourse_company_id_companies_id_fk" TO "enroll_course_company_id_companies_id_fk";--> statement-breakpoint
-
--- ROLLBACK SCRIPT (save this separately):
--- ALTER TABLE "enroll_course" RENAME TO "enrollCourse";
--- ALTER TABLE "enrollCourse" RENAME CONSTRAINT "enroll_course_course_id_courses_id_fk" TO "enrollCourse_course_id_courses_id_fk";
--- ALTER TABLE "enrollCourse" RENAME CONSTRAINT "enroll_course_user_id_users_id_fk" TO "enrollCourse_user_id_users_id_fk";
--- ALTER TABLE "enrollCourse" RENAME CONSTRAINT "enroll_course_company_id_companies_id_fk" TO "enrollCourse_company_id_companies_id_fk";
+-- Support databases where this previously unregistered migration was applied manually.
+-- Refuse ambiguous state rather than dropping or merging user data.
+DO $$
+BEGIN
+  IF to_regclass('public."enrollCourse"') IS NOT NULL THEN
+    IF to_regclass('public.enroll_course') IS NOT NULL THEN
+      RAISE EXCEPTION 'Both enrollment tables exist. Reconcile them before migrating.';
+    END IF;
+    ALTER TABLE "enrollCourse" RENAME TO "enroll_course";
+  END IF;
+  IF to_regclass('public.enroll_course') IS NULL THEN
+    RAISE EXCEPTION 'Enrollment table missing. Apply the baseline migrations first.';
+  END IF;
+END $$;
+--> statement-breakpoint
+DO $$
+DECLARE suffix text;
+BEGIN
+  FOREACH suffix IN ARRAY ARRAY['course_id_courses_id_fk', 'user_id_users_id_fk', 'company_id_companies_id_fk'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'enroll_course'::regclass AND conname = 'enrollCourse_' || suffix) THEN
+      EXECUTE format('ALTER TABLE enroll_course RENAME CONSTRAINT %I TO %I', 'enrollCourse_' || suffix, 'enroll_course_' || suffix);
+    END IF;
+  END LOOP;
+END $$;

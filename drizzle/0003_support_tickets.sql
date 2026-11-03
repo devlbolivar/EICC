@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS "support_tickets" (
   "resolved_at" timestamp,
   "assigned_to" uuid REFERENCES "users"("id") ON DELETE SET NULL
 );
+--> statement-breakpoint
 
 -- Support Messages Table
 CREATE TABLE IF NOT EXISTS "support_messages" (
@@ -25,11 +26,16 @@ CREATE TABLE IF NOT EXISTS "support_messages" (
   "attachments" json DEFAULT '[]',
   "created_at" timestamp DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
 
 -- Indexes for support_tickets
 CREATE INDEX IF NOT EXISTS "user_ticket_idx" ON "support_tickets" ("user_id");
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "ticket_status_idx" ON "support_tickets" ("status");
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "company_ticket_idx" ON "support_tickets" ("company_id");
+--> statement-breakpoint
 
 -- Indexes for support_messages
 CREATE INDEX IF NOT EXISTS "ticket_message_idx" ON "support_messages" ("ticket_id");
+--> statement-breakpoint

@@ -1,3 +1,4 @@
+jest.mock("@/lib/transactional-database", () => ({ transactionalDb: jest.requireMock("@/config/db").db }));
 /**
  * Plan Limits Integration Tests
  *
@@ -306,6 +307,7 @@ describe("Plan Limits: Course Enrollment (POST)", () => {
     cid: "cid-1",
     isActive: true,
     isPublic: true,
+    visibility: "public",
     companyId: null,
   };
 

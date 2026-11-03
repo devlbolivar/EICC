@@ -1,3 +1,4 @@
+import { canReadCourse, canModifyCourse, isPlatformAdmin } from "@/lib/course-access";
 import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
@@ -60,15 +61,8 @@ export async function GET(
 
     const course = result.rows[0];
 
-    // Verificar permisos de acceso
-    if (!payload.permissions.includes("courses:read")) {
-      // Solo puede ver si es público o de su empresa
-      if (!course.isPublic && course.companyId !== payload.companyId) {
-        return NextResponse.json(
-          { error: "Sin permisos para ver este curso" },
-          { status: 403 }
-        );
-      }
+    if (!canReadCourse(payload, course)) {
+      return NextResponse.json({ error: "Sin permisos para ver este curso" }, { status: 403 });
     }
 
     return NextResponse.json({
@@ -109,7 +103,7 @@ export async function PUT(
     }
 
     // Verificar permisos
-    if (!payload.permissions.includes("courses:edit")) {
+    if (!isPlatformAdmin(payload) && !payload.permissions.includes("courses:edit")) {
       return NextResponse.json(
         { error: "Sin permisos para editar cursos" },
         { status: 403 }
@@ -139,10 +133,7 @@ export async function PUT(
     const course = existingCourse.rows[0];
 
     // Verificar propiedad del curso
-    if (
-      course.createdBy !== payload.userId &&
-      !payload.permissions.includes("courses:edit")
-    ) {
+    if (!canModifyCourse(payload, course, "courses:edit")) {
       return NextResponse.json(
         { error: "Sin permisos para editar este curso" },
         { status: 403 }
@@ -162,7 +153,10 @@ export async function PUT(
     if (body.status) updateData.status = body.status;
     if (body.estimatedDuration)
       updateData.estimatedDuration = body.estimatedDuration;
-    if (body.visibility) updateData.visibility = body.visibility;
+    if (body.visibility) {
+      updateData.visibility = body.visibility;
+      updateData.isPublic = ["public", "Público"].includes(body.visibility);
+    }
     if (body.targetCompanies) updateData.targetCompanies = body.targetCompanies;
     if (body.modules) {
       updateData.modules = body.modules;
@@ -173,7 +167,7 @@ export async function PUT(
     }
     if (body.bannerImage !== undefined)
       updateData.bannerImage = body.bannerImage;
-    if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
+
 
     // Actualizar curso
     const updatedCourse = await db
@@ -224,7 +218,7 @@ export async function DELETE(
     }
 
     // Verificar permisos
-    if (!payload.permissions.includes("courses:delete")) {
+    if (!isPlatformAdmin(payload) && !payload.permissions.includes("courses:delete")) {
       return NextResponse.json(
         { error: "Sin permisos para eliminar cursos" },
         { status: 403 }
@@ -252,10 +246,7 @@ export async function DELETE(
     const course = existingCourse.rows[0];
 
     // Verificar propiedad del curso
-    if (
-      course.createdBy !== payload.userId &&
-      !payload.permissions.includes("courses:delete")
-    ) {
+    if (!canModifyCourse(payload, course, "courses:delete")) {
       return NextResponse.json(
         { error: "Sin permisos para eliminar este curso" },
         { status: 403 }

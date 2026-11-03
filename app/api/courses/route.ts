@@ -1,3 +1,4 @@
+import { courseReadScope, isPlatformAdmin } from "@/lib/course-access";
 import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Verificar permisos - aceptar courses:read, courses:view, o courses:create
     if (
+      !isPlatformAdmin(payload) &&
       !payload.permissions.includes("courses:read") &&
       !payload.permissions.includes("courses:view") &&
       !payload.permissions.includes("courses:create")
@@ -53,6 +55,8 @@ export async function GET(request: NextRequest) {
     // FIX 4: Limit pagination to max 100 items to prevent DoS
     const limit = Math.min(Math.max(rawLimit, 1), 100);
 
+    const scope = courseReadScope(payload);
+
     // Construir consulta base
     const query = sql`
       SELECT 
@@ -63,7 +67,7 @@ export async function GET(request: NextRequest) {
       FROM courses c
       LEFT JOIN users u ON c."createdBy" = u.id
       LEFT JOIN companies comp ON c."companyId" = comp.id
-      WHERE c."isActive" = true
+      WHERE c."isActive" = true AND ${scope}
       ORDER BY c."createdAt" DESC
       LIMIT ${limit} OFFSET ${(page - 1) * limit}
     `;
@@ -74,7 +78,7 @@ export async function GET(request: NextRequest) {
     const countQuery = sql`
       SELECT COUNT(*) as total
       FROM courses c
-      WHERE c."isActive" = true
+      WHERE c."isActive" = true AND ${scope}
     `;
 
     const countResult = await db.execute(countQuery);
@@ -183,7 +187,7 @@ export async function POST(request: NextRequest) {
         bannerImage: bannerImage || "",
         createdBy: payload.userId,
         companyId: payload.companyId,
-        isPublic: visibility === "Público",
+        isPublic: ["public", "Público"].includes(visibility),
         isActive: true,
       })
       .returning();
