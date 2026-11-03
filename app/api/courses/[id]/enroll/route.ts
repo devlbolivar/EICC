@@ -1,3 +1,5 @@
+import { transactionalDb } from "@/lib/transactional-database";
+import { canReadCourse } from "@/lib/course-access";
 import { requireCsrf } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/config/db";
@@ -68,14 +70,14 @@ export async function POST(
     }
 
     // Verificar visibilidad del curso
-    if (!course.isPublic && course.companyId !== payload.companyId) {
+    if (!canReadCourse(payload, course)) {
       return NextResponse.json(
         { error: "No tienes acceso a este curso" },
         { status: 403 }
       );
     }
 
-    const companyId = request.headers.get("x-company-id") || payload.companyId;
+    const companyId = payload.companyId;
 
     // Verificar límites del plan si el usuario pertenece a una empresa
     if (companyId) {
@@ -120,7 +122,7 @@ export async function POST(
 
     try {
       // FIX 5: Use transaction to prevent race condition (duplicate enrollments)
-      const enrollment = await db.transaction(async (tx) => {
+      const enrollment = await transactionalDb.transaction(async (tx) => {
         const result = await tx.execute(sql`
           INSERT INTO "enroll_course" (
             "course_id", "user_id", "company_id", "progress", "isCompleted",
@@ -323,7 +325,7 @@ export async function PUT(
     }
 
     // FIX 5: Envolver en db.transaction
-    const result = await db.transaction(async (tx) => {
+    const result = await transactionalDb.transaction(async (tx) => {
       // 1. Actualizar enrollment
       const updatedEnrollment = await tx.execute(sql`
         ${updateQuery}

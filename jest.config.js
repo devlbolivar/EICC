@@ -17,6 +17,7 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     "<rootDir>/.next/", 
     "<rootDir>/node_modules/",
+    "<rootDir>/tests/sql/",
     "<rootDir>/__tests__/e2e/", // Exclude E2E tests from Jest
   ],
   transformIgnorePatterns: [

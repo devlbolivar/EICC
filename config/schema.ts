@@ -9,6 +9,7 @@ import {
   json,
   uuid,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import {
@@ -175,7 +176,7 @@ export const enrollCourseTable = pgTable(
     userEmail: varchar({ length: 255 }),
   },
   (table) => ({
-    userCourseIdx: index("user_course_idx").on(table.userId, table.courseId),
+    userCourseIdx: uniqueIndex("user_course_idx").on(table.userId, table.courseId),
   })
 );
 

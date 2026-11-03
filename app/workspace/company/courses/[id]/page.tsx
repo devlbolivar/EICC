@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { Course, Module, Lesson } from "@/app/types";
 import { API_ROUTES, ERROR_MESSAGES } from "@/lib/constants";
+import { useCsrfToken } from "@/hooks/use-csrf-token";
 import { toast } from "sonner";
 
 // Componente para el reproductor de video
@@ -105,6 +106,7 @@ const VideoPlayer = ({ videoUrl }: { videoUrl: string }) => {
 };
 
 export default function CompanyCourseViewPage() {
+  const { fetchWithCsrf } = useCsrfToken();
   const params = useParams();
   const router = useRouter();
   const courseId = params.id as string;
@@ -226,7 +228,7 @@ export default function CompanyCourseViewPage() {
       setEnrolling(true);
 
       // Inscribir al usuario en el curso
-      const response = await fetch(`/api/enrollments`, {
+      const response = await fetchWithCsrf(`/api/courses/${courseId}/enroll`, {
         method: "POST",
         credentials: "include",
         headers: {

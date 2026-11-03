@@ -109,6 +109,7 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(*) as total
       FROM ${sql.identifier(getTableName(certificatesTable))} cert
       LEFT JOIN ${sql.identifier(getTableName(coursesTable))} c ON cert.${sql.identifier(certificatesTable.courseId.name)} = c.${sql.identifier(coursesTable.id.name)}
+      LEFT JOIN ${sql.identifier(getTableName(usersTable))} u ON cert.${sql.identifier(certificatesTable.userId.name)} = u.${sql.identifier(usersTable.id.name)}
       WHERE ${whereConditions}
     `;
 
