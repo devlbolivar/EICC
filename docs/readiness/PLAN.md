@@ -19,7 +19,8 @@ No se autoriza producción hasta tener evidencia completa en staging, sin bloque
 - [x] Registrar las migraciones pendientes y agregar passwordChangedAt y unicidad de inscripción.
 - [x] Probar migraciones desde cero, reejecución, tabla renombrada manualmente y rechazo de duplicados sin eliminarlos.
 - [x] Corregir URL/CSRF de inscripción desde vista de empresa y JOIN del conteo de certificados.
-- [ ] Inspeccionar esquema e historial de migraciones de staging; exportar backup antes de aplicar cambios.
+- [x] Inspeccionar esquema e historial de migraciones de staging; exportar backup y ensayar restauración antes de aplicar cambios (2026-11-05).
+- [x] Reparar en staging la unicidad de inscripción mediante transacción con bloqueo; conservar historial vacío sin ejecutar el baseline.
 - [ ] Reconciliar snapshots de Drizzle para futuras generaciones: no ejecutar db:generate o db:push a ciegas contra staging.
 - [ ] Validar conexión TLS, pool y transacciones del cliente Node contra Neon en staging.
 
